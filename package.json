@@ -10,11 +10,13 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-navigation/native": "^6.1.18",
     "@rnmapbox/maps": "^10.1.31",
     "react": "18.3.1",
     "react-native": "0.75.3",
     "react-native-autocomplete-input": "^5.4.0",
-    "react-native-geolocation-service": "^5.3.1"
+    "react-native-geolocation-service": "^5.3.1",
+    "react-native-gesture-handler": "^2.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
