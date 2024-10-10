@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TextInput, FlatList, TouchableOpacity, Text } from 'react-native';
 import MapboxGl from '@rnmapbox/maps';
 import Geolocation from 'react-native-geolocation-service';
+import Login from './components/Login/Login';
+import Register from './components/Register/Register';
+import PasswordCheng from './components/PasswordCheng/PasswordCheng';
+import Home from './components/Home/Home';
+
+
+
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator, } from '@react-navigation/native-stack';
+
+const Stack = createNativeStackNavigator();
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -24,7 +35,7 @@ const App = () => {
         );
     }, []);
 
-    const fetchSuggestions = async (query) => {
+    const fetchSuggestions = async (query: string) => {
         if (!query) {
             setSuggestions([]);
             return;
@@ -62,82 +73,98 @@ const App = () => {
     };
 
     return (
-        <View style={styles.container}>
-            <TextInput
-                style={styles.input}
-                placeholder="Qayerga bormoqchisiz?"
-                value={destination}
-                onChangeText={(text) => {
-                    setDestination(text);
-                    fetchSuggestions(text); // Qidiruv natijalarini olish
-                }}
-            />
-            {suggestions.length > 0 && (
-                <FlatList
-                    data={suggestions}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity onPress={() => handleDestinationSelect(item)}>
-                            <Text style={styles.suggestion}>{item.place_name}</Text>
-                        </TouchableOpacity>
-                    )}
-                />
-            )}
-            <MapboxGl.MapView style={styles.map}>
-                {currentLocation && (
-                    <MapboxGl.Camera
-                        zoomLevel={14}
-                        centerCoordinate={currentLocation}
-                    />
-                )}
-                {currentLocation && (
-                    <MapboxGl.PointAnnotation
-                        id="currentLocation"
-                        coordinate={currentLocation}
-                    />
-                )}
-                {routeCoordinates.length > 0 && (
-                    <MapboxGl.ShapeSource
-                        id="routeSource"
-                        shape={{
-                            type: 'Feature',
-                            geometry: {
-                                type: 'LineString',
-                                coordinates: routeCoordinates,
-                            },
-                        }}
-                    >
-                        <MapboxGl.LineLayer id="routeLayer" style={styles.routeLine} />
-                    </MapboxGl.ShapeSource>
-                )}
-            </MapboxGl.MapView>
-        </View>
+        // <View style={styles.container_div}>
+        <NavigationContainer >
+            <Stack.Navigator initialRouteName="Login">
+                <Stack.Screen options={{ headerShown: false }} name="Login" component={Login} />
+                <Stack.Screen options={{ headerShown: false }} name="PasswordCheng" component={PasswordCheng} />
+                <Stack.Screen options={{ headerShown: false }} name="Register" component={Register} />
+                <Stack.Screen options={{ headerShown: false }} name="Home" component={Home} />
+            </Stack.Navigator>
+
+
+        </NavigationContainer>
+
+        // {
+        /* <TextInput
+             style={styles.input}
+             placeholder="Qayerga bormoqchisiz?"
+             value={destination}
+             onChangeText={(text) => {
+                 setDestination(text);
+                 fetchSuggestions(text); // Qidiruv natijalarini olish
+             }}
+         />
+         {suggestions.length > 0 && (
+             <FlatList
+                 data={suggestions}
+                 keyExtractor={(item) => item.id}
+                 renderItem={({ item }) => (
+                     <TouchableOpacity onPress={() => handleDestinationSelect(item)}>
+                         <Text style={styles.suggestion}>{item.place_name}</Text>
+                     </TouchableOpacity>
+                 )}
+             />
+         )}
+         <MapboxGl.MapView style={styles.map}>
+             {currentLocation && (
+                 <MapboxGl.Camera
+                     zoomLevel={14}
+                     centerCoordinate={currentLocation}
+                 />
+             )}
+             {currentLocation && (
+                 <MapboxGl.PointAnnotation
+                     id="currentLocation"
+                     coordinate={currentLocation}
+                 />
+             )}
+             {routeCoordinates.length > 0 && (
+                 <MapboxGl.ShapeSource
+                     id="routeSource"
+                     shape={{
+                         type: 'Feature',
+                         geometry: {
+                             type: 'LineString',
+                             coordinates: routeCoordinates,
+                         },
+                     }}
+                 >
+                     <MapboxGl.LineLayer id="routeLayer" style={styles.routeLine} />
+                 </MapboxGl.ShapeSource>
+             )}
+         </MapboxGl.MapView> */
+        //}
+        // {/* </View> */ }
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    container_div: {
         flex: 1,
+        backgroundColor: '#7e0000',
+
     },
-    map: {
-        flex: 1,
-    },
-    input: {
-        height: 40,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        paddingHorizontal: 10,
-        margin: 10,
-    },
-    suggestion: {
-        padding: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-    },
-    routeLine: {
-        lineWidth: 5,
-        lineColor: 'blue',
-    },
+    // map: {
+    //     flex: 1,
+    // },
+    // input: {
+    //     height: 40,
+    //     borderColor: '#ccc',
+    //     borderWidth: 1,
+    //     paddingHorizontal: 10,
+    //     margin: 10,
+    // },
+    // suggestion: {
+    //     padding: 10,
+    //     borderBottomWidth: 1,
+    //     borderBottomColor: '#ccc',
+
+    // },
+    // routeLine: {
+    //     lineWidth: 5,
+    //     lineColor: 'blue',
+    // },
 });
 
 
