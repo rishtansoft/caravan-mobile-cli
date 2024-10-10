@@ -81,8 +81,6 @@ const App = () => {
                 <Stack.Screen options={{ headerShown: false }} name="Register" component={Register} />
                 <Stack.Screen options={{ headerShown: false }} name="Home" component={Home} />
             </Stack.Navigator>
-
-
         </NavigationContainer>
 
         // {
@@ -142,7 +140,7 @@ const App = () => {
 const styles = StyleSheet.create({
     container_div: {
         flex: 1,
-        backgroundColor: '#7e0000',
+        backgroundColor: '#ffffff',
 
     },
     // map: {
