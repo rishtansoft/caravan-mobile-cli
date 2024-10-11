@@ -1,5 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, TextInput, FlatList, TouchableOpacity, Text, Button, Animated, Linking } from 'react-native';
+import {
+    View, StyleSheet,
+    TextInput, FlatList,
+    TouchableOpacity, Text, Button,
+    Animated, Linking,
+
+} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import { LoginProps } from '../RouterTypes';
@@ -111,6 +117,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
     }
 
 
+
     return (
         <View style={styles.container}>
             <View style={styles.header_con}>
@@ -120,8 +127,6 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                     <Icon onPress={() => navigation.navigate('Home')} name="angle-left" size={30} color="#7257FF" />
                 </View>
                 <Text style={styles.text}>
-
-
                     Kirish
                 </Text>
             </View>
@@ -131,7 +136,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                     <TextInput
                         style={!isFocusedValue ? styles.input : styles.inputFocus}
                         keyboardType={"numeric"}
-                        placeholderTextColor="#131214"
+                        placeholderTextColor="#898D8F"
                         value={value}
                         onChangeText={validateInput}
                         placeholder="ID yoki telefon raqam"
@@ -150,7 +155,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                         style={!isFocusedPasword ? styles.input : styles.inputFocus}
                         value={valuePasword}
                         secureTextEntry={true}
-                        placeholderTextColor="#131214"
+                        placeholderTextColor="#898D8F"
                         onChangeText={onPasswordFun}
                         placeholder="Parol kiriting"
                         onFocus={() => setIsFocusedPasword(true)}  // Focus bo'lganda
