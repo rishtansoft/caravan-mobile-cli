@@ -5,6 +5,7 @@ import Login from '../components/Login/Login';
 import Register from '../components/Register/Register';
 import PasswordCheng from '../components/PasswordCheng/PasswordCheng';
 import Home from '../components/Home/Home';
+import SmsPage from '../components/sms/SmsPage';
 
 
 
@@ -19,6 +20,7 @@ const App = () => {
             <NavigationContainer >
                 <Stack.Navigator initialRouteName="Login">
                     <Stack.Screen options={{ headerShown: false }} name="Login" component={Login} />
+                    <Stack.Screen options={{ headerShown: false }} name="Smspagepassword" component={SmsPage} />
                     <Stack.Screen options={{ headerShown: false }} name="PasswordCheng" component={PasswordCheng} />
                     <Stack.Screen options={{ headerShown: false }} name="Register" component={Register} />
                     <Stack.Screen options={{ headerShown: false }} name="Home" component={Home} />

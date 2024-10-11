@@ -116,6 +116,15 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
         }
     }
 
+    const passwordChangFun = () => {
+        const phoneRegex = /^998\d{9}$/; // +998xxxxxxxxx phone format
+        if (value && phoneRegex.test(value)) {
+            navigation.navigate('Smspagepassword');
+        } else {
+            setErrorMessage("Telefon raqamni kirtish shart")
+        }
+    }
+
 
 
     return (
@@ -168,7 +177,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                 <View style={{
                     marginTop: 15
                 }}>
-                    <Text onPress={() => navigation.navigate('PasswordCheng')} style={{ marginBottom: 5, color: '#7257FF', fontSize: 18, fontWeight: 600 }}>Parolni unutdingizmi?</Text>
+                    <Text onPress={passwordChangFun} style={{ marginBottom: 5, color: '#7257FF', fontSize: 18, fontWeight: 600 }}>Parolni unutdingizmi?</Text>
                     <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18 }}>Akkountingiz yo'qmi?  <Text onPress={() => navigation.navigate('Register')} style={{ color: '#7257FF' }}> Ro'yxatdan o'tish</Text></Text>
                 </View>
 

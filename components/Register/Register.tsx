@@ -60,7 +60,7 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
 
     // Har bir element uchun ko'rinish
     const renderItem = ({ item, index }) => (
-        <View style={styles.listItem}>
+        <View key={index} style={styles.listItem}>
             <Text style={styles.bullet}>•</Text>
             <Text style={styles.itemText}>{item.text}</Text>
         </View>
@@ -118,7 +118,7 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
                                 onFocus={() => setNameIsFocused(true)}
                                 onBlur={() => setNameIsFocused(false)}
                             />
-                            {nameError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+                            {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
                         </View>
 
                         <View style={{ marginTop: 18 }}>
@@ -133,7 +133,7 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
                                 onBlur={() => setPasswordIsFocused(false)}
                                 secureTextEntry={true}
                             />
-                            {passwordError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+                            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
                         </View>
                         <View style={{ marginTop: 8 }}>
                             <FlatList
@@ -145,18 +145,18 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
                         </View>
 
                         <View style={{ marginTop: 18 }}>
-                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parol</Text>
+                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parolni takrorlang</Text>
                             <TextInput
                                 style={!passwordReqIsFocused ? styles.input : styles.inputFocus}
                                 placeholderTextColor="#898D8F"
                                 value={passwordReq}
                                 onChangeText={passwordReqInputFun}
-                                placeholder="Parolni kiriting"
+                                placeholder="Parolni takrorlang"
                                 onFocus={() => setPasswordReqIsFocused(true)}
                                 onBlur={() => setPasswordReqIsFocused(false)}
                                 secureTextEntry={true}
                             />
-                            {passwordReqError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+                            {passwordReqError ? <Text style={styles.errorText}>{passwordReqError}</Text> : null}
                         </View>
 
 
