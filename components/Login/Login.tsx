@@ -178,7 +178,7 @@ const Login: React.FC<LoginProps> = ({ navigation }) => {
                     marginTop: 15
                 }}>
                     <Text onPress={passwordChangFun} style={{ marginBottom: 5, color: '#7257FF', fontSize: 18, fontWeight: 600 }}>Parolni unutdingizmi?</Text>
-                    <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18 }}>Akkountingiz yo'qmi?  <Text onPress={() => navigation.navigate('Register')} style={{ color: '#7257FF' }}> Ro'yxatdan o'tish</Text></Text>
+                    <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18 }}>Akkountingiz yo'qmi?  <Text onPress={() => navigation.navigate('Register')} style={{ color: '#7257FF', fontWeight: '600' }}> Ro'yxatdan o'tish</Text></Text>
                 </View>
 
             </View>
@@ -246,7 +246,9 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 20,
         lineHeight: 100,
-        width: '90%'
+        width: '90%',
+        fontWeight: '600'
+
     },
     button: {
         backgroundColor: '#7257FF',

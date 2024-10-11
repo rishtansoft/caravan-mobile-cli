@@ -159,6 +159,12 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
                             {passwordReqError ? <Text style={styles.errorText}>{passwordReqError}</Text> : null}
                         </View>
 
+                        <View style={{
+                            marginTop: 13
+                        }}>
+                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18 }}>Akkountingiz bormi?   <Text onPress={() => navigation.navigate('Login')} style={{ color: '#7257FF', fontWeight: '600' }}>Kirish</Text></Text>
+                        </View>
+
 
                     </ScrollView>
 
@@ -166,6 +172,8 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
 
 
             </KeyboardAvoidingView>
+
+
 
             <View style={{
                 position: 'static',
@@ -218,7 +226,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 20,
         lineHeight: 100,
-        width: '90%'
+        width: '90%',
+        fontWeight: '600'
     },
     input: {
         borderColor: '#E6E9EB',

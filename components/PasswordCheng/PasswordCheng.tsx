@@ -170,7 +170,9 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 20,
         lineHeight: 100,
-        width: '90%'
+        width: '90%',
+        fontWeight: '600'
+
     },
 
     bullet: {
