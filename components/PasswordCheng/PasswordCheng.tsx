@@ -33,10 +33,18 @@ const PasswordCheng: React.FC<PasswordChengProps> = ({ navigation }) => {
 
     const PasswordInputFun = (values: string) => {
         setPassword(values)
+        setPasswordError('')
+
     }
 
     const passwordReqInputFun = (values: string) => {
-        setPasswordReq(values)
+        if (password == values) {
+            setPasswordReq(values)
+            setPasswordReqError('')
+        } else {
+            setPasswordReq(values)
+            setPasswordReqError("Parolga mos bo'lishi kerak")
+        }
     }
 
     const items = [
@@ -57,6 +65,50 @@ const PasswordCheng: React.FC<PasswordChengProps> = ({ navigation }) => {
         inputRange: [0, 1],
         outputRange: ['#7257FF', '#462eba'], // 0 = 'blue', 1 = 'darkblue'
     });
+
+
+    const validatePassword = (password: string) => {
+        const minLength = 8;
+        const capitalLetterPattern = /[A-Z]/;
+        const specialCharacterPattern = /[^A-Za-z0-9]/;
+
+        if (password.length < minLength) {
+            return false;
+        }
+        if (!capitalLetterPattern.test(password)) {
+            return false;
+        }
+        if (!specialCharacterPattern.test(password)) {
+            return false;
+        }
+
+        return true; // If the password meets all criteria
+    };
+
+    const savePaswordFun = () => {
+        if (password && passwordReq &&
+            validatePassword(password) &&
+            password == passwordReq) {
+            navigation.navigate("Login")
+
+        } else {
+            if (!password) {
+                setPasswordError("Parol kiritish shart")
+            } else if (!validatePassword(password)) {
+                setPasswordError("Parolni berilgan shartlar bo'yicha bo'lish shart")
+            } else {
+                setPasswordError('')
+            }
+
+            if (!passwordReq) {
+                setPasswordReqError("Parolni takrolash shart")
+            } else if (password != passwordReq) {
+                setPasswordReqError("Parolga mos bo'lishi kerak")
+            } else {
+                setPasswordReqError('')
+            }
+        }
+    }
 
     return (
         <View style={styles.container}>
@@ -123,7 +175,7 @@ const PasswordCheng: React.FC<PasswordChengProps> = ({ navigation }) => {
                 >
                     <Animated.View style={[styles.button, { backgroundColor }]}>
                         <Text
-                            // onPress={loginBtn} 
+                            onPress={savePaswordFun}
                             style={styles.button_text}>
                             Kirish
                         </Text>

@@ -42,14 +42,18 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
 
     const phoneInputFun = (values: string) => {
         setPhone(values)
+        setPhoneError('')
     }
 
     const nameInputFun = (values: string) => {
         setName(values)
+        setNameError('')
     }
 
     const PasswordInputFun = (values: string) => {
         setPassword(values)
+        setPasswordError('')
+
     }
 
     const passwordReqInputFun = (values: string) => {
@@ -116,16 +120,36 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
             validatePassword(password) &&
             password == passwordReq
         ) {
-
+            navigation.navigate('Home')
         } else {
             if (!phone) {
                 setPhoneError("Telefon raqam kiritish shart!")
+            } else if (!phoneValidateFun(phone)) {
+                setPhoneError("Telefon raqam nato'g'ri kiritildi!")
             } else {
-                if (phone || !phoneValidateFun(phone)) {
-                    setPhoneError("Telefon raqam nato'g'ri kiritildi!")
-                } else {
-                    setPhoneError('')
-                }
+                setPhoneError('')
+            }
+
+            if (!name || /^\s*$/.test(name)) {
+                setNameError("Ism Familya kiritish shart")
+            } else {
+                setNameError('')
+            }
+
+            if (!password) {
+                setPasswordError("Parol kiritish shart")
+            } else if (!validatePassword(password)) {
+                setPasswordError("Parolni berilgan shartlar bo'yicha bo'lish shart")
+            } else {
+                setPasswordError('')
+            }
+
+            if (!passwordReq) {
+                setPasswordReqError("Parolni takrolash shart")
+            } else if (password != passwordReq) {
+                setPasswordReqError("Parolga mos bo'lishi kerak")
+            } else {
+                setPasswordReqError('')
             }
         }
     }
