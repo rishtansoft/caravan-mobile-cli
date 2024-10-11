@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
 
     },
     scrollContainer: {
-        paddingBottom: 30,
+        paddingBottom: 35,
         flexGrow: 1,
     },
     errorText: {
