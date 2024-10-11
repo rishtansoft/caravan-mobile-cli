@@ -25,7 +25,7 @@ const App = () => {
     return (
         <View style={styles.container_div}>
             <NavigationContainer >
-                <Stack.Navigator initialRouteName="RegisterSecond">
+                <Stack.Navigator initialRouteName="Login">
                     <Stack.Screen options={{ headerShown: false }} name="Login" component={Login} />
                     <Stack.Screen options={{ headerShown: false }} name="Smspagepassword" component={SmsPage} />
                     <Stack.Screen options={{ headerShown: false }} name="PasswordCheng" component={PasswordCheng} />
