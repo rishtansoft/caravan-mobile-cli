@@ -3,7 +3,12 @@ import {
     SafeAreaView, View,
     StyleSheet, TextInput,
     FlatList, TouchableOpacity,
-    Text, Button, Animated
+    Text, Button, Animated,
+    KeyboardAvoidingView,
+    ScrollView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { RegisterProps } from '../RouterTypes';
@@ -29,6 +34,7 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
     const [passwordReq, setPasswordReq] = useState<string>('');
     const [passwordReqError, setPasswordReqError] = useState<string>('');
     const [passwordReqIsFocused, setPasswordReqIsFocused] = useState<boolean>(false);
+    const animatedValue = useRef(new Animated.Value(0)).current;
 
     const phoneInputFun = (values: string) => {
         setPhone(values)
@@ -40,6 +46,10 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
 
     const PasswordInputFun = (values: string) => {
         setPassword(values)
+    }
+
+    const passwordReqInputFun = (values: string) => {
+        setPasswordReq(values)
     }
 
     const items = [
@@ -56,6 +66,11 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
         </View>
     );
 
+    const backgroundColor = animatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['#7257FF', '#462eba'], // 0 = 'blue', 1 = 'darkblue'
+    });
+
 
     return (
         <View style={styles.container}>
@@ -69,75 +84,112 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
                     Ro'yxatdan o'tish
                 </Text>
             </View>
-            <SafeAreaView>
-                <View>
-                    <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Telefon raqam</Text>
-                    <TextInput
-                        style={!phoneIsFocused ? styles.input : styles.inputFocus}
-                        keyboardType={"numeric"}
-                        placeholderTextColor="#898D8F"
-                        value={phone}
-                        onChangeText={phoneInputFun}
-                        placeholder="+998 __  ___  __  __"
-                        onFocus={() => setPhoneIsFocused(true)}
-                        onBlur={() => setPhoneIsFocused(false)}
-                    />
-                    {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : <Text style={{ color: '#6E7375', marginTop: 6, lineHeight: 14 }}>Ushbu raqamga SMS kod yuboriladi</Text>}
-                </View>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <ScrollView contentContainerStyle={styles.scrollContainer}
+                        showsVerticalScrollIndicator={false}>
+                        <View>
+                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Telefon raqam</Text>
+                            <TextInput
+                                style={!phoneIsFocused ? styles.input : styles.inputFocus}
+                                keyboardType={"numeric"}
+                                placeholderTextColor="#898D8F"
+                                value={phone}
+                                onChangeText={phoneInputFun}
+                                placeholder="+998 __  ___  __  __"
+                                onFocus={() => setPhoneIsFocused(true)}
+                                onBlur={() => setPhoneIsFocused(false)}
+                            />
+                            {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : <Text style={{ color: '#6E7375', marginTop: 6, lineHeight: 14 }}>Ushbu raqamga SMS kod yuboriladi</Text>}
+                        </View>
 
-                <View style={{ marginTop: 18 }}>
-                    <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Ism Familya</Text>
-                    <TextInput
-                        style={!nameIsFocused ? styles.input : styles.inputFocus}
-                        placeholderTextColor="#898D8F"
-                        value={name}
-                        onChangeText={nameInputFun}
-                        placeholder="To'liq ismingizni kiriting"
-                        onFocus={() => setNameIsFocused(true)}
-                        onBlur={() => setNameIsFocused(false)}
-                    />
-                    {nameError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
-                </View>
+                        <View style={{ marginTop: 18 }}>
+                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Ism Familya</Text>
+                            <TextInput
+                                style={!nameIsFocused ? styles.input : styles.inputFocus}
+                                placeholderTextColor="#898D8F"
+                                value={name}
+                                onChangeText={nameInputFun}
+                                placeholder="To'liq ismingizni kiriting"
+                                onFocus={() => setNameIsFocused(true)}
+                                onBlur={() => setNameIsFocused(false)}
+                            />
+                            {nameError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+                        </View>
 
-                <View style={{ marginTop: 18 }}>
-                    <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parol</Text>
-                    <TextInput
-                        style={!passwordIsFocused ? styles.input : styles.inputFocus}
-                        placeholderTextColor="#898D8F"
-                        value={password}
-                        onChangeText={PasswordInputFun}
-                        placeholder="Parolni kiriting"
-                        onFocus={() => setPasswordIsFocused(true)}
-                        onBlur={() => setPasswordIsFocused(false)}
-                        secureTextEntry={true}
-                    />
-                    {passwordError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
-                </View>
-                <View style={{ marginTop: 8 }}>
-                    <FlatList
-                        data={items}
-                        renderItem={renderItem}
-                        keyExtractor={item => item.id}
-                        style={styles.flatList}
-                    />
-                </View>
+                        <View style={{ marginTop: 18 }}>
+                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parol</Text>
+                            <TextInput
+                                style={!passwordIsFocused ? styles.input : styles.inputFocus}
+                                placeholderTextColor="#898D8F"
+                                value={password}
+                                onChangeText={PasswordInputFun}
+                                placeholder="Parolni kiriting"
+                                onFocus={() => setPasswordIsFocused(true)}
+                                onBlur={() => setPasswordIsFocused(false)}
+                                secureTextEntry={true}
+                            />
+                            {passwordError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+                        </View>
+                        <View style={{ marginTop: 8 }}>
+                            <FlatList
+                                data={items}
+                                renderItem={renderItem}
+                                keyExtractor={item => item.id}
+                                style={styles.flatList}
+                            />
+                        </View>
 
-                <View style={{ marginTop: 18 }}>
-                    <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parol</Text>
-                    <TextInput
-                        style={!passwordReqIsFocused ? styles.input : styles.inputFocus}
-                        placeholderTextColor="#898D8F"
-                        value={password}
-                        onChangeText={PasswordInputFun}
-                        placeholder="Parolni kiriting"
-                        onFocus={() => setPasswordIsFocused(true)}
-                        onBlur={() => setPasswordIsFocused(false)}
-                        secureTextEntry={true}
-                    />
-                    {passwordError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
-                </View>
+                        <View style={{ marginTop: 18 }}>
+                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parol</Text>
+                            <TextInput
+                                style={!passwordReqIsFocused ? styles.input : styles.inputFocus}
+                                placeholderTextColor="#898D8F"
+                                value={passwordReq}
+                                onChangeText={passwordReqInputFun}
+                                placeholder="Parolni kiriting"
+                                onFocus={() => setPasswordReqIsFocused(true)}
+                                onBlur={() => setPasswordReqIsFocused(false)}
+                                secureTextEntry={true}
+                            />
+                            {passwordReqError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+                        </View>
 
-            </SafeAreaView>
+
+                    </ScrollView>
+
+                </TouchableWithoutFeedback>
+
+
+            </KeyboardAvoidingView>
+
+            <View style={{
+                position: 'static',
+                bottom: 0,
+                left: 0,
+                right: 0
+            }}>
+                <TouchableOpacity
+                    // style={isPressed ? styles.inbutton : styles.button}
+                    // onPressIn={() => handlePressIn()}
+                    // onPressOut={() => handlePressOut()}
+                    activeOpacity={1}
+
+                >
+                    <Animated.View style={[styles.button, { backgroundColor }]}>
+                        <Text
+                            // onPress={loginBtn} 
+                            style={styles.button_text}>
+                            Davom etish
+                        </Text>
+                    </Animated.View>
+
+                </TouchableOpacity>
+            </View>
 
 
 
@@ -148,9 +200,12 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        flexDirection: "column",
         backgroundColor: '#FFFFFF',
         padding: 10,
-        position: 'relative'
+        position: 'relative',
+        overflow: "scroll",
+        height: 100
     },
     header_con: {
         display: 'flex',
@@ -187,6 +242,10 @@ const styles = StyleSheet.create({
         elevation: 1,
 
     },
+    scrollContainer: {
+        paddingBottom: 30,
+        flexGrow: 1,
+    },
     errorText: {
         color: 'red',
         marginTop: 6,
@@ -217,6 +276,18 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
+    button: {
+        backgroundColor: '#7257FF',
+        padding: 9,
+        margin: 10,
+        borderRadius: 20,
+        cursor: 'pointer',
+    },
+    button_text: {
+        color: '#fff',
+        textAlign: 'center',
+        fontSize: 20
+    },
 
 });
 
