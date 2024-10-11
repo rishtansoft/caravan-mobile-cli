@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { FC } from 'react';
 
 import Login from '../components/Login/Login';
 import Register from '../components/Register/Register';
