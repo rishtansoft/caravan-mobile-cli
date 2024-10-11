@@ -1,5 +1,7 @@
-import { StackNavigationProp } from '@react-navigation/stack';
+import { StackNavigationProp, } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+
 
 export type RootStackParamList = {
     Login: undefined;
@@ -14,6 +16,13 @@ export type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, '
 export type PasswordChengScreenNavigationProp = StackNavigationProp<RootStackParamList, 'PasswordCheng'>;
 export type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>;
 export type SmsPagePasswordScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Smspagepassword'>;
+
+
+export type LoginType = NativeStackScreenProps<RootStackParamList, 'Login'>;
+export type HomeType = NativeStackScreenProps<RootStackParamList, 'Home'>;
+export type PasswordChengType = NativeStackScreenProps<RootStackParamList, 'PasswordCheng'>;
+export type RegisterType = NativeStackScreenProps<RootStackParamList, 'Register'>;
+export type SmsPagePasswordType = NativeStackScreenProps<RootStackParamList, 'Smspagepassword'>;
 
 export type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
 export type LoginScreenRouteProp = RouteProp<RootStackParamList, 'Login'>;

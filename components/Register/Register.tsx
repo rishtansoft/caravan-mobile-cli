@@ -18,6 +18,10 @@ import { RegisterProps } from '../RouterTypes';
 
 // }
 
+interface ListItem {
+    text: string;
+}
+
 const Register: React.FC<RegisterProps> = ({ navigation }) => {
     const [phone, setPhone] = useState<string>('');
     const [phoneError, setPhoneError] = useState<string>('');
@@ -49,7 +53,13 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
     }
 
     const passwordReqInputFun = (values: string) => {
-        setPasswordReq(values)
+        if (password == values) {
+            setPasswordReq(values)
+            setPasswordReqError('')
+        } else {
+            setPasswordReq(values)
+            setPasswordReqError("Parolga mos bo'lishi kerak")
+        }
     }
 
     const items = [
@@ -59,7 +69,7 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
     ];
 
     // Har bir element uchun ko'rinish
-    const renderItem = ({ item, index }) => (
+    const renderItem = ({ item, index }: { item: ListItem; index: number }) => (
         <View key={index} style={styles.listItem}>
             <Text style={styles.bullet}>•</Text>
             <Text style={styles.itemText}>{item.text}</Text>
@@ -70,6 +80,55 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
         inputRange: [0, 1],
         outputRange: ['#7257FF', '#462eba'], // 0 = 'blue', 1 = 'darkblue'
     });
+
+    const phoneValidateFun = (value: string) => {
+        const phoneRegex = /^998\d{9}$/; // +998xxxxxxxxx phone format
+        if (value && phoneRegex.test(value)) {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    const validatePassword = (password: string) => {
+        const minLength = 8;
+        const capitalLetterPattern = /[A-Z]/;
+        const specialCharacterPattern = /[^A-Za-z0-9]/;
+
+        if (password.length < minLength) {
+            return false;
+        }
+        if (!capitalLetterPattern.test(password)) {
+            return false;
+        }
+        if (!specialCharacterPattern.test(password)) {
+            return false;
+        }
+
+        return true; // If the password meets all criteria
+    };
+
+    const saveDataFun = () => {
+        if (
+            phone && phoneValidateFun(phone)
+            && name && !/^\s*$/.test(name) &&
+            password && passwordReq &&
+            validatePassword(password) &&
+            password == passwordReq
+        ) {
+
+        } else {
+            if (!phone) {
+                setPhoneError("Telefon raqam kiritish shart!")
+            } else {
+                if (phone || !phoneValidateFun(phone)) {
+                    setPhoneError("Telefon raqam nato'g'ri kiritildi!")
+                } else {
+                    setPhoneError('')
+                }
+            }
+        }
+    }
 
 
     return (
@@ -190,7 +249,7 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
                 >
                     <Animated.View style={[styles.button, { backgroundColor }]}>
                         <Text
-                            // onPress={loginBtn} 
+                            onPress={saveDataFun}
                             style={styles.button_text}>
                             Davom etish
                         </Text>
@@ -295,7 +354,8 @@ const styles = StyleSheet.create({
     button_text: {
         color: '#fff',
         textAlign: 'center',
-        fontSize: 20
+        fontSize: 20,
+        width: "100%"
     },
 
 });

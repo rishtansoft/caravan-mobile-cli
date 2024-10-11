@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { FC } from 'react';
 
 import Login from '../components/Login/Login';
 import Register from '../components/Register/Register';
@@ -7,12 +8,18 @@ import PasswordCheng from '../components/PasswordCheng/PasswordCheng';
 import Home from '../components/Home/Home';
 import SmsPage from '../components/sms/SmsPage';
 
+import {
+    RootStackParamList,
+} from '../components/RouterTypes';
 
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator, } from '@react-navigation/native-stack';
 
-const Stack = createNativeStackNavigator();
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+
 
 const App = () => {
     return (

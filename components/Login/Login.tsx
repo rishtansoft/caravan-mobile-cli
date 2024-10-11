@@ -267,7 +267,8 @@ const styles = StyleSheet.create({
     button_text: {
         color: '#fff',
         textAlign: 'center',
-        fontSize: 20
+        fontSize: 20,
+        width: "100%"
     },
     errorText: {
         color: 'red',

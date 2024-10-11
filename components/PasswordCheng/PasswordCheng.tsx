@@ -17,6 +17,10 @@ import { PasswordChengProps } from '../RouterTypes';
 
 // }
 
+interface ListItem {
+    text: string;
+}
+
 const PasswordCheng: React.FC<PasswordChengProps> = ({ navigation }) => {
     const [password, setPassword] = useState<string>('');
     const [passwordError, setPasswordError] = useState<string>('');
@@ -42,7 +46,7 @@ const PasswordCheng: React.FC<PasswordChengProps> = ({ navigation }) => {
     ];
 
     // Har bir element uchun ko'rinish
-    const renderItem = ({ item, index }) => (
+    const renderItem = ({ item, index }: { item: ListItem; index: number }) => (
         <View key={index} style={styles.listItem}>
             <Text style={styles.bullet}>•</Text>
             <Text style={styles.itemText}>{item.text}</Text>
@@ -148,7 +152,8 @@ const styles = StyleSheet.create({
     button_text: {
         color: '#fff',
         textAlign: 'center',
-        fontSize: 20
+        fontSize: 20,
+        width: "100%"
     },
 
     header_con: {
