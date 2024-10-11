@@ -144,7 +144,7 @@ const RegisterSecond: React.FC<RegisterSecondProps> = ({ navigation }) => {
                 >
                     <Animated.View style={[styles.button, { backgroundColor }]}>
                         <Text
-                            // onPress={saveDataFun}
+                            onPress={() => navigation.navigate('Home')}
                             style={styles.button_text}>
                             Ro'yxatdan o'tish
                         </Text>

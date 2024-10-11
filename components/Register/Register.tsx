@@ -120,7 +120,7 @@ const Register: React.FC<RegisterProps> = ({ navigation }) => {
             validatePassword(password) &&
             password == passwordReq
         ) {
-            navigation.navigate('Home')
+            navigation.navigate('RegisterSecond')
         } else {
             if (!phone) {
                 setPhoneError("Telefon raqam kiritish shart!")
