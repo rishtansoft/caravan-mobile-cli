@@ -12,6 +12,8 @@ import ForgotSmsPassword from './screens/general/ForgotSmsPassword';
 import NewPassword from './screens/general/NewPassword';
 import RegisterScreen from './screens/general/RegisterScreen';
 import RegisterSecondScreen from './screens/general/RegisterSecondScreen';
+import HomeScreen from './screens/general/Home';
+import VerifySmsScreen from './screens/general/VerifySmsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -50,7 +52,8 @@ const AuthNavigator = () => {
       <Stack.Screen options={{ headerShown: false }} name="new_password" component={NewPassword} />
       <Stack.Screen options={{ headerShown: false }} name="register" component={RegisterScreen} />
       <Stack.Screen options={{ headerShown: false }} name="register_second" component={RegisterSecondScreen} />
-      {/* <Stack.Screen options={{ headerShown: false }} name="Home" component={Home} /> */}
+      <Stack.Screen options={{ headerShown: false }} name="verify_sms_screen" component={VerifySmsScreen} />
+      <Stack.Screen options={{ headerShown: false }} name="home" component={HomeScreen} />
     </Stack.Navigator>
   );
 };

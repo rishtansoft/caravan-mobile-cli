@@ -80,15 +80,11 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
 
     const saveData = () => {
         if (
-            phoneSecond
-            && date
-            && role
+            (phoneSecond && phoneSecond ? phoneValidateFun(phone) : true) || date && role
         ) {
-            navigation.navigate('login');
+            navigation.navigate('verify_sms_screen');
         } else {
-            if (!phone) {
-                setPhoneSecondError('Telefon raqam kiritish shart!');
-            } else if (!phoneValidateFun(phone)) {
+            if (phoneSecond && !phoneValidateFun(phone)) {
                 setPhoneSecondError('Telefon raqam nato\'g\'ri kiritildi!');
             } else {
                 setPhoneSecondError('');
@@ -126,7 +122,7 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
 
 
                     <View style={{ marginTop: 18 }}>
-                        <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Telefon raqam</Text>
+                        <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Qo'shimcha telefon raqam <Text style={styles.span_teg}>(ixtiyoriy)</Text></Text>
                         <TextInput
                             style={!phoneSecondIsFocused ? styles.input : styles.inputFocus}
                             keyboardType={"numeric"}
@@ -188,6 +184,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
 
+    },
+    span_teg: {
+        color: '#C1C4C6',
+        fontWeight: '500',
     },
     text: {
         color: '#131214',

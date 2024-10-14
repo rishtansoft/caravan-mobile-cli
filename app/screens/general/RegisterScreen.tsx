@@ -127,7 +127,7 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
             validatePassword(password) &&
             password === passwordReq
         ) {
-            navigation.navigate('register_second')
+            navigation.navigate('register_second');
         } else {
             if (!phone) {
                 setPhoneError('Telefon raqam kiritish shart!');
