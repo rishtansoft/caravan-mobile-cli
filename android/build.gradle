@@ -4,7 +4,8 @@ buildscript {
         minSdkVersion = 23
         compileSdkVersion = 34
         targetSdkVersion = 34
-        ndkVersion = "26.1.10909125"
+        ndkVersion = "28.0.12433566"
+        // ndkVersion = "26.1.10909125"
         kotlinVersion = "1.9.24"
         RNMapboxMapsVersion = '11.4.1'
         RNMapboxMapsImp='mapbox'
