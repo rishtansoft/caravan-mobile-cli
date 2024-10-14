@@ -1,5 +1,5 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+import { View, Text } from 'react-native';
+import React from 'react';
 
 const VerifySmsScreen = () => {
   return (
@@ -9,4 +9,4 @@ const VerifySmsScreen = () => {
   )
 }
 
-export default VerifySmsScreen
+export default VerifySmsScreen;

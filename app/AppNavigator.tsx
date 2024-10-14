@@ -1,11 +1,20 @@
-import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { Provider, useSelector } from "react-redux";
-import DriverNavigation from "./navigations/driver/DriverNavigator";
-import OwnerNavigation from "./navigations/owner/OwnerNavigator";
-import GeneralNavigation from "./navigations/general/GeneralNavigator";
-import { Text } from "react-native";
-import store, { RootState } from "./store/store";
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { Provider, useSelector } from 'react-redux';
+import DriverNavigation from './navigations/driver/DriverNavigator';
+import OwnerNavigation from './navigations/owner/OwnerNavigator';
+import GeneralNavigation from './navigations/general/GeneralNavigator';
+import store, { RootState } from './store/store';
+import LoginScreen from './screens/general/LoginScreen';
+import { RootStackParamList } from './screens/general/RouterType';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ForgotSmsPassword from './screens/general/ForgotSmsPassword';
+import NewPassword from './screens/general/NewPassword';
+import RegisterScreen from './screens/general/RegisterScreen';
+import RegisterSecondScreen from './screens/general/RegisterSecondScreen';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
 const AppNavigator = () => {
   return (
     <Provider store={store}>
@@ -22,9 +31,9 @@ const RootNavigator = () => {
   const role = auth.role;
 
   if (isLoggedIn) {
-    if (role === "driver") {
+    if (role === 'driver') {
       return <DriverNavigation />;
-    } else if (role === "owner") {
+    } else if (role === 'owner') {
       return <OwnerNavigation />;
     }
     return <GeneralNavigation />;
@@ -34,7 +43,16 @@ const RootNavigator = () => {
 };
 
 const AuthNavigator = () => {
-  return <Text>Auth Screen (Tizimga kirish sahifasi)</Text>;
+  return (
+    <Stack.Navigator initialRouteName="login">
+      <Stack.Screen options={{ headerShown: false }} name="login" component={LoginScreen} />
+      <Stack.Screen options={{ headerShown: false }} name="forgot_sms_pagepassword" component={ForgotSmsPassword} />
+      <Stack.Screen options={{ headerShown: false }} name="new_password" component={NewPassword} />
+      <Stack.Screen options={{ headerShown: false }} name="register" component={RegisterScreen} />
+      <Stack.Screen options={{ headerShown: false }} name="register_second" component={RegisterSecondScreen} />
+      {/* <Stack.Screen options={{ headerShown: false }} name="Home" component={Home} /> */}
+    </Stack.Navigator>
+  );
 };
 
 export default AppNavigator;
