@@ -69,6 +69,16 @@ const RegisterSecond: React.FC<RegisterSecondProps> = ({ navigation }) => {
         console.log('Tanlangan foydalanuvchi turi:', type);
     };
 
+    const saveData = () => {
+        if (
+            phoneSecond
+            && date
+            && role
+        ) {
+
+        }
+    }
+
 
     return (
         <View style={styles.container}>
@@ -136,11 +146,10 @@ const RegisterSecond: React.FC<RegisterSecondProps> = ({ navigation }) => {
                 right: 0
             }}>
                 <TouchableOpacity
-                    // style={isPressed ? styles.inbutton : styles.button}
+                    // style={isPressed styles.inbutton : styles.button}
                     // onPressIn={() => handlePressIn()}
                     // onPressOut={() => handlePressOut()}
                     activeOpacity={1}
-
                 >
                     <Animated.View style={[styles.button, { backgroundColor }]}>
                         <Text
