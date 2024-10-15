@@ -4,10 +4,10 @@ import {
   Text,
   NativeSyntheticEvent, TextInputKeyPressEventData,
 } from 'react-native';
-import { VerifySmsScreenProps } from './RouterType';
+import { SmsPagePasswordProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const VerifySmsScreen: React.FC<VerifySmsScreenProps> = ({ navigation }) => {
+const ForgotSmsPassword: React.FC<SmsPagePasswordProps> = ({ navigation }) => {
   const [code, setCode] = useState<string[]>(['', '', '', '']);
   const inputs = useRef<Array<TextInput | null>>([]);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
@@ -24,7 +24,7 @@ const VerifySmsScreen: React.FC<VerifySmsScreenProps> = ({ navigation }) => {
 
   useEffect(() => {
     if (code.every(digit => digit !== '')) {
-      navigation.navigate('home');
+      navigation.navigate('new_password');
     }
   }, [code, navigation]);
 
@@ -64,7 +64,7 @@ const VerifySmsScreen: React.FC<VerifySmsScreenProps> = ({ navigation }) => {
         <View style={{
           width: '6%'
         }}>
-          <Icon onPress={() => navigation.navigate('register_second')} name="angle-left" size={30} color="#7257FF" />
+          <Icon onPress={() => navigation.navigate('login')} name="angle-left" size={30} color="#7257FF" />
         </View>
 
       </View>
@@ -194,4 +194,4 @@ const styles = StyleSheet.create({
 
 
 
-export default VerifySmsScreen;
+export default ForgotSmsPassword;
