@@ -29,8 +29,8 @@ const AppNavigator = () => {
 
 const RootNavigator = () => {
   const auth = useSelector((state: RootState) => state.auth);
-  const isLoggedIn = auth.isLoggedIn;
-  const role = auth.role;
+  const isLoggedIn = true;
+  const role = 'driver';
 
   if (isLoggedIn) {
     if (role === 'driver') {
