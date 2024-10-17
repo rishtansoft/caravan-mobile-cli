@@ -7,8 +7,12 @@ import {
     Keyboard
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
+import axios from 'axios';
 import { LoginProps } from './RouterType';
+import { API_URL } from '@env';
+import { StoreData, GetData, } from '../AsyncStorage/AsyncStorage';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '../../store/UserData';
 
 // interface LoginProps {
 //     // navigation: LoginScreenNavigationProp;
@@ -19,14 +23,15 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
     const [isFocusedValue, setIsFocusedValue] = useState(false);
     const [valuePasword, setValuePasword] = useState('');
     const [isFocusedPasword, setIsFocusedPasword] = useState(false);
-
-
+    const [isPhone, setIsPhone] = useState<boolean>(false);
     // const [isPressed, setIsPressed] = useState(false);
     const animatedValue = useRef(new Animated.Value(0)).current;
     const [errorMessage, setErrorMessage] = useState('');
     const [errorMessagePassword, setErrorMessagePassword] = useState('');
-
     const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const dispatch = useDispatch();
+
+
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
@@ -46,6 +51,7 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
 
 
     const validateInput = (values: string) => {
+        setIsPhone(false);
         if (values.length > 0) {
             setValue(values);
             setErrorMessage('');
@@ -61,8 +67,10 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
             const idRegex = /^[0-9]{6}$/; // 6 digit ID
             const phoneRegex = /^998\d{9}$/; // +998xxxxxxxxx phone format
             if (idRegex.test(innervalue)) {
+                setIsPhone(false)
                 return true;
             } else if (phoneRegex.test(innervalue)) {
+                setIsPhone(true)
                 return true;
             } else {
                 return false;
@@ -106,13 +114,36 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
         outputRange: ['#7257FF', '#462eba'], // 0 = 'blue', 1 = 'darkblue'
     });
 
-    const loginBtn = () => {
+    const loginBtn = async () => {
         const valueFilter = validateInputFun(value);
 
         if (value && valuePasword && valueFilter) {
-            // navigation.navigate("Home");
-            setValue('');
-            setValuePasword('');
+
+            await axios.post(API_URL + '/api/auth/login', {
+                "phone": isPhone ? '+' + value : value,
+                "password": valuePasword
+            }).then((res) => {
+                dispatch(setCredentials({
+                    token: res.data.token,
+                    role: res.data.role,
+                    user_id: res.data.user_id
+                }));
+                // login(res.data.token, res.data.role);
+                StoreData('user_id', res.data.user_id);
+                StoreData('token', res.data.token);
+                StoreData('role', res.data.role);
+                StoreData('inlogin', 'true');
+                // navigation.navigate("Home");
+                // setValue('');
+                // setValuePasword('');
+            }).catch((error) => {
+                // console.log(125, isPhone ? '+' + value : value);
+                // console.log(126, valuePasword);
+
+                console.log(error.response.data.message);
+
+            })
+
         } else {
             if (!value) {
                 setErrorMessage("Maydoni to'ldirish shart");

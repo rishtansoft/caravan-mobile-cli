@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { RegisterProps } from './RouterType';
+import axios from 'axios';
+import { API_URL } from '@env';
+import { StoreData, GetData, } from '../AsyncStorage/AsyncStorage';
 
 interface ListItem {
     text: string;
@@ -24,6 +27,9 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
     const [name, setName] = useState<string>('');
     const [nameError, setNameError] = useState<string>('');
     const [nameIsFocused, setNameIsFocused] = useState<boolean>(false);
+    const [nameLastname, setNameLastname] = useState<string>('');
+    const [nameLastnameError, setNameLastnameError] = useState<string>('');
+    const [nameLastnameIsFocused, setNameLastnameIsFocused] = useState<boolean>(false);
     const [password, setPassword] = useState<string>('');
     const [passwordError, setPasswordError] = useState<string>('');
     const [passwordIsFocused, setPasswordIsFocused] = useState<boolean>(false);
@@ -59,6 +65,11 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
     const nameInputFun = (values: string) => {
         setName(values);
         setNameError('');
+    };
+
+    const nameLastnameInputFun = (values: string) => {
+        setNameLastname(values);
+        setNameLastnameError('');
     };
 
     const PasswordInputFun = (values: string) => {
@@ -119,15 +130,34 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
         return true; // If the password meets all criteria
     };
 
-    const saveDataFun = () => {
+    const saveDataFun = async () => {
         if (
             phone && phoneValidateFun(phone)
             && name && !/^\s*$/.test(name) &&
+            nameLastname && !/^\s*$/.test(nameLastname) &&
             password && passwordReq &&
             validatePassword(password) &&
             password === passwordReq
         ) {
-            navigation.navigate('register_second');
+            const postData = {
+                "firstname": name,
+                "lastname": nameLastname,
+                "phone": '+' + phone,
+                "password": password,
+                "password_rep": passwordReq
+            }
+            await StoreData('user_data', JSON.stringify(postData));
+
+            await axios.post(API_URL + '/api/auth/register/initial', postData).then((res) => {
+                console.log(150, res.data);
+                StoreData('user_id', res.data.user_id);
+
+                navigation.navigate('register_second');
+
+            }).catch((error) => {
+                console.log(error);
+
+            });
         } else {
             if (!phone) {
                 setPhoneError('Telefon raqam kiritish shart!');
@@ -137,9 +167,14 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
                 setPhoneError('');
             }
             if (!name || /^\s*$/.test(name)) {
-                setNameError('Ism Familya kiritish shart');
+                setNameError('Ism kiritish shart');
             } else {
                 setNameError('');
+            }
+            if (!nameLastname || /^\s*$/.test(nameLastname)) {
+                setNameLastnameError('Familya kiritish shart');
+            } else {
+                setNameLastnameError('');
             }
             if (!password) {
                 setPasswordError('Parol kiritish shart');
@@ -195,17 +230,30 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
                             {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : <Text style={{ color: '#6E7375', marginTop: 6, lineHeight: 14 }}>Ushbu raqamga SMS kod yuboriladi</Text>}
                         </View>
                         <View style={{ marginTop: 18 }}>
-                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Ism Familya</Text>
+                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Ism</Text>
                             <TextInput
                                 style={!nameIsFocused ? styles.input : styles.inputFocus}
                                 placeholderTextColor="#898D8F"
                                 value={name}
                                 onChangeText={nameInputFun}
-                                placeholder="To'liq ismingizni kiriting"
+                                placeholder="Ismingizni kiriting"
                                 onFocus={() => setNameIsFocused(true)}
                                 onBlur={() => setNameIsFocused(false)}
                             />
                             {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+                        </View>
+                        <View style={{ marginTop: 18 }}>
+                            <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Familya</Text>
+                            <TextInput
+                                style={!nameLastnameIsFocused ? styles.input : styles.inputFocus}
+                                placeholderTextColor="#898D8F"
+                                value={nameLastname}
+                                onChangeText={nameLastnameInputFun}
+                                placeholder="Familyangizni kiriting"
+                                onFocus={() => setNameLastnameIsFocused(true)}
+                                onBlur={() => setNameLastnameIsFocused(false)}
+                            />
+                            {nameLastnameError ? <Text style={styles.errorText}>{nameLastnameError}</Text> : null}
                         </View>
                         <View style={{ marginTop: 18 }}>
                             <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parol</Text>

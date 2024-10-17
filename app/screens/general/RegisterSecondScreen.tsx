@@ -11,10 +11,14 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { RegisterSecondProps } from './RouterType';
 import CustomDatePicker from '../ui/DatePIker/DatePIker';
 import UserTypeSelection from '../ui/ButtonUserRole/ButtonUserRole';
+import axios from 'axios';
+import { API_URL } from '@env';
+import { StoreData, GetData, } from '../AsyncStorage/AsyncStorage';
+
 
 enum UserType {
     DRIVER = 'driver',
-    OWNER = 'owner',
+    OWNER = 'cargo_owner',
 }
 
 const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => {
@@ -27,6 +31,7 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
     const [dateError, setDateError] = useState<string>('');
     const [role, setRole] = useState<string>('');
     const [roleError, setRoleError] = useState<string>('');
+    const [user_id, setUser_id] = useState<string>('');
     const backgroundColor = animatedValue.interpolate({
         inputRange: [0, 1],
         outputRange: ['#7257FF', '#462eba'], // 0 = 'blue', 1 = 'darkblue'
@@ -34,6 +39,22 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
     const [keyboardVisible, setKeyboardVisible] = useState(false);
 
     useEffect(() => {
+        GetData('user_id').then((res) => {
+            if (res) {
+                // console.log(44, JSON.parse(res).user_id);
+                console.log(res);
+                setUser_id(res)
+
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+        // setUser_id(userId)
+    }, []);
+
+    useEffect(() => {
+
+
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
             setKeyboardVisible(true); // Klaviatura ochilganda true ga o'zgartirish
         });
@@ -58,7 +79,7 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
         const year = date.getFullYear();
-        return `${day}/${month}/${year}`; // Return formatted date as dd/mm/yyyy
+        return `${year}.${month}.${day}`; // Return formatted date as dd/mm/yyyy
     };
     const handleDateChange = (date: Date) => {
         setDate(date);
@@ -78,11 +99,24 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
         }
     };
 
-    const saveData = () => {
+    const saveData = async () => {
         if (
             (phoneSecond && phoneSecond ? phoneValidateFun(phone) : true) || date && role
         ) {
-            navigation.navigate('verify_sms_screen');
+            await axios.post(API_URL + 'api/auth/register/complete', {
+                "phone_2": phoneSecond ? '+' + phoneSecond : '',
+                "role": role,
+                "birthday": date,
+                'user_id': user_id
+            }).then((res) => {
+                console.log(113, res.data);
+
+                navigation.navigate('verify_sms_screen');
+
+            }).catch((error) => {
+                console.log(error);
+
+            })
         } else {
             if (phoneSecond && !phoneValidateFun(phone)) {
                 setPhoneSecondError('Telefon raqam nato\'g\'ri kiritildi!');
