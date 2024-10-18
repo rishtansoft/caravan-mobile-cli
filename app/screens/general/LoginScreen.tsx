@@ -4,7 +4,8 @@ import {
     TextInput,
     TouchableOpacity, Text,
     Animated,
-    Keyboard
+    Keyboard,
+    Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import axios from 'axios';
@@ -17,6 +18,10 @@ import { setCredentials } from '../../store/UserData';
 // interface LoginProps {
 //     // navigation: LoginScreenNavigationProp;
 // }
+
+const showErrorAlert = (message: string) => {
+    Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
+};
 
 const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
     const [value, setValue] = useState('');
@@ -120,7 +125,8 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
         if (value && valuePasword && valueFilter) {
 
             await axios.post(API_URL + '/api/auth/login', {
-                "phone": isPhone ? '+' + value : value,
+                "unique_id": value.length == 6 ? value : '',
+                "phone": value.length == 12 ? '+' + value : '',
                 "password": valuePasword
             }).then((res) => {
                 dispatch(setCredentials({
@@ -128,7 +134,6 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
                     role: res.data.role,
                     user_id: res.data.user_id
                 }));
-                // login(res.data.token, res.data.role);
                 StoreData('user_id', res.data.user_id);
                 StoreData('token', res.data.token);
                 StoreData('role', res.data.role);
@@ -137,10 +142,15 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
                 // setValue('');
                 // setValuePasword('');
             }).catch((error) => {
-                // console.log(125, isPhone ? '+' + value : value);
-                // console.log(126, valuePasword);
+                console.log(error?.response?.data?.message);
+                if (error?.response?.data?.message == 'User not found') {
+                    showErrorAlert('Foydalanuvchi topilmadi')
+                } else if (error?.response?.data?.message == 'Invalid password') {
+                    showErrorAlert("Parolni noto'g'ri kiritdingiz. Tekshirib, qaytadan kiring")
+                } else {
+                    showErrorAlert(error?.response?.data?.message)
+                }
 
-                console.log(error.response.data.message);
 
             })
 

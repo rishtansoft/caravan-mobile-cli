@@ -33,18 +33,15 @@ const RootNavigator = () => {
     const isLoggedIn = auth.isLoggedIn;
     const role = auth.role;
 
-    if (isLoggedIn) {
-        if (role === 'driver') {
-            return <DriverNavigation />;
-        } else if (role === 'cargo_owner') {
-            return <OwnerNavigation />;
-        }
-        return <GeneralNavigation />;
-    }
+    // if (isLoggedIn) {
 
-    return <AuthNavigator />;
-
-
+    //     if (role === 'driver') {
+    //         return <DriverNavigation />;
+    //     } else if (role === 'cargo_owner') {
+    //         return <OwnerNavigation />;
+    //     }
+    //     return <GeneralNavigation />;
+    // }
 
     if (isLoggedIn) {
         return <UserRole roles={role} />

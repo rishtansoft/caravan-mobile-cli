@@ -4,7 +4,7 @@ import React from 'react'
 const ActiveOrders = () => {
   return (
     <View>
-      <Text>ActiveOrders</Text>
+      <Text style={{ color: '#000' }} >ActiveOrders</Text>
     </View>
   )
 }

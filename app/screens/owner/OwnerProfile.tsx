@@ -4,7 +4,7 @@ import React from 'react'
 const OwnerProfile = () => {
   return (
     <View>
-      <Text>OwnerProfile</Text>
+      <Text style={{ color: '#000' }}>OwnerProfile</Text>
     </View>
   )
 }

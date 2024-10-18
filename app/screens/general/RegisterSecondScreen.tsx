@@ -42,14 +42,20 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
         GetData('user_id').then((res) => {
             if (res) {
                 // console.log(44, JSON.parse(res).user_id);
-                console.log(res);
                 setUser_id(res)
 
             }
         }).catch((error) => {
             console.error('Xatolik yuz berdi:', error);
         });
-        // setUser_id(userId)
+
+        GetData('user_data').then((res) => {
+            if (res) {
+                setPhone(JSON.parse(res).phone)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
     }, []);
 
     useEffect(() => {
@@ -103,18 +109,23 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
         if (
             (phoneSecond && phoneSecond ? phoneValidateFun(phone) : true) || date && role
         ) {
-            await axios.post(API_URL + 'api/auth/register/complete', {
+            await axios.post(API_URL + '/api/auth/register/complete', {
                 "phone_2": phoneSecond ? '+' + phoneSecond : '',
                 "role": role,
                 "birthday": date,
                 'user_id': user_id
             }).then((res) => {
-                console.log(113, res.data);
+                console.log(119, res.data);
 
+                StoreData('user_data_2', JSON.stringify({
+                    "phone_2": phoneSecond ? '+' + phoneSecond : '',
+                    "role": role,
+                    "birthday": date,
+                    'user_id': user_id
+                }));
                 navigation.navigate('verify_sms_screen');
-
             }).catch((error) => {
-                console.log(error);
+                console.log(128, error?.response?.data?.message);
 
             })
         } else {

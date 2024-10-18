@@ -4,7 +4,7 @@ import React from 'react'
 const PastOrders = () => {
   return (
     <View>
-      <Text>PastOrders</Text>
+      <Text style={{ color: '#000' }} >PastOrders</Text>
     </View>
   )
 }

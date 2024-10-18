@@ -9,6 +9,7 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
+    Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { RegisterProps } from './RouterType';
@@ -19,6 +20,11 @@ import { StoreData, GetData, } from '../AsyncStorage/AsyncStorage';
 interface ListItem {
     text: string;
 }
+
+const showErrorAlert = (message: string) => {
+    Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
+};
+
 
 const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
     const [phone, setPhone] = useState<string>('');
@@ -149,13 +155,16 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
             await StoreData('user_data', JSON.stringify(postData));
 
             await axios.post(API_URL + '/api/auth/register/initial', postData).then((res) => {
-                console.log(150, res.data);
                 StoreData('user_id', res.data.user_id);
-
                 navigation.navigate('register_second');
 
             }).catch((error) => {
-                console.log(error);
+                console.log(error?.response?.data?.message);
+                if (error?.response?.data?.message == "This phone number is already registered and active.") {
+                    showErrorAlert("Bu telefon raqami allaqachon ro'yxatdan o'tgan va faol.")
+                } else {
+                    showErrorAlert(error?.response?.data?.message);
+                }
 
             });
         } else {

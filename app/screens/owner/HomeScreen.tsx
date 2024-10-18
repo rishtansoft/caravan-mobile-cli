@@ -3,8 +3,8 @@ import React from 'react'
 
 const HomeScreen = () => {
   return (
-    <View>
-      <Text>HomeScreen</Text>
+    <View style={{ height: '100%' }}>
+      <Text style={{ color: '#000' }}>HomeScreen</Text>
     </View>
   )
 }

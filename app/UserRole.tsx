@@ -16,7 +16,7 @@ const UserRole: React.FC<componentNameProps> = ({ roles }) => {
     } else if (roles === 'cargo_owner') {
         return <OwnerNavigation />;
     }
-    // return <GeneralNavigation />;
+    return <GeneralNavigation />;
 };
 
 export default UserRole;
