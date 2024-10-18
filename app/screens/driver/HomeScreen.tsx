@@ -17,7 +17,9 @@ const HomeScreen = () => {
   const [isSwitchOn, setIsSwitchOn] = useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
   const orders = [1, 1, 1, 1, 1, 1];
-  const userRegister = true
+
+  // Royhatdan toliq o'tgan yoki yoqligini tekshirish asnc storage bilan tekshirish
+  const userRegister = false
 
 
 
@@ -26,7 +28,7 @@ const HomeScreen = () => {
   
   const toggleModal = () => {
     if (userRegister) {
-      navigation.navigate('ActiveLoadDetail', { orderId: '12345' });
+      navigation.navigate('ActiveLoadDetail', { orderId: '55555' });//Aynan shu buyurtma malumotlarini uzatish uchun ishlatildi
     }else{
       setModalVisible(!isModalVisible);
     }
