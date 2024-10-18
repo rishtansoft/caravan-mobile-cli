@@ -150,8 +150,6 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
                 } else {
                     showErrorAlert(error?.response?.data?.message)
                 }
-
-
             })
 
         } else {
@@ -177,10 +175,25 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
 
     const passwordChangFun = () => {
         const phoneRegex = /^998\d{9}$/; // +998xxxxxxxxx phone format
+        setErrorMessagePassword('');
         if (value && phoneRegex.test(value)) {
-            navigation.navigate('forgot_sms_pagepassword');
+            axios.post(API_URL + '/api/auth/forgot-password', {
+                phone: '+' + value
+            }).then((res) => {
+                console.log(res.data);
+                StoreData("user_phone", value)
+                navigation.navigate('forgot_sms_pagepassword');
+            }).catch((error) => {
+                if (error?.response?.data?.message == 'User with this phone number not found') {
+                    showErrorAlert("Ushbu telefon raqamga tegishli foydalanuchi topilmadi.")
+                } else {
+                    showErrorAlert(error?.response?.data?.message)
+                }
+            })
+
         } else {
             setErrorMessage('Telefon raqamni kirtish shart');
+
         }
     };
 

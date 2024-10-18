@@ -61,6 +61,24 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
         };
     }, []);
 
+    const handlePressIn = () => {
+        // setIsPressed(true);
+        Animated.timing(animatedValue, {
+            toValue: 1, // Final holat (bosilganda)
+            duration: 100, // O'zgarish vaqti (ms)
+            useNativeDriver: false, // ranglar uchun `useNativeDriver` false bo'lishi kerak
+        }).start();
+    };
+
+    const handlePressOut = () => {
+        // setIsPressed(false);
+        Animated.timing(animatedValue, {
+            toValue: 0, // Bosilmaganda dastlabki holatga qaytadi
+            duration: 100, // O'zgarish vaqti (ms)
+            useNativeDriver: false,
+        }).start();
+    };
+
 
 
     const phoneInputFun = (values: string) => {
@@ -317,8 +335,8 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
             }}>
                 <TouchableOpacity
                     // style={isPressed ? styles.inbutton : styles.button}
-                    // onPressIn={() => handlePressIn()}
-                    // onPressOut={() => handlePressOut()}
+                    onPressIn={() => handlePressIn()}
+                    onPressOut={() => handlePressOut()}
                     activeOpacity={1}
                 >
                     <Animated.View style={[styles.button, { backgroundColor }]}>

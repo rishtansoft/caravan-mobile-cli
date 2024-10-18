@@ -58,7 +58,7 @@ const VerifySmsScreen: React.FC<VerifySmsScreenProps> = ({ navigation }) => {
 
             }).catch((error) => {
                 if (error?.response?.data?.message == 'Invalid or expired verification code') {
-                    showErrorAlert("Sms kod yaroqsiz mudati o'tgan ")
+                    showErrorAlert("Sms kod yaroqsiz muddati o'tgan.")
                     setErrorInput(true);
                 } else {
                     showErrorAlert(error?.response?.data?.message)
