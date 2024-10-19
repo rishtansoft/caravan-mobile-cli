@@ -18,7 +18,7 @@ const ActiveLoadDetail = ({ route }) => {
     >
       <View style={styles.header}>
         <IconFont
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => navigation.goBack()}
           name="angle-left"
           size={40}
           color="#7257FF"
