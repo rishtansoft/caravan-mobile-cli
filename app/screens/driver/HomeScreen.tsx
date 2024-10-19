@@ -19,7 +19,7 @@ const HomeScreen = () => {
   const orders = [1, 1, 1, 1, 1, 1];
 
   // Royhatdan toliq o'tgan yoki yoqligini tekshirish asnc storage bilan tekshirish
-  const userRegister = false
+  const userRegister = true
 
 
 
