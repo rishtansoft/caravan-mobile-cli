@@ -11,7 +11,7 @@ import {
 // Tanlash turi uchun enum
 enum UserType {
     DRIVER = 'driver',
-    OWNER = 'owner',
+    OWNER = 'cargo_owner',
 }
 
 interface SelectionButtonProps {

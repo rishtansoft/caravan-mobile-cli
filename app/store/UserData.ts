@@ -1,42 +1,38 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface AuthState {
-  isLoggedIn: boolean;
-  token: string | null;
-  role: string | null; 
+    isLoggedIn: boolean;
+    role: string | null;
+    token: string | null;
+    user_id: any | null; // tipni o'zingizning user modelingizga moslashtiring
 }
 
 const initialState: AuthState = {
-  isLoggedIn: false,
-  token: null,
-  role: null,
+    isLoggedIn: false,
+    role: null,
+    token: null,
+    user_id: null
 };
 
 const authSlice = createSlice({
-  name: "auth",
-  initialState,
-  reducers: {
-    loginSuccess: (state, action: PayloadAction<{ token: string; role: string }>) => {
-      state.isLoggedIn = true;
-      state.token = action.payload.token; 
-      state.role = action.payload.role;  
+    name: 'auth',
+    initialState,
+    reducers: {
+        setCredentials: (state, action: PayloadAction<{  token: string; role: string ; user_id:string}>) => {
+            const {  token, role, user_id } = action.payload;
+            state.token = token;
+            state.role = role;
+            state.isLoggedIn = true;
+            state.user_id = user_id;
+        },
+        logout: (state) => {
+            state.token = null;
+            state.role = null;
+            state.user_id = null;
+            state.isLoggedIn = false;
+        },
     },
-    logoutSuccess: (state) => {
-      state.isLoggedIn = false;
-      state.token = null;
-      state.role = null; 
-    },
-  },
 });
 
-export const { loginSuccess, logoutSuccess } = authSlice.actions;
-
-export const login = (token: string, role: string) => async (dispatch: any) => {
-  dispatch(loginSuccess({ token, role }));
-};
-
-export const logout = () => async (dispatch: any) => {
-  dispatch(logoutSuccess());
-};
-
+export const { setCredentials, logout } = authSlice.actions;
 export default authSlice.reducer;

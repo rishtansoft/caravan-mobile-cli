@@ -11,10 +11,14 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { RegisterSecondProps } from './RouterType';
 import CustomDatePicker from '../ui/DatePIker/DatePIker';
 import UserTypeSelection from '../ui/ButtonUserRole/ButtonUserRole';
+import axios from 'axios';
+import { API_URL } from '@env';
+import { StoreData, GetData, } from '../AsyncStorage/AsyncStorage';
+
 
 enum UserType {
     DRIVER = 'driver',
-    OWNER = 'owner',
+    OWNER = 'cargo_owner',
 }
 
 const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => {
@@ -27,6 +31,7 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
     const [dateError, setDateError] = useState<string>('');
     const [role, setRole] = useState<string>('');
     const [roleError, setRoleError] = useState<string>('');
+    const [user_id, setUser_id] = useState<string>('');
     const backgroundColor = animatedValue.interpolate({
         inputRange: [0, 1],
         outputRange: ['#7257FF', '#462eba'], // 0 = 'blue', 1 = 'darkblue'
@@ -34,6 +39,28 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
     const [keyboardVisible, setKeyboardVisible] = useState(false);
 
     useEffect(() => {
+        GetData('user_id').then((res) => {
+            if (res) {
+                // console.log(44, JSON.parse(res).user_id);
+                setUser_id(res)
+
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+
+        GetData('user_data').then((res) => {
+            if (res) {
+                setPhone(JSON.parse(res).phone)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+    }, []);
+
+    useEffect(() => {
+
+
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
             setKeyboardVisible(true); // Klaviatura ochilganda true ga o'zgartirish
         });
@@ -48,6 +75,24 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
         };
     }, []);
 
+    const handlePressIn = () => {
+        // setIsPressed(true);
+        Animated.timing(animatedValue, {
+            toValue: 1, // Final holat (bosilganda)
+            duration: 100, // O'zgarish vaqti (ms)
+            useNativeDriver: false, // ranglar uchun `useNativeDriver` false bo'lishi kerak
+        }).start();
+    };
+
+    const handlePressOut = () => {
+        // setIsPressed(false);
+        Animated.timing(animatedValue, {
+            toValue: 0, // Bosilmaganda dastlabki holatga qaytadi
+            duration: 100, // O'zgarish vaqti (ms)
+            useNativeDriver: false,
+        }).start();
+    };
+
 
     const phoneSecondInputFun = (values: string) => {
         setPhoneSecond(values);
@@ -58,7 +103,7 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
         const year = date.getFullYear();
-        return `${day}/${month}/${year}`; // Return formatted date as dd/mm/yyyy
+        return `${year}.${month}.${day}`; // Return formatted date as dd/mm/yyyy
     };
     const handleDateChange = (date: Date) => {
         setDate(date);
@@ -78,11 +123,29 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
         }
     };
 
-    const saveData = () => {
+    const saveData = async () => {
         if (
             (phoneSecond && phoneSecond ? phoneValidateFun(phone) : true) || date && role
         ) {
-            navigation.navigate('verify_sms_screen');
+            await axios.post(API_URL + '/api/auth/register/complete', {
+                "phone_2": phoneSecond ? '+' + phoneSecond : '',
+                "role": role,
+                "birthday": date,
+                'user_id': user_id
+            }).then((res) => {
+                console.log(119, res.data);
+
+                StoreData('user_data_2', JSON.stringify({
+                    "phone_2": phoneSecond ? '+' + phoneSecond : '',
+                    "role": role,
+                    "birthday": date,
+                    'user_id': user_id
+                }));
+                navigation.navigate('verify_sms_screen');
+            }).catch((error) => {
+                console.log(128, error?.response?.data?.message);
+
+            })
         } else {
             if (phoneSecond && !phoneValidateFun(phone)) {
                 setPhoneSecondError('Telefon raqam nato\'g\'ri kiritildi!');
@@ -152,8 +215,8 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
             {!keyboardVisible && <View>
                 <TouchableOpacity
                     // style={isPressed styles.inbutton : styles.button}
-                    // onPressIn={() => handlePressIn()}
-                    // onPressOut={() => handlePressOut()}
+                    onPressIn={() => handlePressIn()}
+                    onPressOut={() => handlePressOut()}
                     activeOpacity={1}
                 >
                     <Animated.View style={[styles.button, { backgroundColor }]}>
