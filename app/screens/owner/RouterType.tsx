@@ -1,0 +1,82 @@
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+
+export type RootStackParamList = {
+    home: undefined;
+    active_loads: undefined,
+    history: undefined,
+    profile: undefined,
+    contact_admin: undefined,
+    terms_condition: undefined,
+    active_loads_detail: { itemId: string },
+    history_detail: { itemId: string },
+};
+
+export type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'home'>;
+export type ActiveLoadsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'active_loads'>;
+export type HistoryScreenNavigationProp = StackNavigationProp<RootStackParamList, 'history'>;
+export type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'profile'>;
+export type ContactAdminScreenNavigationProp = StackNavigationProp<RootStackParamList, 'contact_admin'>;
+export type ActiveLoadsDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'active_loads_detail'>;
+export type HistoryDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'history_detail'>;
+export type TermsConditionScreenNavigationProp = StackNavigationProp<RootStackParamList, 'terms_condition'>;
+
+export type HomeType = NativeStackScreenProps<RootStackParamList, 'home'>;
+export type ActiveLoadsType = NativeStackScreenProps<RootStackParamList, 'active_loads'>;
+export type HistoryType = NativeStackScreenProps<RootStackParamList, 'history'>;
+export type ProfileType = NativeStackScreenProps<RootStackParamList, 'profile'>;
+export type ContactAdminType = NativeStackScreenProps<RootStackParamList, 'contact_admin'>;
+export type ActiveLoadsDetailType = NativeStackScreenProps<RootStackParamList, 'active_loads_detail'>;
+export type HistoryDetailType = NativeStackScreenProps<RootStackParamList, 'history_detail'>;
+export type TermsConditionType = NativeStackScreenProps<RootStackParamList, 'terms_condition'>;
+
+export type HomeRouteProp = RouteProp<RootStackParamList, 'home'>;
+export type ActiveLoadsRouteProp = RouteProp<RootStackParamList, 'active_loads'>;
+export type HistoryRouteProp = RouteProp<RootStackParamList, 'history'>;
+export type ProfileRouteProp = RouteProp<RootStackParamList, 'profile'>;
+export type ContactAdminRouteProp = RouteProp<RootStackParamList, 'contact_admin'>;
+export type ActiveLoadsDetailRouteProp = RouteProp<RootStackParamList, 'active_loads_detail'>;
+export type HistoryDetailRouteProp = RouteProp<RootStackParamList, 'history_detail'>;
+export type TermsConditionRouteProp = RouteProp<RootStackParamList, 'terms_condition'>;
+
+export interface HomeProps {
+    navigation: HomeScreenNavigationProp;
+    route: HomeRouteProp;
+}
+
+export interface ActiveLoadsProps {
+    navigation: ActiveLoadsScreenNavigationProp;
+    route: ActiveLoadsRouteProp;
+}
+
+export interface TermsConditionProps {
+    navigation: TermsConditionScreenNavigationProp;
+    route: TermsConditionRouteProp;
+}
+
+export interface ActiveLoadsDetailProps {
+    navigation: ActiveLoadsDetailScreenNavigationProp;
+    route: ActiveLoadsDetailRouteProp;
+}
+
+export interface HistoryProps {
+    navigation: HistoryScreenNavigationProp;
+    route: HistoryRouteProp;
+}
+
+export interface HistoryDetailProps {
+    navigation: HistoryDetailScreenNavigationProp;
+    route: HistoryDetailRouteProp;
+}
+
+export interface ProfileProps {
+    navigation: ProfileScreenNavigationProp;
+    route: ProfileRouteProp;
+}
+
+export interface ContactAdminProps {
+    navigation: ContactAdminScreenNavigationProp;
+    route: ContactAdminRouteProp;
+}

@@ -1,32 +1,43 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    View, StyleSheet,
+    View,
+    StyleSheet,
     TextInput,
     TouchableOpacity, Text,
     Animated,
-    Keyboard
+    Keyboard,
+    Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
+import axios from 'axios';
 import { LoginProps } from './RouterType';
+import { API_URL } from '@env';
+import { StoreData, GetData, } from '../AsyncStorage/AsyncStorage';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '../../store/UserData';
 
 // interface LoginProps {
 //     // navigation: LoginScreenNavigationProp;
 // }
+
+const showErrorAlert = (message: string) => {
+    Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
+};
 
 const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
     const [value, setValue] = useState('');
     const [isFocusedValue, setIsFocusedValue] = useState(false);
     const [valuePasword, setValuePasword] = useState('');
     const [isFocusedPasword, setIsFocusedPasword] = useState(false);
-
-
+    const [isPhone, setIsPhone] = useState<boolean>(false);
     // const [isPressed, setIsPressed] = useState(false);
     const animatedValue = useRef(new Animated.Value(0)).current;
     const [errorMessage, setErrorMessage] = useState('');
     const [errorMessagePassword, setErrorMessagePassword] = useState('');
-
     const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const dispatch = useDispatch();
+
+
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
@@ -46,6 +57,7 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
 
 
     const validateInput = (values: string) => {
+        setIsPhone(false);
         if (values.length > 0) {
             setValue(values);
             setErrorMessage('');
@@ -61,8 +73,10 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
             const idRegex = /^[0-9]{6}$/; // 6 digit ID
             const phoneRegex = /^998\d{9}$/; // +998xxxxxxxxx phone format
             if (idRegex.test(innervalue)) {
+                setIsPhone(false)
                 return true;
             } else if (phoneRegex.test(innervalue)) {
+                setIsPhone(true)
                 return true;
             } else {
                 return false;
@@ -106,13 +120,39 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
         outputRange: ['#7257FF', '#462eba'], // 0 = 'blue', 1 = 'darkblue'
     });
 
-    const loginBtn = () => {
+    const loginBtn = async () => {
         const valueFilter = validateInputFun(value);
 
         if (value && valuePasword && valueFilter) {
-            // navigation.navigate("Home");
-            setValue('');
-            setValuePasword('');
+
+            await axios.post(API_URL + '/api/auth/login', {
+                "unique_id": value.length == 6 ? value : '',
+                "phone": value.length == 12 ? '+' + value : '',
+                "password": valuePasword
+            }).then((res) => {
+                dispatch(setCredentials({
+                    token: res.data.token,
+                    role: res.data.role,
+                    user_id: res.data.user_id
+                }));
+                StoreData('user_id', res.data.user_id);
+                StoreData('token', res.data.token);
+                StoreData('role', res.data.role);
+                StoreData('inlogin', 'true');
+                // navigation.navigate("Home");
+                // setValue('');
+                // setValuePasword('');
+            }).catch((error) => {
+                console.log(error?.response?.data?.message);
+                if (error?.response?.data?.message == 'User not found') {
+                    showErrorAlert('Foydalanuvchi topilmadi')
+                } else if (error?.response?.data?.message == 'Invalid password') {
+                    showErrorAlert("Parolni noto'g'ri kiritdingiz. Tekshirib, qaytadan kiring")
+                } else {
+                    showErrorAlert(error?.response?.data?.message)
+                }
+            })
+
         } else {
             if (!value) {
                 setErrorMessage("Maydoni to'ldirish shart");
@@ -136,10 +176,25 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
 
     const passwordChangFun = () => {
         const phoneRegex = /^998\d{9}$/; // +998xxxxxxxxx phone format
+        setErrorMessagePassword('');
         if (value && phoneRegex.test(value)) {
-            navigation.navigate('forgot_sms_pagepassword');
+            axios.post(API_URL + '/api/auth/forgot-password', {
+                phone: '+' + value
+            }).then((res) => {
+                console.log(res.data);
+                StoreData("user_phone", value)
+                navigation.navigate('forgot_sms_pagepassword');
+            }).catch((error) => {
+                if (error?.response?.data?.message == 'User with this phone number not found') {
+                    showErrorAlert("Ushbu telefon raqamga tegishli foydalanuchi topilmadi.")
+                } else {
+                    showErrorAlert(error?.response?.data?.message)
+                }
+            })
+
         } else {
             setErrorMessage('Telefon raqamni kirtish shart');
+
         }
     };
 
