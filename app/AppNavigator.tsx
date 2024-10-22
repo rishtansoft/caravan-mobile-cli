@@ -45,6 +45,7 @@ const RootNavigator = () => {
 
     if (isLoggedIn) {
         return <UserRole roles={role} />
+
     }
 
     return <AuthNavigator />;
