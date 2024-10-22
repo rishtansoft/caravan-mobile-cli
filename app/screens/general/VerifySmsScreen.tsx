@@ -22,6 +22,7 @@ const VerifySmsScreen: React.FC<VerifySmsScreenProps> = ({ navigation }) => {
     const [user_id, setUser_id] = useState<string>('');
     const [errorInput, setErrorInput] = useState<boolean>(false);
     const [phone, setPhone] = useState<string>('+998 91 234 56 78');
+
     useEffect(() => {
         GetData('user_data').then((res) => {
             if (res) {
@@ -30,6 +31,15 @@ const VerifySmsScreen: React.FC<VerifySmsScreenProps> = ({ navigation }) => {
         }).catch((error) => {
             console.error('Xatolik yuz berdi:', error);
         });
+
+        GetData('user_id').then((res) => {
+            if (res) {
+                setUser_id(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+
     }, []);
 
     useEffect(() => {
@@ -43,13 +53,6 @@ const VerifySmsScreen: React.FC<VerifySmsScreenProps> = ({ navigation }) => {
 
     useEffect(() => {
         if (code.every(digit => digit !== '')) {
-            GetData('user_id').then((res) => {
-                if (res) {
-                    setUser_id(res)
-                }
-            }).catch((error) => {
-                console.error('Xatolik yuz berdi:', error);
-            });
             axios.post(API_URL + '/api/auth/verify-phone', {
                 "user_id": user_id,
                 "code": code.join('')
@@ -66,19 +69,10 @@ const VerifySmsScreen: React.FC<VerifySmsScreenProps> = ({ navigation }) => {
                 }
                 console.log(error?.response?.data?.message);
             });
-
-
         }
     }, [code, navigation]);
 
     const resetTimer = () => {
-        GetData('user_id').then((res) => {
-            if (res) {
-                setUser_id(res)
-            }
-        }).catch((error) => {
-            console.error('Xatolik yuz berdi:', error);
-        });
         axios.post(API_URL + '/api/auth/resend-code', {
             "user_id": user_id,
 
@@ -97,6 +91,7 @@ const VerifySmsScreen: React.FC<VerifySmsScreenProps> = ({ navigation }) => {
             }
             console.log(error?.response?.data?.message);
         });
+
 
     };
 

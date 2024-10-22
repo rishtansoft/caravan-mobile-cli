@@ -139,9 +139,11 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
                 StoreData('token', res.data.token);
                 StoreData('role', res.data.role);
                 StoreData('inlogin', 'true');
-                // navigation.navigate("Home");
-                // setValue('');
-                // setValuePasword('');
+                StoreData('unique_id', res.data.unique_id);
+                setValue('')
+                setValuePasword('')
+                setErrorMessage('')
+                setErrorMessagePassword('')
             }).catch((error) => {
                 console.log(error?.response?.data?.message);
                 if (error?.response?.data?.message == 'User not found') {
@@ -182,6 +184,10 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
                 phone: '+' + value
             }).then((res) => {
                 console.log(res.data);
+                setValue('')
+                setValuePasword('')
+                setErrorMessage('')
+                setErrorMessagePassword('')
                 StoreData("user_phone", value)
                 navigation.navigate('forgot_sms_pagepassword');
             }).catch((error) => {
@@ -254,7 +260,13 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
                 }}>
                     <Text onPress={passwordChangFun} style={{ marginBottom: 5, color: '#7257FF', fontSize: 18, fontWeight: 600 }}>Parolni unutdingizmi?</Text>
                     <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18 }}>Akkountingiz yo'qmi?  <Text
-                        onPress={() => navigation.navigate('register')}
+                        onPress={() => {
+                            setValue('')
+                            setValuePasword('')
+                            setErrorMessage('')
+                            setErrorMessagePassword('')
+                            navigation.navigate('register')
+                        }}
                         style={{ color: '#7257FF', fontWeight: '600' }}> Ro'yxatdan o'tish</Text></Text>
                 </View>
 
@@ -271,10 +283,11 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
                         onPressIn={() => handlePressIn()}
                         onPressOut={() => handlePressOut()}
                         activeOpacity={1}
+                        onPress={loginBtn}
 
                     >
                         <Animated.View style={[styles.button, { backgroundColor }]}>
-                            <Text onPress={loginBtn} style={styles.button_text}>Kirish</Text>
+                            <Text style={styles.button_text}>Kirish</Text>
                         </Animated.View>
 
                     </TouchableOpacity>

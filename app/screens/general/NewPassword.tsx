@@ -234,11 +234,11 @@ const NewPassword: React.FC<NewPasswordProps> = (
                         onPressIn={() => handlePressIn()}
                         onPressOut={() => handlePressOut()}
                         activeOpacity={1}
-
+                        onPress={savePaswordFun}
                     >
                         <Animated.View style={[styles.button, { backgroundColor }]}>
                             <Text
-                                onPress={savePaswordFun}
+
                                 style={styles.button_text}>
                                 Kirish
                             </Text>
