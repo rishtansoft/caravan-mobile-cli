@@ -218,10 +218,11 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
                     onPressIn={() => handlePressIn()}
                     onPressOut={() => handlePressOut()}
                     activeOpacity={1}
+                    onPress={saveData}
                 >
                     <Animated.View style={[styles.button, { backgroundColor }]}>
                         <Text
-                            onPress={saveData}
+
                             style={styles.button_text}>
                             Ro'yxatdan o'tish
                         </Text>

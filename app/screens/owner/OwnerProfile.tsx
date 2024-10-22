@@ -6,11 +6,18 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { handleLogout } from '../../store/Logout';
 import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons';
 import CustomSwitch from '../ui/switch/Switch';
-
+import LanguageSelector from '../ui/Languch/LanguageSelector';
 const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     const [nightMode, setNightMode] = useState<boolean>(false);
     const [bacFonFun, setBacFonFun] = useState<boolean>(true);
 
+    const [currentLanguage, setCurrentLanguage] = useState('uz');
+
+    const handleLanguageChange = (languageCode: string) => {
+        setCurrentLanguage(languageCode);
+        // Bu yerda til o'zgarganda kerakli logikani yozish mumkin
+        // Masalan: i18n configuratsiyasi, AsyncStorage'ga saqlash va h.k.
+    }
 
     const logoutFun = async () => {
         await handleLogout()
@@ -47,14 +54,10 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
             </View>
             <View style={[styles.container, { marginTop: 10 }]}>
                 <Text style={styles.setting_title}>Sozlamalar</Text>
-                <TouchableOpacity style={styles.setting}>
-                    <View style={styles.setting_left}>
-                        <SimpleLineIcons name="globe" size={20} color="#131214" />
-                        <Text style={styles.setting_text}>Uzbek</Text>
-                    </View>
-                    <Icon
-                        name="angle-right" size={20} color="#131214" />
-                </TouchableOpacity>
+                <LanguageSelector
+                    selectedLanguage={currentLanguage}
+                    onSelectLanguage={handleLanguageChange}
+                />
                 <View style={styles.setting}>
                     <View style={styles.setting_left}>
                         <Icon name="moon-o" size={24} color="#131214" />
@@ -97,7 +100,7 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                     <View style={styles.exit_btn_left}>
                         <Ionicons
                             name="exit-outline" size={24} color="#DB340B" />
-                        <Text style={styles.exit_btn_text}>Akkountni o'chirishs</Text>
+                        <Text style={styles.exit_btn_text}>Akkountni o'chirish</Text>
                     </View>
                     <Icon
                         // onPress={() => navigation.navigate('home')}

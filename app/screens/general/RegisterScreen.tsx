@@ -338,10 +338,11 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
                     onPressIn={() => handlePressIn()}
                     onPressOut={() => handlePressOut()}
                     activeOpacity={1}
+                    onPress={saveDataFun}
                 >
                     <Animated.View style={[styles.button, { backgroundColor }]}>
                         <Text
-                            onPress={saveDataFun}
+
                             style={styles.button_text}>
                             Davom etish
                         </Text>
