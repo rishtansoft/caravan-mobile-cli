@@ -38,7 +38,7 @@ const RootNavigator = () => {
     //     if (role === 'driver') {
     //         return <DriverNavigation />;
     //     } else if (role === 'cargo_owner') {
-    //         return <OwnerNavigation />;
+    // return <OwnerNavigation />;
     //     }
     //     return <GeneralNavigation />;
     // }
@@ -59,7 +59,7 @@ const AuthNavigator = () => {
             <Stack.Screen options={{ headerShown: false }} name="register" component={RegisterScreen} />
             <Stack.Screen options={{ headerShown: false }} name="register_second" component={RegisterSecondScreen} />
             <Stack.Screen options={{ headerShown: false }} name="verify_sms_screen" component={VerifySmsScreen} />
-            <Stack.Screen options={{ headerShown: false }} name="home" component={HomeScreen} />
+            {/* <Stack.Screen options={{ headerShown: false }} name="home" component={HomeScreen} /> */}
         </Stack.Navigator>
     );
 };

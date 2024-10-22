@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconFont from 'react-native-vector-icons/FontAwesome6';
+import IconFontAwesome from 'react-native-vector-icons/FontAwesome';
 import { RootStackParamList } from './RouterType';
 
 type NavbarProps = {
@@ -55,7 +56,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 style={styles.navItem}
                 onPress={() => setActiveTab('profile')}
             >
-                <Icon name="person" size={24} color={activeTab === 'profile' ? '#5336E2' : '#898D8F'} />
+                <IconFontAwesome name="user-circle-o" size={24} color={activeTab === 'profile' ? '#5336E2' : '#898D8F'} />
                 <Text style={[
                     styles.navText,
                     { color: activeTab === 'profile' ? '#5336E2' : '#898D8F' }

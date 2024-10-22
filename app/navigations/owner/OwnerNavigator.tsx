@@ -8,7 +8,10 @@ import OwnerProfile from '../../screens/owner/OwnerProfile';
 import ActiveOrders from '../../screens/owner/ActiveOrders';
 import PastOrders from '../../screens/owner/PastOrders';
 import { useNavigation, NavigationProp } from '@react-navigation/native'; // Import navigation hook
-
+import ContactAdmin from '../../screens/owner/ContactAdmin';
+import ActiveOrderDetail from '../../screens/owner/ActiveOrderDetail';
+import PastOrderDetail from '../../screens/owner/PastOrderDetail';
+import TermsAndCondition from '../../screens/owner/TermsAndCondition';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -26,15 +29,10 @@ const OwnerNavigation = () => {
 
     return (
         < >
-            <Stack.Navigator initialRouteName='profile'>
+            <Stack.Navigator initialRouteName='home'>
                 <Stack.Screen
                     name="home"
                     component={HomeScreen}
-                    options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                    name='profile'
-                    component={OwnerProfile}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
@@ -43,10 +41,38 @@ const OwnerNavigation = () => {
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
+                    name="active_loads_detail"
+                    component={ActiveOrderDetail}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
                     name='history'
                     component={PastOrders}
                     options={{ headerShown: false }}
                 />
+                <Stack.Screen
+                    name='history_detail'
+                    component={PastOrderDetail}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name='profile'
+                    component={OwnerProfile}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    options={{ headerShown: false }}
+                    name="contact_admin"
+                    component={ContactAdmin}
+
+                />
+                <Stack.Screen
+                    options={{ headerShown: false }}
+                    name='terms_condition'
+                    component={TermsAndCondition}
+
+                />
+
             </Stack.Navigator>
             <Navbar activeTab={activeTab} setActiveTab={handleTabChange} />
         </>
