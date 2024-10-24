@@ -7,6 +7,8 @@ import TarihScreen from '../../screens/driver/LoadHistory';
 import AdminScreen from '../../screens/driver/ContactAdmin';
 import ProfileScreen from '../../screens/driver/DriverProfile';
 import DetailScreen from '../../screens/driver/ActiveLoadDetail';
+import TermsAndCondition from '../../screens/driver/TermsAndCondition';
+import DriverProfileEdit from '../../screens/driver/DriverProfileEdit';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -22,6 +24,16 @@ const HomeStack = () => {
       <Stack.Screen 
         name="ActiveLoadDetail" 
         component={DetailScreen} 
+        options={{ headerShown:false }} 
+      />
+      <Stack.Screen 
+        name="TermsAndCondition" 
+        component={TermsAndCondition} 
+        options={{ headerShown:false }} 
+      />
+      <Stack.Screen 
+        name="DriverProfileEdit" 
+        component={DriverProfileEdit} 
         options={{ headerShown:false }} 
       />
     </Stack.Navigator>
