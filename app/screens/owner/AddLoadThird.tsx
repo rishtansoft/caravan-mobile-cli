@@ -1,11 +1,27 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+    View, Text, TouchableOpacity, StyleSheet,
+    ScrollView, SafeAreaView,
+    TextInput,
+    Switch
+} from 'react-native';
 import { AddLoadThirdProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import AddReceiverForm from '../ui/AddReceiverForm/AddReceiverForm';
 
 const AddLoadThird: React.FC<AddLoadThirdProps> = ({ navigation }) => {
+
+    const [phone, setPhone] = useState<string>('');
+    const [phoneError, setPhoneError] = useState<string>('');
+    const [phoneIsFocused, setPhoneIsFocused] = useState<boolean>(false);
+
+
+    const phoneInputFun = (values: string) => {
+        setPhone(values);
+        setPhoneError('');
+    };
 
 
     return (
@@ -14,7 +30,7 @@ const AddLoadThird: React.FC<AddLoadThirdProps> = ({ navigation }) => {
             <View style={styles.header_con}>
                 <View style={{ width: '6%' }}>
                     <Icon
-                        onPress={() => navigation.navigate("home")}
+                        onPress={() => navigation.navigate('add_load_second')}
                         name="angle-left"
                         size={30}
                         color="#7257FF"
@@ -37,12 +53,13 @@ const AddLoadThird: React.FC<AddLoadThirdProps> = ({ navigation }) => {
 
             {/* Main Content */}
             <View style={styles.content_container}>
-                <ScrollView
-                    style={styles.scroll_con}
-                    contentContainerStyle={styles.scrollContent}
-                >
-
-                </ScrollView>
+                <View style={styles.container}>
+                    <AddReceiverForm
+                        onSubmit={(data) => {
+                            console.log(data);
+                            // Form ma'lumotlarini qayta ishlash
+                        }} />
+                </View>
 
                 {/* Bottom Buttons */}
                 <View style={styles.bottom_btns}>
@@ -106,6 +123,34 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         justifyContent: 'space-between',
     },
+    input: {
+        borderColor: '#E6E9EB',
+        width: '100%',
+        borderWidth: 1,
+        color: '#131214',
+        borderRadius: 8,
+        paddingLeft: 15,
+    },
+    inputFocus: {
+        borderColor: '#7257FF',
+        width: '100%',
+        borderWidth: 2,
+        color: '#131214',
+        borderRadius: 8,
+        paddingLeft: 15,
+        shadowColor: '#7257FF',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 1,
+        elevation: 1,
+    },
+
+    errorText: {
+        color: 'red',
+        marginTop: 6,
+        lineHeight: 14,
+    },
+
     scroll_con: {
         flex: 1,
     },

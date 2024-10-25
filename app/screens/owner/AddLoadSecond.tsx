@@ -4,6 +4,7 @@ import { AddLoadSecondProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import AddCargoForm from '../ui/AddCargoForm/AddCargoForm';
 
 const AddLoadSecond: React.FC<AddLoadSecondProps> = ({ navigation }) => {
 
@@ -14,7 +15,7 @@ const AddLoadSecond: React.FC<AddLoadSecondProps> = ({ navigation }) => {
             <View style={styles.header_con}>
                 <View style={{ width: '6%' }}>
                     <Icon
-                        onPress={() => navigation.navigate("home")}
+                        onPress={() => navigation.navigate('add_loads')}
                         name="angle-left"
                         size={30}
                         color="#7257FF"
@@ -37,12 +38,17 @@ const AddLoadSecond: React.FC<AddLoadSecondProps> = ({ navigation }) => {
 
             {/* Main Content */}
             <View style={styles.content_container}>
-                <ScrollView
-                    style={styles.scroll_con}
-                    contentContainerStyle={styles.scrollContent}
-                >
-
-                </ScrollView>
+                {/* <ScrollView */}
+                {/* style={styles.scroll_con} */}
+                {/* contentContainerStyle={styles.scrollContent} */}
+                {/* > */}
+                <View style={styles.container}>
+                    <AddCargoForm onSubmit={(data) => {
+                        console.log(data);
+                        // Form ma'lumotlarini qayta ishlash
+                    }} />
+                </View>
+                {/* </ScrollView> */}
 
                 {/* Bottom Buttons */}
                 <View style={styles.bottom_btns}>
