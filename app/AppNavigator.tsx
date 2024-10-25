@@ -17,18 +17,35 @@ import VerifySmsScreen from './screens/general/VerifySmsScreen';
 import { GetData, RemoveData } from './screens/AsyncStorage/AsyncStorage';
 import UserRole from './UserRole';
 const Stack = createNativeStackNavigator<RootStackParamList>();
+import { useNavigationContainerRef } from '@react-navigation/native';
 
 const AppNavigator = () => {
+    const navigationRef = useNavigationContainerRef();
+    const [routerPage, setRouterPage] = useState<string | undefined>('');
+
+    useEffect(() => {
+        const unsubscribe = navigationRef.addListener('state', () => {
+            const currentRouteName = navigationRef.getCurrentRoute()?.name;
+            const params = navigationRef.getCurrentRoute()?.params;
+            setRouterPage(currentRouteName)
+
+        });
+
+        return unsubscribe;
+    }, []);
     return (
         <Provider store={store}>
-            <NavigationContainer>
-                <RootNavigator />
+            <NavigationContainer ref={navigationRef}>
+                <RootNavigator name={routerPage} />
             </NavigationContainer>
         </Provider>
     );
 };
-
-const RootNavigator = () => {
+interface RouterPage {
+    name: string | undefined;
+    params?: object;
+}
+const RootNavigator: React.FC<RouterPage> = ({ name }) => {
     const auth = useSelector((state: RootState) => state.auth);
     const isLoggedIn = auth.isLoggedIn;
     const role = auth.role;
@@ -44,7 +61,7 @@ const RootNavigator = () => {
     // }
 
     if (isLoggedIn) {
-        return <UserRole roles={role} />
+        return <UserRole name={name} roles={role} />
 
     }
 

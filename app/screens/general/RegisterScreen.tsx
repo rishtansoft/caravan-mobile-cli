@@ -42,6 +42,7 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
     const [passwordReq, setPasswordReq] = useState<string>('');
     const [passwordReqError, setPasswordReqError] = useState<string>('');
     const [passwordReqIsFocused, setPasswordReqIsFocused] = useState<boolean>(false);
+
     const animatedValue = useRef(new Animated.Value(0)).current;
 
     const [keyboardVisible, setKeyboardVisible] = useState(false);

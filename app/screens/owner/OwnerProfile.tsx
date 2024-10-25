@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, Switch, StyleSheet, Linking } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, Switch, StyleSheet, Linking, Alert } from 'react-native';
 import { ProfileProps } from './RouterType'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -7,11 +7,23 @@ import { handleLogout } from '../../store/Logout';
 import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons';
 import CustomSwitch from '../ui/switch/Switch';
 import LanguageSelector from '../ui/Languch/LanguageSelector';
+import axios from 'axios';
+import { GetData } from '../AsyncStorage/AsyncStorage';
+import { API_URL } from '@env';
+import EditProfileModal from '../ui/EditProfileModal/EditProfileModal';
+const showErrorAlert = (message: string) => {
+    Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
+};
 const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     const [nightMode, setNightMode] = useState<boolean>(false);
     const [bacFonFun, setBacFonFun] = useState<boolean>(true);
-
+    const [user_id, setUser_id] = useState<string>('');
+    const [token, setToken] = useState<string>('');
     const [currentLanguage, setCurrentLanguage] = useState('uz');
+    const [name, setName] = useState<string>('');
+    const [nameLastname, setNameLastname] = useState<string>('');
+    const [phone, setPhone] = useState<string>('');
+    const [modalVisible, setModalVisible] = useState(false);
 
     const handleLanguageChange = (languageCode: string) => {
         setCurrentLanguage(languageCode);
@@ -19,9 +31,64 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
         // Masalan: i18n configuratsiyasi, AsyncStorage'ga saqlash va h.k.
     }
 
+    useEffect(() => {
+        GetData('user_id').then((res) => {
+            if (res) {
+                // console.log(44, JSON.parse(res).user_id);
+                setUser_id(res)
+
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+        GetData('token').then((res) => {
+            if (res) {
+                setToken(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+    }, []);
+
+    useEffect(() => {
+
+        if (user_id && token) {
+            axios.get(API_URL + `/api/auth/get-profile?user_id=${user_id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }).then((res) => {
+                console.log(73, res.data);
+                setName(res.data.firstname)
+                setNameLastname(res.data.lastname)
+                setPhone(res.data.phone)
+
+            }).catch((error) => {
+                console.log(76, error);
+
+                showErrorAlert(error?.response?.data?.message)
+            })
+        }
+
+    }, [user_id, token]);
+
+    const handleChangePhoneNumber = () => {
+        // Telefon raqamni o'zgartirish logikasi
+        setModalVisible(false);
+    };
+
+    const handleChangePersonalInfo = () => {
+        setModalVisible(false);
+        navigation.navigate('profile_update')
+    };
+
+
+
     const logoutFun = async () => {
         await handleLogout()
     }
+
+
 
     return (
         <View style={styles.container_all}>
@@ -42,13 +109,16 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                 <View style={styles.profileContainer}>
                     <Image source={require('../../assets/img/owner/user.png')} style={styles.profileImage} />
                     <View>
-                        <Text style={styles.profileName}>Anvar</Text>
+                        <Text style={styles.profileName}>{name} {nameLastname}</Text>
                         {/* <TouchableOpacity onPress={() => Linking.openURL('tel:+998998427979')}> */}
-                        <Text style={styles.profilePhone}>+998 99 842 79 79</Text>
+                        <Text style={styles.profilePhone}>{phone}</Text>
                         {/* </TouchableOpacity> */}
                     </View>
                 </View>
-                <TouchableOpacity style={styles.editButton}>
+                <TouchableOpacity
+                    onPress={() => setModalVisible(true)}
+
+                    style={styles.editButton}>
                     <Text style={styles.editButtonText}>Ma'lumotlarni tahrirlash</Text>
                 </TouchableOpacity>
             </View>
@@ -107,6 +177,12 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                         name="angle-right" size={24} color="#DB340B" />
                 </TouchableOpacity>
             </View>
+            <EditProfileModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                onChangePhoneNumber={handleChangePhoneNumber}
+                onChangePersonalInfo={handleChangePersonalInfo}
+            />
         </View>
     );
 };

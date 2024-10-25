@@ -97,7 +97,7 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
 
                 </View>
                 <IconFoundation
-                    onPress={() => navigation.navigate('home')}
+                    onPress={() => navigation.navigate("active_loads_map", { itemId: itemId })}
                     name="map" size={30} color="#7257FF" />
             </View>
             <ScrollView style={{ flex: 1, paddingBottom: 10 }}>
@@ -258,7 +258,9 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                         </View>
                     </View>
                 </View>
-                <TouchableOpacity style={[styles.btn, { backgroundColor: '#7257FF', }]}>
+                <TouchableOpacity
+                    onPress={() => navigation.navigate("active_loads_map", { itemId: itemId })}
+                    style={[styles.btn, { backgroundColor: '#7257FF', }]}>
                     <Text style={[styles.btn_text, { color: '#fff' }]}>Xaritada ko'rish
                     </Text>
                     <IconFoundation
@@ -297,6 +299,8 @@ const styles = StyleSheet.create({
         height: 'auto',
 
     },
+
+
 
     header_con: {
         display: 'flex',

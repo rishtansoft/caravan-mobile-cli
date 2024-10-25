@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, StyleSheet, Text, Keyboard } from 'react-native';
 import Navbar from '../../screens/owner/Navbar';
 import { RootStackParamList } from '../../screens/owner/RouterType';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -12,12 +12,27 @@ import ContactAdmin from '../../screens/owner/ContactAdmin';
 import ActiveOrderDetail from '../../screens/owner/ActiveOrderDetail';
 import PastOrderDetail from '../../screens/owner/PastOrderDetail';
 import TermsAndCondition from '../../screens/owner/TermsAndCondition';
+import ProfileDataUpdate from '../../screens/owner/ProfileDataUpdate';
+import ActiveOrderMap from '../../screens/owner/ActiveOrderMap';
+import AddLoad from '../../screens/owner/AddLoad';
+import AddLoadSecond from '../../screens/owner/AddLoadSecond';
+import AddLoadThird from '../../screens/owner/AddLoadThird';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+interface componentNameProps {
+    page: string | undefined,
+}
 
-
-const OwnerNavigation = () => {
+const OwnerNavigation: React.FC<componentNameProps> = ({ page }) => {
     const [activeTab, setActiveTab] = useState('home');
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+
+    useEffect(() => {
+        if (page) {
+            setActiveTab(page)
+        }
+    }, [page]);
 
     const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Specify navigation type
 
@@ -27,6 +42,20 @@ const OwnerNavigation = () => {
         navigation.navigate(tab); // Use correct tab type
     };
 
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+            setKeyboardVisible(true); // Klaviatura ochilganda true ga o'zgartirish
+        });
+        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+            setKeyboardVisible(false); // Klaviatura yopilganda false ga o'zgartirish
+        });
+        return () => {
+            // Listenerlarni tozalash
+            keyboardDidShowListener.remove();
+            keyboardDidHideListener.remove();
+        };
+    }, []);
+
     return (
         < >
             <Stack.Navigator initialRouteName='home'>
@@ -35,6 +64,22 @@ const OwnerNavigation = () => {
                     component={HomeScreen}
                     options={{ headerShown: false }}
                 />
+                <Stack.Screen
+                    name='add_loads'
+                    component={AddLoad}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name='add_load_second'
+                    component={AddLoadSecond}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name='add_load_third'
+                    component={AddLoadThird}
+                    options={{ headerShown: false }}
+                />
+
                 <Stack.Screen
                     name="active_loads"
                     component={ActiveOrders}
@@ -56,8 +101,18 @@ const OwnerNavigation = () => {
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
+                    name='profile_update'
+                    component={ProfileDataUpdate}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
                     name='profile'
                     component={OwnerProfile}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name='active_loads_map'
+                    component={ActiveOrderMap}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
@@ -72,9 +127,9 @@ const OwnerNavigation = () => {
                     component={TermsAndCondition}
 
                 />
-
             </Stack.Navigator>
-            <Navbar activeTab={activeTab} setActiveTab={handleTabChange} />
+            {(!keyboardVisible && page !== 'add_loads' && page !== 'add_load_second' && page !== 'add_load_third') && <Navbar activeTab={activeTab} setActiveTab={handleTabChange} />}
+
         </>
     );
 }
