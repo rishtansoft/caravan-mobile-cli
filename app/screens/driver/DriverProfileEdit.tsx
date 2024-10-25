@@ -145,6 +145,22 @@ const DriverProfileEdit = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.InputWrapper}>
+        <Text style={styles.InputTitle}>Moshina nomi</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Moshina nomini kiriting"
+          value={carPassport}
+          onChangeText={setCarPassport}
+        />
+      </View>
+      <View style={styles.imageUploadContainer}>
+        <Text style={styles.imageTitle}>Mashina rasmi(ixtiyoriy)</Text>
+        <TouchableOpacity style={styles.imageUpload}>
+          <Ionicons name="camera-outline" size={32} color="blue" />
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>Saqlash</Text>
       </TouchableOpacity>
