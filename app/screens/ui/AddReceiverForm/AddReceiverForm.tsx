@@ -5,10 +5,13 @@ import {
     TextInput,
     StyleSheet,
     Pressable,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import CustomSwitch from '../switch/Switch';
-import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
+import Fontisto from 'react-native-vector-icons/Octicons';
 
 interface ReceiverFormProps {
     onSubmit: (data: {
@@ -43,89 +46,102 @@ const AddReceiverForm: React.FC<ReceiverFormProps> = ({ onSubmit }) => {
     );
 
     return (
-        <View style={styles.container}>
-            {/* Telefon raqami Input */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Qabul qiluvchining telefon raqami</Text>
-                <TextInput
-                    value={phone}
-                    onChangeText={setPhone}
-                    placeholder="+998 __  ___  __  __"
-                    placeholderTextColor="#898D8F"
-                    style={phoneIsFocused ? styles.inputFocus : styles.input}
-                    onFocus={() => setPhoneIsFocused(true)}
-                    onBlur={() => setPhoneIsFocused(false)}
-                    keyboardType="phone-pad"
-                />
-            </View>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardAvoidingView}
+        >
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContentContainer}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.container}>
+                    {/* Telefon raqami Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Qabul qiluvchining telefon raqami</Text>
+                        <TextInput
+                            value={phone}
+                            onChangeText={setPhone}
+                            placeholder="+998 __  ___  __  __"
+                            placeholderTextColor="#898D8F"
+                            style={phoneIsFocused ? styles.inputFocus : styles.input}
+                            onFocus={() => setPhoneIsFocused(true)}
+                            onBlur={() => setPhoneIsFocused(false)}
+                            keyboardType="phone-pad"
+                        />
+                    </View>
 
-            {/* Kim to'laydi Radio */}
-            <View style={styles.payerContainer}>
-                <Text style={styles.radioText}>Kim to'laydi</Text>
-                <View style={styles.radioGroup}>
-                    <Pressable
-                        style={styles.radioButton}
-                        onPress={() => setPayer('sender')}
-                    >
-                        <RadioButton selected={payer === 'sender'} />
-                        <Text style={[
-                            styles.activeText
-                        ]}>
-                            Yuk beruvchi
-                        </Text>
-                    </Pressable>
-                    <Pressable
-                        style={styles.radioButton}
-                        onPress={() => setPayer('receiver')}
-                    >
-                        <RadioButton selected={payer === 'receiver'} />
-                        <Text style={[
-                            styles.activeText
-                        ]}>
-                            Yuk oluvchi
-                        </Text>
-                    </Pressable>
+                    {/* Kim to'laydi Radio */}
+                    <View style={styles.payerContainer}>
+                        <Text style={styles.radioText}>Kim to'laydi</Text>
+                        <View style={styles.radioGroup}>
+                            <Pressable
+                                style={styles.radioButton}
+                                onPress={() => setPayer('sender')}
+                            >
+                                <RadioButton selected={payer === 'sender'} />
+                                <Text style={styles.activeText}>Yuk beruvchi</Text>
+                            </Pressable>
+                            <Pressable
+                                style={styles.radioButton}
+                                onPress={() => setPayer('receiver')}
+                            >
+                                <RadioButton selected={payer === 'receiver'} />
+                                <Text style={styles.activeText}>Yuk oluvchi</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+
+                    {/* Borib qaytish */}
+                    <View style={styles.roundTripContainer}>
+                        <View style={styles.roundTripLeft}>
+                            <Fontisto name="arrow-switch" size={24} color="#131214" />
+                            <Text style={styles.roundTripText}>Borib qaytish</Text>
+                        </View>
+                        <CustomSwitch
+                            value={roundTrip}
+                            onValueChange={setRoundTrip}
+                        />
+                    </View>
+
+                    {/* Izoh TextArea */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Buyurtma uchun sharh</Text>
+                        <TextInput
+                            value={comment}
+                            onChangeText={setComment}
+                            placeholder="Buyurtma uchun sharh"
+                            placeholderTextColor="#898D8F"
+                            style={[
+                                commentIsFocused ? styles.inputFocus : styles.input,
+                                styles.textArea
+                            ]}
+                            onFocus={() => setCommentIsFocused(true)}
+                            onBlur={() => setCommentIsFocused(false)}
+                            multiline={true}
+                            numberOfLines={4}
+                            textAlignVertical="top"
+                        />
+                    </View>
                 </View>
-            </View>
-
-            {/* Borib qaytish */}
-            <View style={styles.roundTripContainer}>
-                <View style={styles.roundTripLeft}>
-                    <Fontisto name="arrow-switch" size={24} color="#131214" />
-                    <Text style={styles.roundTripText}>Borib qaytish</Text>
-                </View>
-                <CustomSwitch
-                    value={roundTrip}
-                    onValueChange={setRoundTrip}
-                />
-            </View>
-
-            {/* Izoh TextArea */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Buyurtma uchun sharh</Text>
-                <TextInput
-                    value={comment}
-                    onChangeText={setComment}
-                    placeholder="Buyurtma uchun sharh"
-                    placeholderTextColor="#898D8F"
-                    style={[
-                        commentIsFocused ? styles.inputFocus : styles.input,
-                        styles.textArea
-                    ]}
-                    onFocus={() => setCommentIsFocused(true)}
-                    onBlur={() => setCommentIsFocused(false)}
-                    multiline={true}
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                />
-            </View>
-        </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 
-
 const styles = StyleSheet.create({
-
+    keyboardAvoidingView: {
+        flex: 1,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContentContainer: {
+        flexGrow: 1,
+        paddingBottom: 20, // Klaviatura ostida qo'shimcha padding
+    },
+    // ... qolgan styles kodlari o'zgarishsiz qoladi ...
     radioContainer: {
         width: 20,
         height: 20,
@@ -178,9 +194,9 @@ const styles = StyleSheet.create({
         color: '#131214',
         fontWeight: '500',
     },
-
     container: {
         gap: 16,
+        flex: 1,
     },
     inputContainer: {
         gap: 8,
@@ -224,14 +240,11 @@ const styles = StyleSheet.create({
     payerContainer: {
         marginBottom: 16,
     },
-
-
     radioGroup: {
         flexDirection: 'column',
         gap: 12,
         marginTop: 8,
     },
-
     roundTripContainer: {
         flexDirection: 'row',
         alignItems: 'center',

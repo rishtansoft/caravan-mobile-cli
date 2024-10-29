@@ -100,7 +100,7 @@ const PastOrderDetail: React.FC<HistoryDetailProps> = ({ navigation, route }) =>
 
                 </View>
                 <IconFoundation
-                    onPress={() => navigation.navigate('home')}
+                    onPress={() => navigation.navigate('history_detail_map', { itemId: itemId })}
                     name="map" size={30} color="#7257FF" />
             </View>
             <ScrollView style={{ flex: 1, paddingBottom: 10 }}>
@@ -285,7 +285,8 @@ const PastOrderDetail: React.FC<HistoryDetailProps> = ({ navigation, route }) =>
                         </View>
                     </View>
                 </View>
-                <TouchableOpacity style={[styles.btn, { backgroundColor: '#7257FF', marginBottom: 20 }]}>
+                <TouchableOpacity onPress={() => navigation.navigate('history_detail_map', { itemId: itemId })}
+                    style={[styles.btn, { backgroundColor: '#7257FF', marginBottom: 20 }]}>
                     <Text style={[styles.btn_text, { color: '#fff' }]}>Xaritada ko'rish
                     </Text>
                     <IconFoundation

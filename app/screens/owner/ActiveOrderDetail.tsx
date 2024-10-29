@@ -300,8 +300,6 @@ const styles = StyleSheet.create({
 
     },
 
-
-
     header_con: {
         display: 'flex',
         flexDirection: 'row',

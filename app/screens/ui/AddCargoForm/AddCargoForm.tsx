@@ -4,6 +4,9 @@ import {
     Text,
     TextInput,
     StyleSheet,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 
@@ -47,83 +50,110 @@ const CargoForm: React.FC<CargoFormProps> = ({ onSubmit }) => {
     ]);
 
     return (
-        <View style={styles.container}>
-            {/* Yuk turi Dropdown */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Yuk turi</Text>
-                <DropDownPicker
-                    open={cargoTypeOpen}
-                    value={cargoType}
-                    items={cargoTypes}
-                    setOpen={setCargoTypeOpen}
-                    setValue={setCargoType}
-                    placeholder="Yuk turini tanlang"
-                    placeholderStyle={styles.placeholderStyle}
-                    style={styles.dropdown}
-                    dropDownContainerStyle={styles.dropdownContainer}
-                    textStyle={styles.dropdownText}
-                    zIndex={2000}
-                    zIndexInverse={1000}
-                />
-            </View>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardAvoidingView}
+        >
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContentContainer}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled={true}
+            >
+                <View style={styles.container}>
+                    {/* Yuk turi Dropdown */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Yuk turi</Text>
+                        <DropDownPicker
+                            open={cargoTypeOpen}
+                            value={cargoType}
+                            items={cargoTypes}
+                            setOpen={setCargoTypeOpen}
+                            setValue={setCargoType}
+                            placeholder="Yuk turini tanlang"
+                            placeholderStyle={styles.placeholderStyle}
+                            style={styles.dropdown}
+                            dropDownContainerStyle={styles.dropdownContainer}
+                            textStyle={styles.dropdownText}
+                            zIndex={2000}
+                            zIndexInverse={1000}
+                            listMode="SCROLLVIEW"
+                        />
+                    </View>
 
-            {/* Yuk og'irligi Input */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Yuk o'g'irligi</Text>
-                <TextInput
-                    value={weight}
-                    onChangeText={setWeight}
-                    placeholder="Yuk o'g'irligini kiriting"
-                    placeholderTextColor="#898D8F"
-                    style={weightIsFocused ? styles.inputFocus : styles.input}
-                    onFocus={() => setWeightIsFocused(true)}
-                    onBlur={() => setWeightIsFocused(false)}
-                />
-            </View>
+                    {/* Yuk og'irligi Input */}
+                    <View style={[styles.inputContainer, { marginTop: cargoTypeOpen ? 120 : 0 }]}>
+                        <Text style={styles.label}>Yuk o'g'irligi</Text>
+                        <TextInput
+                            value={weight}
+                            onChangeText={setWeight}
+                            placeholder="Yuk o'g'irligini kiriting"
+                            placeholderTextColor="#898D8F"
+                            style={weightIsFocused ? styles.inputFocus : styles.input}
+                            onFocus={() => setWeightIsFocused(true)}
+                            onBlur={() => setWeightIsFocused(false)}
+                        />
+                    </View>
 
-            {/* Yuklash vaqti Input */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Yuklash vaqti</Text>
-                <TextInput
-                    value={loadingTime}
-                    onChangeText={setLoadingTime}
-                    placeholder="Yuklash vaqtini tanlang"
-                    placeholderTextColor="#898D8F"
-                    style={loadingTimeIsFocused ? styles.inputFocus : styles.input}
-                    onFocus={() => setLoadingTimeIsFocused(true)}
-                    onBlur={() => setLoadingTimeIsFocused(false)}
-                />
-            </View>
+                    {/* Yuklash vaqti Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Yuklash vaqti</Text>
+                        <TextInput
+                            value={loadingTime}
+                            onChangeText={setLoadingTime}
+                            placeholder="Yuklash vaqtini tanlang"
+                            placeholderTextColor="#898D8F"
+                            style={loadingTimeIsFocused ? styles.inputFocus : styles.input}
+                            onFocus={() => setLoadingTimeIsFocused(true)}
+                            onBlur={() => setLoadingTimeIsFocused(false)}
+                        />
+                    </View>
 
-            {/* Mashina turi Dropdown */}
-            <View style={styles.inputContainer}>
-                <Text style={styles.label}>Mashina turi</Text>
-                <DropDownPicker
-                    open={vehicleTypeOpen}
-                    value={vehicleType}
-                    items={vehicleTypes}
-                    setOpen={setVehicleTypeOpen}
-                    setValue={setVehicleType}
-                    placeholder="Mashina turini tanlang"
-                    placeholderStyle={styles.placeholderStyle}
-                    style={styles.dropdown}
-                    dropDownContainerStyle={styles.dropdownContainer}
-                    textStyle={styles.dropdownText}
-                    zIndex={1000}
-                    zIndexInverse={2000}
-                />
-            </View>
-        </View>
+                    {/* Mashina turi Dropdown */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Mashina turi</Text>
+                        <DropDownPicker
+                            open={vehicleTypeOpen}
+                            value={vehicleType}
+                            items={vehicleTypes}
+                            setOpen={setVehicleTypeOpen}
+                            setValue={setVehicleType}
+                            placeholder="Mashina turini tanlang"
+                            placeholderStyle={styles.placeholderStyle}
+                            style={styles.dropdown}
+                            dropDownContainerStyle={styles.dropdownContainer}
+                            textStyle={styles.dropdownText}
+                            zIndex={1000}
+                            zIndexInverse={2000}
+                            listMode="SCROLLVIEW"
+                        />
+                    </View>
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 
 const styles = StyleSheet.create({
+    keyboardAvoidingView: {
+        flex: 1,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContentContainer: {
+        flexGrow: 1,
+        paddingBottom: 20,
+    },
     container: {
         gap: 16,
+        flex: 1,
     },
     inputContainer: {
         gap: 8,
-        marginBottom: 5,
+        marginBottom: 16,
+        zIndex: 1,
     },
     label: {
         fontSize: 16,

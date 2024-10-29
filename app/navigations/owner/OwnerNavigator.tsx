@@ -17,6 +17,9 @@ import ActiveOrderMap from '../../screens/owner/ActiveOrderMap';
 import AddLoad from '../../screens/owner/AddLoad';
 import AddLoadSecond from '../../screens/owner/AddLoadSecond';
 import AddLoadThird from '../../screens/owner/AddLoadThird';
+import MainPhoneUpdate from '../../screens/owner/MainPhoneUpdate';
+import MainPhoneUpdateSmcCode from '../../screens/owner/MainPhoneUpdateSmcCode';
+import PastOrderDetailMap from '../../screens/owner/PastOrderDetailMap';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 interface componentNameProps {
@@ -101,8 +104,23 @@ const OwnerNavigation: React.FC<componentNameProps> = ({ page }) => {
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
+                    name='history_detail_map'
+                    component={PastOrderDetailMap}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
                     name='profile_update'
                     component={ProfileDataUpdate}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name="main_phone_update"
+                    component={MainPhoneUpdate}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name='main_phone_update_sms_code'
+                    component={MainPhoneUpdateSmcCode}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
@@ -128,7 +146,10 @@ const OwnerNavigation: React.FC<componentNameProps> = ({ page }) => {
 
                 />
             </Stack.Navigator>
-            {(!keyboardVisible && page !== 'add_loads' && page !== 'add_load_second' && page !== 'add_load_third') && <Navbar activeTab={activeTab} setActiveTab={handleTabChange} />}
+            {(!keyboardVisible && page !== 'add_loads' && page !== 'add_load_second' &&
+                page !== 'add_load_third' &&
+                page != 'active_loads_map' && page != 'history_detail_map'
+                && page != 'main_phone_update_sms_code') && <Navbar activeTab={activeTab} setActiveTab={handleTabChange} />}
 
         </>
     );

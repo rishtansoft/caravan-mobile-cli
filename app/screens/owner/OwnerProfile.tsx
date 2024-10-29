@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Linking, Alert, Platform } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Linking, Alert, Platform, Modal } from 'react-native';
 import { ProfileProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -63,30 +63,38 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
 
 
     const ImagePickerModal = () => (
-        <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-                <TouchableOpacity style={styles.modalButton} onPress={handleTakePhoto}>
-                    <Icon name="camera" size={24} color="#5336E2" />
-                    <Text style={styles.modalButtonText}>Kameradan rasmga olish</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.modalButton} onPress={handleChoosePhoto}>
-                    <Icon name="image" size={24} color="#5336E2" />
-                    <Text style={styles.modalButtonText}>Galereyadan tanlash</Text>
-                </TouchableOpacity>
-
-                {profileImage && (
-                    <TouchableOpacity style={[styles.modalButton, styles.deleteButton]} onPress={handleDeletePhoto}>
-                        <Icon name="trash" size={24} color="#DB340B" />
-                        <Text style={[styles.modalButtonText, styles.deleteButtonText]}>Rasmni o'chirish</Text>
+        <Modal
+            visible={imageChangeModal}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setImageChangeModal(false)}
+        >
+            <TouchableOpacity onPress={() => setImageChangeModal(false)} style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                    <TouchableOpacity style={styles.modalButton} onPress={handleTakePhoto}>
+                        <Icon name="camera" size={24} color="#5336E2" />
+                        <Text style={styles.modalButtonText}>Kameradan rasmga olish</Text>
                     </TouchableOpacity>
-                )}
 
-                <TouchableOpacity style={styles.cancelButton} onPress={() => setImageChangeModal(false)}>
-                    <Text style={styles.cancelButtonText}>Bekor qilish</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+                    <TouchableOpacity style={styles.modalButton} onPress={handleChoosePhoto}>
+                        <Icon name="image" size={24} color="#5336E2" />
+                        <Text style={styles.modalButtonText}>Galereyadan tanlash</Text>
+                    </TouchableOpacity>
+
+                    {profileImage && (
+                        <TouchableOpacity style={[styles.modalButton, styles.deleteButton]} onPress={handleDeletePhoto}>
+                            <Icon name="trash" size={24} color="#DB340B" />
+                            <Text style={[styles.modalButtonText, styles.deleteButtonText]}>Rasmni o'chirish</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity style={styles.cancelButton} onPress={() => setImageChangeModal(false)}>
+                        <Text style={styles.cancelButtonText}>Bekor qilish</Text>
+                    </TouchableOpacity>
+                </View>
+            </TouchableOpacity>
+        </Modal>
+
     );
 
 
@@ -162,7 +170,7 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     };
 
     const uploadImage = async (imageUri: string) => {
-        if (user_id && token) {
+        if (token && user_id) {
             const formData = new FormData();
 
             const fileName = imageUri.split('/').pop() || 'photo.jpg';
@@ -177,7 +185,7 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
 
             try {
                 const response = await axios.post<ImageResponse>(
-                    API_URL + `/api/auth//upload-profile-picture?user_id=${user_id}`,
+                    `${API_URL}/api/auth/upload-profile-picture?user_id=${user_id}`,
                     formData,
                     {
                         headers: {
@@ -192,13 +200,14 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
 
                 if (response.data) {
                     console.log('Rasm yuklandi:', response.data);
-                    setProfileImage(response.data.image_url);
+                    // setProfileImage(response.data.image_url);
                     Alert.alert('Muvaffaqiyatli', 'Profil rasmi yangilandi');
                 }
             } catch (error) {
                 console.error('Rasm yuklashda xatolik:', error);
 
                 if (axios.isAxiosError(error)) {
+                    console.log(error);
                     console.log('Response data:', error.response?.data);
                     console.log('Response status:', error.response?.status);
                     console.log('Response headers:', error.response?.headers);
@@ -209,8 +218,8 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                     "Rasmni yuklashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
                 );
             }
-        }
 
+        }
     };
 
 
@@ -245,8 +254,8 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     }, [user_id, token]);
 
     const handleChangePhoneNumber = () => {
-        // Telefon raqamni o'zgartirish logikasi
         setModalVisible(false);
+        navigation.navigate('main_phone_update')
     };
 
     const handleChangePersonalInfo = () => {
@@ -361,7 +370,7 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                 onChangePhoneNumber={handleChangePhoneNumber}
                 onChangePersonalInfo={handleChangePersonalInfo}
             />
-            {imageChangeModal && <ImagePickerModal />}
+            <ImagePickerModal />
 
         </View>
     );
@@ -396,6 +405,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'flex-end',
         height: '100%',
+        zIndex: 9999
     },
     modalContent: {
         backgroundColor: '#fff',

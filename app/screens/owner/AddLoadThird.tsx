@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     container: {
+        flex: 1,
         backgroundColor: '#ffffff',
         paddingVertical: 10,
         marginTop: 10,

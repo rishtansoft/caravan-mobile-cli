@@ -10,6 +10,8 @@ export type RootStackParamList = {
     add_load_second: undefined,
     add_load_third: undefined,
     history: undefined,
+    main_phone_update: undefined,
+    main_phone_update_sms_code: undefined,
     profile: undefined,
     profile_update: undefined,
     contact_admin: undefined,
@@ -17,6 +19,7 @@ export type RootStackParamList = {
     active_loads_detail: { itemId: string },
     active_loads_map: { itemId: string },
     history_detail: { itemId: string },
+    history_detail_map: { itemId: string },
 
 
 };
@@ -34,6 +37,9 @@ export type ActiveLoadsDetailMapScreenNavigationProp = StackNavigationProp<RootS
 export type AddLoadsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'add_loads'>;
 export type AddLoadSecondScreenNavigationProp = StackNavigationProp<RootStackParamList, 'add_load_second'>;
 export type AddLoadThirdScreenNavigationProp = StackNavigationProp<RootStackParamList, 'add_load_third'>;
+export type MainPhoneUpdateScreenNavigationProp = StackNavigationProp<RootStackParamList, 'main_phone_update'>;
+export type MainPhoneUpdateSmcCodeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'main_phone_update_sms_code'>;
+export type HistoryDetailMapCodeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'history_detail_map'>;
 
 export type HomeType = NativeStackScreenProps<RootStackParamList, 'home'>;
 export type ActiveLoadsType = NativeStackScreenProps<RootStackParamList, 'active_loads'>;
@@ -48,6 +54,9 @@ export type ActiveLoadsDetailMapType = NativeStackScreenProps<RootStackParamList
 export type AddLoadsType = NativeStackScreenProps<RootStackParamList, 'add_loads'>;
 export type AddLoadSecondType = NativeStackScreenProps<RootStackParamList, 'add_load_second'>;
 export type AddLoadThirdType = NativeStackScreenProps<RootStackParamList, 'add_load_third'>;
+export type MainPhoneUpdateType = NativeStackScreenProps<RootStackParamList, 'main_phone_update'>;
+export type MainPhoneUpdateSmcCodeType = NativeStackScreenProps<RootStackParamList, 'main_phone_update_sms_code'>;
+export type HistoryDetailMapCodeType = NativeStackScreenProps<RootStackParamList, 'history_detail_map'>;
 
 export type HomeRouteProp = RouteProp<RootStackParamList, 'home'>;
 export type ActiveLoadsRouteProp = RouteProp<RootStackParamList, 'active_loads'>;
@@ -62,12 +71,32 @@ export type ActiveLoadsDetailMapRouteProp = RouteProp<RootStackParamList, 'activ
 export type AddLoadsRouteProp = RouteProp<RootStackParamList, 'add_loads'>;
 export type AddLoadSecondRouteProp = RouteProp<RootStackParamList, 'add_load_second'>;
 export type AddLoadThirdRouteProp = RouteProp<RootStackParamList, 'add_load_third'>;
+export type MainPhoneUpdateRouteProp = RouteProp<RootStackParamList, 'main_phone_update'>;
+export type MainPhoneUpdateSmcCodeRouteProp = RouteProp<RootStackParamList, 'main_phone_update_sms_code'>;
+export type HistoryDetailMapCodeRouteProp = RouteProp<RootStackParamList, 'history_detail_map'>;
 
 
 export interface AddLoadsProps {
     navigation: AddLoadsScreenNavigationProp;
     route: AddLoadsRouteProp;
 }
+
+export interface HistoryDetailMapProps {
+    navigation: HistoryDetailMapCodeScreenNavigationProp;
+    route: HistoryDetailMapCodeRouteProp;
+}
+
+export interface MainPhoneUpdateProps {
+    navigation: MainPhoneUpdateScreenNavigationProp;
+    route: MainPhoneUpdateRouteProp;
+}
+
+export interface MainPhoneUpdateSmcCodeProps {
+    navigation: MainPhoneUpdateSmcCodeScreenNavigationProp;
+    route: MainPhoneUpdateSmcCodeRouteProp;
+}
+
+
 
 export interface AddLoadSecondProps {
     navigation: AddLoadSecondScreenNavigationProp;

@@ -30,7 +30,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 style={styles.navItem}
                 onPress={() => setActiveTab('active_loads')}
             >
-                <IconFont name="truck-fast" size={24} color={(activeTab === 'active_loads' || activeTab == 'active_loads_detail') ? '#5336E2' : '#898D8F'} />
+                <IconFont name="truck-fast" size={24} color={(activeTab === 'active_loads' || activeTab == 'active_loads_detail' || activeTab == 'active_loads_map') ? '#5336E2' : '#898D8F'} />
                 <Text style={[
                     styles.navText,
                     { color: (activeTab === 'active_loads' || activeTab == 'active_loads_detail') ? '#5336E2' : '#898D8F' }
