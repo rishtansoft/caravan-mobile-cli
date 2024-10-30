@@ -213,7 +213,7 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
                     width: '6%'
                 }}>
                     <Icon
-                        //  onPress={() => navigation.navigate('Home')}
+                        onPress={() => navigation.navigate('home')}
                         name="angle-left" size={30} color="#7257FF" />
                 </View>
                 <Text style={styles.text}>

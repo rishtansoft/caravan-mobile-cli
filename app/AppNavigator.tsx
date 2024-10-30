@@ -70,7 +70,8 @@ const RootNavigator: React.FC<RouterPage> = ({ name }) => {
 
 const AuthNavigator = () => {
     return (
-        <Stack.Navigator initialRouteName="login">
+        <Stack.Navigator initialRouteName="home">
+            <Stack.Screen options={{ headerShown: false }} name="home" component={HomeScreen} />
             <Stack.Screen options={{ headerShown: false }} name="login" component={LoginScreen} />
             <Stack.Screen options={{ headerShown: false }} name="forgot_sms_pagepassword" component={ForgotSmsPassword} />
             <Stack.Screen options={{ headerShown: false }} name="new_password" component={NewPassword} />
