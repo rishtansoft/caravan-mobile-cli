@@ -59,8 +59,6 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
     }, []);
 
     useEffect(() => {
-
-
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
             setKeyboardVisible(true); // Klaviatura ochilganda true ga o'zgartirish
         });

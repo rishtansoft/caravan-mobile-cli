@@ -1,18 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import moment from 'moment';
 
 interface CustomDatePickerProps {
-    onDateChange: (date: Date) => void;
+    onDateChange: (date: Date) => void | null;
+    value: string | null
 }
 
-const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ onDateChange }) => {
+const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ onDateChange, value }) => {
     const [date, setDate] = useState<Date | null>(null);
     const [showPicker, setShowPicker] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [dateIsFocused, setDateIsFocused] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (value) {
+            setInputValue(moment(value).format('DD/MM/YYYY'))
+        }
+    }, [value]);
 
     const showDatepicker = () => {
         setShowPicker(true);

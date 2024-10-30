@@ -6,15 +6,17 @@ import { GetData } from './screens/AsyncStorage/AsyncStorage';
 import GeneralNavigation from './navigations/general/GeneralNavigator';
 
 interface componentNameProps {
-    roles: string | null | undefined
+    roles: string | null | undefined,
+    name: string | undefined,
+
 }
 
-const UserRole: React.FC<componentNameProps> = ({ roles }) => {
+const UserRole: React.FC<componentNameProps> = ({ roles, name }) => {
 
     if (roles === 'driver') {
         return <DriverNavigation />;
     } else if (roles === 'cargo_owner') {
-        return <OwnerNavigation />;
+        return <OwnerNavigation page={name} />;
     }
     return <GeneralNavigation />;
 };

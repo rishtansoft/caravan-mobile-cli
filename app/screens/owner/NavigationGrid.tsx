@@ -12,7 +12,7 @@ const NavigationGrid: React.FC<NavigationGridProps> = ({ setActiveTab }) => {
     return (
         <View style={styles.container}>
             <View style={styles.grid}>
-                <TouchableOpacity style={styles.gridItem}>
+                <TouchableOpacity onPress={() => setActiveTab('add_loads')} style={styles.gridItem}>
                     <Image source={require('../../assets/img/owner/Yuk.png')} style={styles.image} />
                     <Text style={styles.gridText}>Yuk qo'shish</Text>
                 </TouchableOpacity>

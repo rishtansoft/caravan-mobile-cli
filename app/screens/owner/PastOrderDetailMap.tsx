@@ -5,7 +5,7 @@ import Geolocation from 'react-native-geolocation-service';
 import { Position, Feature, Geometry } from 'geojson';
 import { MAPBOX_ACCESS_TOKEN } from '@env';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { ActiveLoadsDetailMapProps } from './RouterType';
+import { HistoryDetailMapProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
 
@@ -61,7 +61,7 @@ const getTextColorKey = (key: string): string => {
 
 
 
-const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation }) => {
+const PastOrderDetailMap: React.FC<HistoryDetailMapProps> = ({ route, navigation }) => {
     const { itemId } = route.params;
 
     const [currentLocation, setCurrentLocation] = useState<Position | null>(null);
@@ -237,7 +237,7 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
                     width: '6%'
                 }}>
                     <Icon
-                        onPress={() => navigation.navigate('active_loads_detail', { itemId: itemId })}
+                        onPress={() => navigation.navigate('history_detail', { itemId: itemId })}
                         name="angle-left" size={30} color="#7257FF" />
                 </View>
                 <Text style={styles.title}>
@@ -305,7 +305,7 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
                         <Text style={styles.link_location_text}>Toshkent</Text>
                     </View>
                     <View style={styles.link_bottom}>
-                        <Text style={[styles.link_bottom_text, { backgroundColor: getBgColorKey("Yo'lda"), color: getTextColorKey("Yo'lda") }]}>Yo'lda</Text>
+                        <Text style={[styles.link_bottom_text, { backgroundColor: getBgColorKey("Yakunlangan"), color: getTextColorKey("Yakunlangan") }]}>Yakunlangan</Text>
                         <Text style={{ color: '#6E7375', fontSize: 14 }}>
                             10 daqiqada yetib boradi</Text>
                     </View>
@@ -448,4 +448,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default ActiveOrderMap;
+export default PastOrderDetailMap;
