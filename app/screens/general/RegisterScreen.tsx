@@ -42,6 +42,7 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
     const [passwordReq, setPasswordReq] = useState<string>('');
     const [passwordReqError, setPasswordReqError] = useState<string>('');
     const [passwordReqIsFocused, setPasswordReqIsFocused] = useState<boolean>(false);
+
     const animatedValue = useRef(new Animated.Value(0)).current;
 
     const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -328,7 +329,7 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
             </KeyboardAvoidingView>
 
             {!keyboardVisible && <View style={{
-                position: 'static',
+                position: 'absolute',
                 bottom: 0,
                 left: 0,
                 right: 0
