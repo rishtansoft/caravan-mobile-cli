@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { ProfileProps } from "./RouterType";
+// import { ProfileProps } from "./RouterType";
 import Icon from "react-native-vector-icons/FontAwesome";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { handleLogout } from "../../store/Logout";
 import CustomSwitch from "../ui/switch/Switch";
 import LanguageSelector from "../ui/Languch/LanguageSelector";
-const DriverProfile: React.FC<ProfileProps> = ({ navigation }) => {
+const DriverProfile: React.FC = (
+  // { navigation }
+) => {
   const [nightMode, setNightMode] = useState<boolean>(false);
   const [bacFonFun, setBacFonFun] = useState<boolean>(true);
 
@@ -21,10 +23,10 @@ const DriverProfile: React.FC<ProfileProps> = ({ navigation }) => {
     await handleLogout();
   };
   const NavigateTermsAndCondition = () => {
-    navigation.navigate("TermsAndCondition");
+    // navigation.navigate("TermsAndCondition");
   };
-  const ProfileEdit = () =>{
-    navigation.navigate("DriverProfileEdit")
+  const ProfileEdit = () => {
+    // navigation.navigate("DriverProfileEdit")
   }
 
   return (
@@ -36,7 +38,7 @@ const DriverProfile: React.FC<ProfileProps> = ({ navigation }) => {
           }}
         >
           <Icon
-            onPress={() => navigation.navigate("home")}
+            // onPress={() => navigation.navigate("home")}
             name="angle-left"
             size={30}
             color="#7257FF"
@@ -105,7 +107,7 @@ const DriverProfile: React.FC<ProfileProps> = ({ navigation }) => {
           </View>
 
           <Icon
-            onPress={() => navigation.navigate("home")}
+            // onPress={() => navigation.navigate("home")}
             name="angle-right"
             size={24}
             color="#DB340B"
