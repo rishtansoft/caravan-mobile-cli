@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Linking, Alert, Platform, Modal } from 'react-native';
 import { ProfileProps } from './RouterType';
@@ -373,7 +374,42 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
             <ImagePickerModal />
 
         </View>
-    );
+      </View>
+      <View style={[styles.container, { marginTop: 10 }]}>
+        <TouchableOpacity onPress={logoutFun} style={styles.exit_btn}>
+          <View style={styles.exit_btn_left}>
+            <Ionicons
+              // onPress={() => navigation.navigate('home')}
+              name="exit-outline"
+              size={24}
+              color="#DB340B"
+            />
+            <Text style={styles.exit_btn_text}>Chiqish</Text>
+          </View>
+
+          <Icon
+            onPress={() => navigation.navigate("home")}
+            name="angle-right"
+            size={24}
+            color="#DB340B"
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={logoutFun} style={styles.exit_btn}>
+          <View style={styles.exit_btn_left}>
+            <Ionicons name="exit-outline" size={24} color="#DB340B" />
+            <Text style={styles.exit_btn_text}>Akkountni o'chirish</Text>
+          </View>
+          <Icon
+            // onPress={() => navigation.navigate('home')}
+            name="angle-right"
+            size={24}
+            color="#DB340B"
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
