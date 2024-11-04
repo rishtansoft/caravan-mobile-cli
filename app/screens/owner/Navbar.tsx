@@ -17,10 +17,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 style={styles.navItem}
                 onPress={() => setActiveTab('home')}
             >
-                <Icon name="home" size={24} color={activeTab === 'home' ? '#5336E2' : '#898D8F'} />
+                <Icon name="home" size={24} color={(activeTab === 'home' || activeTab == 'terms_condition' || activeTab == 'contact_admin') ? '#5336E2' : '#898D8F'} />
                 <Text style={[
                     styles.navText,
-                    { color: activeTab === 'home' ? '#5336E2' : '#898D8F' }
+                    { color: (activeTab === 'home' || activeTab == 'terms_condition' || activeTab == 'contact_admin') ? '#5336E2' : '#898D8F' }
                 ]}>
                     Asosiy
                 </Text>
@@ -30,10 +30,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 style={styles.navItem}
                 onPress={() => setActiveTab('active_loads')}
             >
-                <IconFont name="truck-fast" size={24} color={activeTab === 'active_loads' ? '#5336E2' : '#898D8F'} />
+                <IconFont name="truck-fast" size={24} color={(activeTab === 'active_loads' || activeTab == 'active_loads_detail' || activeTab == 'active_loads_map') ? '#5336E2' : '#898D8F'} />
                 <Text style={[
                     styles.navText,
-                    { color: activeTab === 'active_loads' ? '#5336E2' : '#898D8F' }
+                    { color: (activeTab === 'active_loads' || activeTab == 'active_loads_detail') ? '#5336E2' : '#898D8F' }
                 ]}>
                     Aktiv yuklar
                 </Text>
@@ -43,10 +43,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 style={styles.navItem}
                 onPress={() => setActiveTab('history')}
             >
-                <Icon name="cube-sharp" size={24} color={activeTab === 'history' ? '#5336E2' : '#898D8F'} />
+                <Icon name="cube-sharp" size={24} color={(activeTab === 'history' || activeTab == 'history_detail') ? '#5336E2' : '#898D8F'} />
                 <Text style={[
                     styles.navText,
-                    { color: activeTab === 'history' ? '#5336E2' : '#898D8F' }
+                    { color: (activeTab === 'history' || activeTab == 'history_detail') ? '#5336E2' : '#898D8F' }
                 ]}>
                     Tarix
                 </Text>
@@ -56,10 +56,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 style={styles.navItem}
                 onPress={() => setActiveTab('profile')}
             >
-                <IconFontAwesome name="user-circle-o" size={24} color={activeTab === 'profile' ? '#5336E2' : '#898D8F'} />
+                <IconFontAwesome name="user-circle-o" size={24} color={(activeTab === 'profile' || activeTab == 'profile_update') ? '#5336E2' : '#898D8F'} />
                 <Text style={[
                     styles.navText,
-                    { color: activeTab === 'profile' ? '#5336E2' : '#898D8F' }
+                    { color: (activeTab === 'profile' || activeTab == 'profile_update') ? '#5336E2' : '#898D8F' }
                 ]}>
                     Profil
                 </Text>
