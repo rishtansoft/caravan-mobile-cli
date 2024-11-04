@@ -378,8 +378,7 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
 
         </View>
         <Text style={styles.title}>Shaxsiy ma'lumotlar</Text>
-      </View>
-
+      
       <View style={styles.container}>
         <View style={styles.profileContainer}>
           <Image
@@ -452,7 +451,7 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
           />
         </TouchableOpacity>
       </View>
-    </View>
+        
   );
 };
 
