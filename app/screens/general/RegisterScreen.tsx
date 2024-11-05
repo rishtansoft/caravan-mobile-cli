@@ -156,6 +156,8 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
     };
 
     const saveDataFun = async () => {
+        console.log(159, API_URL);
+
         if (
             phone && phoneValidateFun(phone)
             && name && !/^\s*$/.test(name) &&
