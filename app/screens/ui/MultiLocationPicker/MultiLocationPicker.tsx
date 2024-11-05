@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text, ScrollView, StyleSheet } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -33,15 +33,53 @@ const MultiLocationPicker: React.FC<MultiLocationPickerProps> = ({
         }
     };
 
+    // const handleRemoveLocation = (id: string) => {
+    //     const newItems = locationItems.filter(item => item.id !== id);
+    //     setLocationItems(newItems);
+
+    //     // Update parent component with new locations
+    //     const validLocations = newItems
+    //         .map(item => item.location)
+    //         .filter((location): location is Location => location !== null);
+    //     onLocationsChange(validLocations);
+    // };
+
+    // const handleLocationSelect = (id: string, location: Location) => {
+    //     const newItems = locationItems.map(item =>
+    //         item.id === id ? { ...item, location } : item
+    //     );
+    //     setLocationItems(newItems);
+
+    //     // Update parent component with new locations
+    //     const validLocations = newItems
+    //         .map(item => item.location)
+    //         .filter((location): location is Location => location !== null);
+    //     onLocationsChange(validLocations);
+    // };
+
+
+    // const handleAddLocation = () => {
+    //     if (locationItems.length < maxLocations) {
+    //         const newId = (locationItems.length + 1).toString();
+    //         setLocationItems([...locationItems, { id: newId, location: null }]);
+
+    //         // Yangi location qo'shilganda ham onLocationsChange ni chaqiramiz
+    //         const allLocations = [...locationItems, { id: newId, location: null }]
+    //             .map(item => item.location)
+    //             .filter((location): location is Location => location !== null);
+    //         onLocationsChange(allLocations);
+    //     }
+    // };
+
     const handleRemoveLocation = (id: string) => {
         const newItems = locationItems.filter(item => item.id !== id);
         setLocationItems(newItems);
 
-        // Update parent component with new locations
-        const validLocations = newItems
+        // Remove qilinganda ham onLocationsChange ni chaqiramiz
+        const allLocations = newItems
             .map(item => item.location)
             .filter((location): location is Location => location !== null);
-        onLocationsChange(validLocations);
+        onLocationsChange(allLocations);
     };
 
     const handleLocationSelect = (id: string, location: Location) => {
@@ -50,12 +88,21 @@ const MultiLocationPicker: React.FC<MultiLocationPickerProps> = ({
         );
         setLocationItems(newItems);
 
-        // Update parent component with new locations
-        const validLocations = newItems
+        // Location tanlaganda barcha locationlarni yuboramiz
+        const allLocations = newItems
             .map(item => item.location)
             .filter((location): location is Location => location !== null);
-        onLocationsChange(validLocations);
+        onLocationsChange(allLocations);
     };
+
+    // Har safar locationItems o'zgarganda onLocationsChange ni chaqiramiz
+    useEffect(() => {
+        const allLocations = locationItems
+            .map(item => item.location)
+            .filter((location): location is Location => location !== null);
+        onLocationsChange(allLocations);
+    }, [locationItems]);
+
 
     return (
         <View style={styles.container}>

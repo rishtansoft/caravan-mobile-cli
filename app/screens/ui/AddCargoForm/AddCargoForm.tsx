@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -12,15 +12,28 @@ import {
     Pressable,
     SafeAreaView,
 } from 'react-native';
+import { API_URL } from '@env';
+import axios from 'axios';
 
 interface CargoFormProps {
-    onSubmit: (data: {
-        cargoType: string;
+    values: {
+        cargoType: { value: number; label: string } | null;
         weight: string;
         loadingTime: string;
-        vehicleType: string;
-    }) => void;
+        vehicleType: { value: string; label: string } | null;
+    };
+    errors: {
+        cargoTypeError: boolean;
+        weightError: boolean;
+        loadingTimeError: boolean;
+        vehicleTypeError: boolean;
+    };
+    onCargoTypeChange: (value: { value: number; label: string } | null) => void;
+    onWeightChange: (value: string) => void;
+    onLoadingTimeChange: (value: string) => void;
+    onVehicleTypeChange: (value: { value: string; label: string } | null) => void;
 }
+
 
 interface SelectModalProps {
     visible: boolean;
@@ -72,40 +85,69 @@ const SelectModal: React.FC<SelectModalProps> = ({
     );
 };
 
-const CargoForm: React.FC<CargoFormProps> = ({ onSubmit }) => {
+interface carTypes {
+    id: string,
+    name: string
+}
+
+const CargoForm: React.FC<CargoFormProps> = (
+    { values,
+        errors,
+        onCargoTypeChange,
+        onWeightChange,
+        onLoadingTimeChange,
+        onVehicleTypeChange
+    }
+) => {
     // Input states
-    const [weight, setWeight] = useState('');
-    const [loadingTime, setLoadingTime] = useState('');
     const [weightIsFocused, setWeightIsFocused] = useState(false);
     const [loadingTimeIsFocused, setLoadingTimeIsFocused] = useState(false);
-
-    // Selected values
-    const [selectedCargoType, setSelectedCargoType] = useState<{ label: string, value: any } | null>(null);
-    const [selectedVehicleType, setSelectedVehicleType] = useState<{ label: string, value: any } | null>(null);
 
     // Modal visibility states
     const [cargoTypeModalVisible, setCargoTypeModalVisible] = useState(false);
     const [vehicleTypeModalVisible, setVehicleTypeModalVisible] = useState(false);
+    const [vehicleTypes, setVehicleTypes] = useState([]);
 
     // Dropdown items
     const cargoTypes = [
-        { value: 1, label: "Boshqa materiallar" },
-        { value: 2, label: "Oziq ovqat" },
-        { value: 3, label: "Kiyimlar" },
-        { value: 4, label: "Uskunalar va ehtiyot qismlar" },
-        { value: 5, label: "Dori vositalari" },
-        { value: 6, label: "Xo'jalik mahsulotlari" },
-        { value: 7, label: "Temir konstrukcia" },
-        { value: 8, label: "Yog'och" },
-        { value: 9, label: "Mebel" },
-        { value: 10, label: "Qurilish mollari" }
+        { value: 'Boshqa materiallar', label: "Boshqa materiallar" },
+        { value: 'Oziq ovqat', label: "Oziq ovqat" },
+        { value: 'Kiyimlar', label: "Kiyimlar" },
+        { value: 'Uskunalar va ehtiyot qismlar', label: "Uskunalar va ehtiyot qismlar" },
+        { value: 'Dori vositalari', label: "Dori vositalari" },
+        { value: "Xo'jalik mahsulotlari", label: "Xo'jalik mahsulotlari" },
+        { value: "Temir konstrukcia", label: "Temir konstrukcia" },
+        { value: "Yog'och", label: "Yog'och" },
+        { value: "Mebel", label: "Mebel" },
+        { value: "Qurilish mollari", label: "Qurilish mollari" }
     ];
 
-    const vehicleTypes = [
-        { label: 'Yuk mashina', value: 'truck' },
-        { label: 'Pikap', value: 'pickup' },
-        { label: 'Fura', value: 'semi' },
-    ];
+    // const vehicleTypes = [
+    //     { label: 'Yuk mashina', value: 'truck' },
+    //     { label: 'Pikap', value: 'pickup' },
+    //     { label: 'Fura', value: 'semi' },
+    // ];
+
+    useEffect(() => {
+        axios.get(API_URL + '/api/admin/car-type/get-all')
+            .then((res) => {
+                console.log(115, res.data.carTypes);
+                if (res.data?.carTypes && res.data.carTypes.length > 0) {
+                    const newArr = res.data.carTypes.map((el: carTypes) => {
+                        return {
+                            value: el.id,
+                            label: el.name
+                        }
+                    })
+                    setVehicleTypes(newArr)
+                }
+
+            }).catch((error) => {
+                console.log(error);
+
+            })
+    }, []);
+
 
     return (
         <KeyboardAvoidingView
@@ -123,68 +165,94 @@ const CargoForm: React.FC<CargoFormProps> = ({ onSubmit }) => {
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>Yuk turi</Text>
                         <TouchableOpacity
-                            style={styles.selectButton}
+                            style={[
+                                styles.selectButton,
+                                errors.cargoTypeError && styles.errorInput
+                            ]}
                             onPress={() => setCargoTypeModalVisible(true)}
-                        >{
-                                selectedCargoType ? (<Text style={styles.selectButtonText}>
-                                    {selectedCargoType.label}
-                                </Text>) : (
-                                    <Text style={styles.selectButtonText_plech}>
-                                        Yuk turini tanlang
-                                    </Text>
-                                )
-                            }
-
-
+                        >
+                            <Text style={[
+                                styles.selectButtonText,
+                                values.cargoType && styles.selectedText
+                            ]}>
+                                {values.cargoType ? values.cargoType.label : "Yuk turini tanlang"}
+                            </Text>
                         </TouchableOpacity>
+                        {errors.cargoTypeError && (
+                            <Text style={styles.errorText}>Yuk turini tanlang</Text>
+                        )}
                     </View>
 
                     {/* Yuk og'irligi Input */}
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Yuk o'g'irligi</Text>
+                        <Text style={styles.label}>Yuk o'g'irligi (kg)</Text>
                         <TextInput
-                            value={weight}
-                            onChangeText={setWeight}
+                            value={values.weight}
+                            onChangeText={onWeightChange}
+
                             placeholder="Yuk o'g'irligini kiriting"
                             placeholderTextColor="#898D8F"
-                            style={weightIsFocused ? styles.inputFocus : styles.input}
+                            style={[
+                                weightIsFocused ? styles.inputFocus : styles.input,
+                                errors.weightError && styles.errorInput
+                            ]}
                             onFocus={() => setWeightIsFocused(true)}
                             onBlur={() => setWeightIsFocused(false)}
+                            keyboardType="numeric"
                         />
+                        {errors.weightError && (
+                            <Text style={styles.errorText}>To'g'ri og'irlik kiriting</Text>
+                        )}
                     </View>
 
                     {/* Yuklash vaqti Input */}
                     <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Yuklash vaqti</Text>
+                        <Text style={styles.label}>Yuklash vaqti (soat)</Text>
                         <TextInput
-                            value={loadingTime}
-                            onChangeText={setLoadingTime}
+                            value={values.loadingTime}
+                            onChangeText={onLoadingTimeChange}
                             placeholder="Yuklash vaqtini tanlang"
                             placeholderTextColor="#898D8F"
-                            style={loadingTimeIsFocused ? styles.inputFocus : styles.input}
+                            style={[
+                                loadingTimeIsFocused ? styles.inputFocus : styles.input,
+                                errors.loadingTimeError && styles.errorInput
+                            ]}
                             onFocus={() => setLoadingTimeIsFocused(true)}
                             onBlur={() => setLoadingTimeIsFocused(false)}
+                            keyboardType={'numeric'}
                         />
+                        {errors.loadingTimeError && (
+                            <Text style={styles.errorText}>Yuklash vaqtini kiriting</Text>
+                        )}
                     </View>
 
                     {/* Mashina turi Select */}
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>Mashina turi</Text>
                         <TouchableOpacity
-                            style={styles.selectButton}
+                            style={[
+                                styles.selectButton,
+                                errors.vehicleTypeError && styles.errorInput
+                            ]}
                             onPress={() => setVehicleTypeModalVisible(true)}
                         >
-                            <Text style={styles.selectButtonText}>
-                                {selectedVehicleType ? selectedVehicleType.label : "Mashina turini tanlang"}
+                            <Text style={[
+                                styles.selectButtonText,
+                                values.vehicleType && styles.selectedText
+                            ]}>
+                                {values.vehicleType ? values.vehicleType.label : "Mashina turini tanlang"}
                             </Text>
                         </TouchableOpacity>
+                        {errors.vehicleTypeError && (
+                            <Text style={styles.errorText}>Mashina turini tanlang</Text>
+                        )}
                     </View>
 
                     {/* Modals */}
                     <SelectModal
                         visible={cargoTypeModalVisible}
                         onClose={() => setCargoTypeModalVisible(false)}
-                        onSelect={setSelectedCargoType}
+                        onSelect={onCargoTypeChange}
                         items={cargoTypes}
                         title="Yuk turini tanlang"
                     />
@@ -192,7 +260,7 @@ const CargoForm: React.FC<CargoFormProps> = ({ onSubmit }) => {
                     <SelectModal
                         visible={vehicleTypeModalVisible}
                         onClose={() => setVehicleTypeModalVisible(false)}
-                        onSelect={setSelectedVehicleType}
+                        onSelect={onVehicleTypeChange}
                         items={vehicleTypes}
                         title="Mashina turini tanlang"
                     />
@@ -202,6 +270,18 @@ const CargoForm: React.FC<CargoFormProps> = ({ onSubmit }) => {
     );
 };
 const styles = StyleSheet.create({
+
+    errorInput: {
+        borderColor: '#FF3B30',
+    },
+    errorText: {
+        color: '#FF3B30',
+        fontSize: 12,
+        marginTop: 4,
+    },
+    selectedText: {
+        color: '#000000',
+    },
 
     keyboardAvoidingView: {
         flex: 1,

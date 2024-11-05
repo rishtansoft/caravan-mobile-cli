@@ -67,6 +67,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, sub_t
                         );
                         const data = await response.json();
 
+
                         if (data.features && data.features.length > 0) {
                             const locationData = {
                                 name: data.features[0].place_name,

@@ -14,19 +14,38 @@ import CustomSwitch from '../switch/Switch';
 import Fontisto from 'react-native-vector-icons/Octicons';
 
 interface ReceiverFormProps {
-    onSubmit: (data: {
-        phone: string;
-        payer: 'sender' | 'receiver';
-        roundTrip: boolean;
-        comment: string;
-    }) => void;
+    phone: string;
+    payer: 'sender' | 'receiver';
+    roundTrip: boolean;
+    comment: string;
+    phoneError: boolean;
+    payerError: boolean;
+    roundTripError: boolean;
+    commentError: boolean;
+    onPhoneChange: (value: string) => void;
+    onPayerChange: (value: 'sender' | 'receiver') => void;
+    onRoundTripChange: (value: boolean) => void;
+    onCommentChange: (value: string) => void;
 }
 
-const AddReceiverForm: React.FC<ReceiverFormProps> = ({ onSubmit }) => {
-    const [phone, setPhone] = useState('');
-    const [comment, setComment] = useState('');
-    const [payer, setPayer] = useState<'sender' | 'receiver'>('sender');
-    const [roundTrip, setRoundTrip] = useState(false);
+const AddReceiverForm: React.FC<ReceiverFormProps> = ({
+    phone,
+    payer,
+    roundTrip,
+    comment,
+    phoneError,
+    payerError,
+    roundTripError,
+    commentError,
+    onPhoneChange,
+    onPayerChange,
+    onRoundTripChange,
+    onCommentChange,
+}) => {
+    // const [phone, setPhone] = useState('');
+    // const [comment, setComment] = useState('');
+    // const [payer, setPayer] = useState<'sender' | 'receiver'>('sender');
+    // const [roundTrip, setRoundTrip] = useState(false);
     const [phoneIsFocused, setPhoneIsFocused] = useState(false);
     const [commentIsFocused, setCommentIsFocused] = useState(false);
 
@@ -62,14 +81,20 @@ const AddReceiverForm: React.FC<ReceiverFormProps> = ({ onSubmit }) => {
                         <Text style={styles.label}>Qabul qiluvchining telefon raqami</Text>
                         <TextInput
                             value={phone}
-                            onChangeText={setPhone}
+                            onChangeText={onPhoneChange}
                             placeholder="+998 __  ___  __  __"
                             placeholderTextColor="#898D8F"
-                            style={phoneIsFocused ? styles.inputFocus : styles.input}
+                            style={[
+                                phoneIsFocused ? styles.inputFocus : styles.input,
+                                phoneError && styles.errorInput
+                            ]}
                             onFocus={() => setPhoneIsFocused(true)}
                             onBlur={() => setPhoneIsFocused(false)}
                             keyboardType="phone-pad"
                         />
+                        {phoneError && (
+                            <Text style={styles.errorText}>To'g'ri telefon raqami kiriting</Text>
+                        )}
                     </View>
 
                     {/* Kim to'laydi Radio */}
@@ -78,19 +103,22 @@ const AddReceiverForm: React.FC<ReceiverFormProps> = ({ onSubmit }) => {
                         <View style={styles.radioGroup}>
                             <Pressable
                                 style={styles.radioButton}
-                                onPress={() => setPayer('sender')}
+                                onPress={() => onPayerChange('sender')}
                             >
                                 <RadioButton selected={payer === 'sender'} />
                                 <Text style={styles.activeText}>Yuk beruvchi</Text>
                             </Pressable>
                             <Pressable
                                 style={styles.radioButton}
-                                onPress={() => setPayer('receiver')}
+                                onPress={() => onPayerChange('receiver')}
                             >
                                 <RadioButton selected={payer === 'receiver'} />
                                 <Text style={styles.activeText}>Yuk oluvchi</Text>
                             </Pressable>
                         </View>
+                        {payerError && (
+                            <Text style={styles.errorText}>Kim to'lashini tanlang</Text>
+                        )}
                     </View>
 
                     {/* Borib qaytish */}
@@ -101,8 +129,9 @@ const AddReceiverForm: React.FC<ReceiverFormProps> = ({ onSubmit }) => {
                         </View>
                         <CustomSwitch
                             value={roundTrip}
-                            onValueChange={setRoundTrip}
+                            onValueChange={onRoundTripChange}
                         />
+
                     </View>
 
                     {/* Izoh TextArea */}
@@ -110,12 +139,13 @@ const AddReceiverForm: React.FC<ReceiverFormProps> = ({ onSubmit }) => {
                         <Text style={styles.label}>Buyurtma uchun sharh</Text>
                         <TextInput
                             value={comment}
-                            onChangeText={setComment}
+                            onChangeText={onCommentChange}
                             placeholder="Buyurtma uchun sharh"
                             placeholderTextColor="#898D8F"
                             style={[
                                 commentIsFocused ? styles.inputFocus : styles.input,
-                                styles.textArea
+                                styles.textArea,
+                                commentError && styles.errorInput
                             ]}
                             onFocus={() => setCommentIsFocused(true)}
                             onBlur={() => setCommentIsFocused(false)}
@@ -123,6 +153,9 @@ const AddReceiverForm: React.FC<ReceiverFormProps> = ({ onSubmit }) => {
                             numberOfLines={4}
                             textAlignVertical="top"
                         />
+                        {commentError && (
+                            <Text style={styles.errorText}>Buyurtma uchun sharh yozing</Text>
+                        )}
                     </View>
                 </View>
             </ScrollView>
@@ -131,6 +164,18 @@ const AddReceiverForm: React.FC<ReceiverFormProps> = ({ onSubmit }) => {
 };
 
 const styles = StyleSheet.create({
+    errorInput: {
+        borderColor: '#FF3B30',
+    },
+    errorText: {
+        color: '#FF3B30',
+        fontSize: 12,
+        marginTop: 4,
+    },
+    selectedText: {
+        color: '#000000',
+    },
+
     keyboardAvoidingView: {
         flex: 1,
     },

@@ -1,30 +1,82 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView, Alert } from 'react-native';
 import LocationPicker from '../ui/LocationPicker/LocationPicker';
 import { AddLoadsProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MultiLocationPicker from '../ui/MultiLocationPicker/MultiLocationPicker';
+import { StoreData, GetData, RemoveData } from '../AsyncStorage/AsyncStorage';
 
 interface Location {
     name: string;
     latitude: number;
     longitude: number;
 }
+const showErrorAlert = (message: string) => {
+    Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
+};
 
 const AddLoad: React.FC<AddLoadsProps> = ({ navigation }) => {
+    const [startLocation, setStartLocation] = useState<Location | null>(null);
+    const [endLocation, setEndLocation] = useState<Location | null>(null);
+    const [stopLocation, setStopLocation] = useState<Location[] | null>(null);
     const handleLocationSelectSart = (location: Location) => {
         console.log('Tanlangan manzil:', location);
+        setStartLocation(location)
     };
+
+    const removeNewLoad = async () => {
+        await RemoveData('new_load_1')
+        await RemoveData('new_load_2')
+        await RemoveData('new_load_3')
+        navigation.navigate("home")
+    }
 
     const handleLocationSelectEnd = (location: Location) => {
         console.log('Tanlangan manzil:', location);
+        setEndLocation(location)
     };
 
     const handleLocationsChange = (locations: Location[]) => {
         console.log('Barcha manzillar:', locations);
+        setStopLocation(locations)
     };
+
+
+    const saveDataFun = async () => {
+        if (
+            // Start location validatsiyasi
+            (!startLocation || !startLocation.name || !startLocation.latitude || !startLocation.longitude) ||
+            // End location validatsiyasi  
+            (!endLocation || !endLocation.name || !endLocation.latitude || !endLocation.longitude) ||
+            // Stop locations validatsiyasi (agar mavjud bo'lsa)
+            (stopLocation && stopLocation.length > 0 &&
+                stopLocation.some(stop => !stop.name || !stop.latitude || !stop.longitude))
+        ) {
+            // Qaysi state xato ekanligini aniqlash
+            if (!startLocation || !startLocation.name || !startLocation.latitude || !startLocation.longitude) {
+                showErrorAlert('Boshlang\'ich manzil to\'liq tanlanmagan! Iltimos boshlang\'ich manzilni tanlang');
+                return;
+            }
+            if (!endLocation || !endLocation.name || !endLocation.latitude || !endLocation.longitude) {
+                showErrorAlert('Yakuniy manzil to\'liq tanlanmagan! Iltimos yakuniy manzilni tanlang');
+                return;
+            }
+            if (stopLocation && stopLocation.length > 0 &&
+                stopLocation.some(stop => !stop.name || !stop.latitude || !stop.longitude)) {
+                showErrorAlert('To\'xtash manzillaridan biri to\'liq tanlanmagan! Iltimos to\'xtash manzillarini tekshiring');
+                return;
+            }
+        } else {
+            await StoreData('new_load_1', JSON.stringify({
+                start_location: startLocation,
+                end_location: endLocation,
+                stop_location: stopLocation && stopLocation.length > 0 ? stopLocation : []
+            }))
+            navigation.navigate('add_load_second')
+        }
+    }
 
     return (
         <SafeAreaView style={styles.container_all}>
@@ -32,14 +84,14 @@ const AddLoad: React.FC<AddLoadsProps> = ({ navigation }) => {
             <View style={styles.header_con}>
                 <View style={{ width: '6%' }}>
                     <Icon
-                        onPress={() => navigation.navigate("home")}
+                        onPress={removeNewLoad}
                         name="angle-left"
                         size={30}
                         color="#7257FF"
                     />
                 </View>
                 <Icon
-                    onPress={() => navigation.navigate('add_load_second')}
+                    onPress={saveDataFun}
                     name="angle-right"
                     size={30}
                     color="#7257FF"
@@ -85,7 +137,7 @@ const AddLoad: React.FC<AddLoadsProps> = ({ navigation }) => {
                 <View style={styles.bottom_btns}>
                     <TouchableOpacity
                         style={[styles.button, styles.cancelButton]}
-                        onPress={() => navigation.navigate("home")}
+                        onPress={removeNewLoad}
                     >
                         <Feather name="x" size={24} color="#131214" />
                         <Text style={styles.cancelButtonText}>Bekor qilish</Text>
@@ -93,7 +145,7 @@ const AddLoad: React.FC<AddLoadsProps> = ({ navigation }) => {
 
                     <TouchableOpacity
                         style={[styles.button, styles.continueButton]}
-                        onPress={() => navigation.navigate('add_load_second')}
+                        onPress={saveDataFun}
                     >
                         <Text style={styles.continueButtonText}>Davom etish</Text>
                         <AntDesign name="arrowright" size={24} color="#FFFFFF" />
