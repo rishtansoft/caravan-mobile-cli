@@ -210,6 +210,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, sub_t
                         <TextInput
                             style={styles.searchInput}
                             placeholder="Manzilni qidiring"
+                            placeholderTextColor="#898D8F"
                             value={searchQuery}
                             onChangeText={(text) => {
                                 setSearchQuery(text);
