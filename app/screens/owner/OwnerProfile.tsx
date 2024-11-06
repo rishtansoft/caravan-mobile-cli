@@ -62,6 +62,28 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     }, []);
 
 
+    useEffect(() => {
+        if (user_id && token) {
+            axios.get(API_URL + `/api/auth/get-profile?user_id=${user_id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }).then((res) => {
+                console.log(73, res.data);
+                setName(res.data.firstname)
+                setNameLastname(res.data.lastname)
+                setPhone(res.data.phone)
+
+            }).catch((error) => {
+                console.log(76, error);
+
+                showErrorAlert(error?.response?.data?.message)
+            })
+        }
+
+    }, [user_id, token]);
+
+
     const ImagePickerModal = () => (
         <Modal
             visible={imageChangeModal}
@@ -231,27 +253,7 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     }
 
 
-    useEffect(() => {
 
-        if (user_id && token) {
-            axios.get(API_URL + `/api/auth/get-profile?user_id=${user_id}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }).then((res) => {
-                console.log(73, res.data);
-                setName(res.data.firstname)
-                setNameLastname(res.data.lastname)
-                setPhone(res.data.phone)
-
-            }).catch((error) => {
-                console.log(76, error);
-
-                showErrorAlert(error?.response?.data?.message)
-            })
-        }
-
-    }, [user_id, token]);
 
     const handleChangePhoneNumber = () => {
         setModalVisible(false);

@@ -17,9 +17,11 @@ import VerifySmsScreen from './screens/general/VerifySmsScreen';
 import { GetData, RemoveData } from './screens/AsyncStorage/AsyncStorage';
 import UserRole from './UserRole';
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
 import { useNavigationContainerRef } from '@react-navigation/native';
 
 const AppNavigator = () => {
+
     const navigationRef = useNavigationContainerRef();
     const [routerPage, setRouterPage] = useState<string | undefined>('');
 
@@ -46,9 +48,30 @@ interface RouterPage {
     params?: object;
 }
 const RootNavigator: React.FC<RouterPage> = ({ name }) => {
+    const [token, setToken] = useState<string>('');
+    const [rolesData, setRolesData] = useState<string>('');
     const auth = useSelector((state: RootState) => state.auth);
     const isLoggedIn = auth.isLoggedIn;
     const role = auth.role;
+
+    useEffect(() => {
+        GetData('token').then((res) => {
+            if (res) {
+                setToken(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+        GetData('role').then((res) => {
+            if (res) {
+                setRolesData(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+    }, []);
+
+
 
     // if (isLoggedIn) {
 

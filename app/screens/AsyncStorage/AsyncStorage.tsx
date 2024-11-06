@@ -14,8 +14,6 @@ export const GetData = async (key: string): Promise<string | null> => {
     try {
         const value = await AsyncStorage.getItem(key);
         if (value !== null) {
-            console.log(17, value);
-
             return value;
         }
         return null; // Ma'lumot topilmadi

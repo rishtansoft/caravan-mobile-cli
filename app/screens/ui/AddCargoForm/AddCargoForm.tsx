@@ -90,6 +90,8 @@ interface carTypes {
     name: string
 }
 
+
+
 const CargoForm: React.FC<CargoFormProps> = (
     { values,
         errors,
@@ -131,7 +133,6 @@ const CargoForm: React.FC<CargoFormProps> = (
     useEffect(() => {
         axios.get(API_URL + '/api/admin/car-type/get-all')
             .then((res) => {
-                console.log(115, res.data.carTypes);
                 if (res.data?.carTypes && res.data.carTypes.length > 0) {
                     const newArr = res.data.carTypes.map((el: carTypes) => {
                         return {

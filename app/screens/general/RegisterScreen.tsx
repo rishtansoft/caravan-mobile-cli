@@ -196,16 +196,7 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
             } else {
                 setPhoneError('');
             }
-            if (!name || /^\s*$/.test(name)) {
-                setNameError('Ism kiritish shart');
-            } else {
-                setNameError('');
-            }
-            if (!nameLastname || /^\s*$/.test(nameLastname)) {
-                setNameLastnameError('Familya kiritish shart');
-            } else {
-                setNameLastnameError('');
-            }
+
             if (!password) {
                 setPasswordError('Parol kiritish shart');
             } else if (!validatePassword(password)) {

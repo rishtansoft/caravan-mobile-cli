@@ -40,6 +40,7 @@ interface LocationData {
         latitude: number;
         longitude: number;
         name: string;
+        order: number;
     }[];
 }
 
@@ -121,7 +122,8 @@ const AddLoadThird: React.FC<AddLoadThirdProps> = ({ navigation }) => {
                     return {
                         "address": el.name,
                         "lat": el.latitude,
-                        "lon": el.longitude
+                        "lon": el.longitude,
+                        "order": el.order
                     }
                 }) : []
 
@@ -151,6 +153,9 @@ const AddLoadThird: React.FC<AddLoadThirdProps> = ({ navigation }) => {
                     "width": 1,
                     "height": 1,
                 }
+                console.log(156, resData);
+                console.log(157, stop_locations);
+
                 axios.post(API_URL + '/api/loads/create', resData, {
                     headers: {
                         Authorization: `Bearer ${token}`

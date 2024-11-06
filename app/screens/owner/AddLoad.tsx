@@ -13,6 +13,12 @@ interface Location {
     latitude: number;
     longitude: number;
 }
+interface LocationArr {
+    name: string;
+    latitude: number;
+    longitude: number;
+    order: number;
+}
 const showErrorAlert = (message: string) => {
     Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
 };
@@ -38,8 +44,8 @@ const AddLoad: React.FC<AddLoadsProps> = ({ navigation }) => {
         setEndLocation(location)
     };
 
-    const handleLocationsChange = (locations: Location[]) => {
-        console.log('Barcha manzillar:', locations);
+    const handleLocationsChange = (locations: LocationArr[]) => {
+        console.log(48, locations);
         setStopLocation(locations)
     };
 

@@ -27,12 +27,6 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
     const [nameLastname, setNameLastname] = useState<string>('');
     const [nameLastnameError, setNameLastnameError] = useState<string>('');
     const [nameLastnameIsFocused, setNameLastnameIsFocused] = useState<boolean>(false);
-    const [password, setPassword] = useState<string>('');
-    const [passwordError, setPasswordError] = useState<string>('');
-    const [passwordIsFocused, setPasswordIsFocused] = useState<boolean>(false);
-    const [passwordReq, setPasswordReq] = useState<string>('');
-    const [passwordReqError, setPasswordReqError] = useState<string>('');
-    const [passwordReqIsFocused, setPasswordReqIsFocused] = useState<boolean>(false);
     const animatedValue = useRef(new Animated.Value(0)).current;
     const [phoneSecond, setPhoneSecond] = useState<string>('');
     const [phoneSecondError, setPhoneSecondError] = useState<string>('');
@@ -43,6 +37,10 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
     const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+    const [address, setAddress] = useState<string>('');
+    const [addressError, setAddressError] = useState<string>('');
+    const [addressIsFocused, setAddressIsFocused] = useState<boolean>(false);
 
 
 
@@ -66,7 +64,6 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
     }, []);
 
     useEffect(() => {
-
         if (user_id && token) {
             axios.get(API_URL + `/api/auth/get-profile?user_id=${user_id}`, {
                 headers: {
@@ -78,6 +75,12 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
                 setNameLastname(res.data.lastname)
                 if (res.data?.birthday) {
                     setDateValue(res.data.birthday)
+                }
+                if (res.data?.phone_2) {
+                    setPhoneSecond(res.data.phone_2.slice(1))
+                }
+                if (res.data?.address) {
+                    setAddress(res.data.address)
                 }
             }).catch((error) => {
                 console.log(76, error);
@@ -127,19 +130,13 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
         setNameLastname(values);
         setNameLastnameError('');
     };
-    const PasswordInputFun = (values: string) => {
-        setPassword(values);
-        setPasswordError('');
+
+    const addressInputFun = (values: string) => {
+        setAddress(values);
+        setAddressError('');
     };
-    const passwordReqInputFun = (values: string) => {
-        if (password === values) {
-            setPasswordReq(values);
-            setPasswordReqError('');
-        } else {
-            setPasswordReq(values);
-            setPasswordReqError("Parolga mos bo'lishi kerak");
-        }
-    };
+
+
     const backgroundColor = animatedValue.interpolate({
         inputRange: [0, 1],
         outputRange: ['#7257FF', '#462eba'], // 0 = 'blue', 1 = 'darkblue'
@@ -152,29 +149,84 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
             return false;
         }
     };
-    const validatePassword = (password: string) => {
-        const minLength = 8;
-        const capitalLetterPattern = /[A-Z]/;
-        const specialCharacterPattern = /[^A-Za-z0-9]/;
-        if (password.length < minLength) {
-            return false;
-        }
-        if (!capitalLetterPattern.test(password)) {
-            return false;
-        }
-        if (!specialCharacterPattern.test(password)) {
-            return false;
-        }
-        return true; // If the password meets all criteria
-    };
+
     const phoneSecondInputFun = (values: string) => {
         setPhoneSecond(values);
         setPhoneSecondError('');
     };
     const handleDateChange = (date: Date) => {
+        console.log(156, date);
+
         setDate(date);
         setDateError('');
     };
+
+    function formatDate(dateString: Date): string {
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    const updateDataFun = () => {
+        if (name && nameLastname && (phoneSecond && phoneSecond ? phoneValidateFun(phoneSecond) : true
+            && (date || dateValue) && address
+        )) {
+            const resdata = {
+                lastname: nameLastname,
+                firstname: name,
+                phone_2: phoneSecond ? '+' + phoneSecond : null,
+                birthday: date ? formatDate(date) : dateValue,
+                address: address
+            }
+            console.log(183, resdata);
+
+            if (token && user_id) {
+                axios.post(API_URL + `/api/auth/update-owner-profile?user_id=${user_id}`, resdata, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }).then((res) => {
+                    console.log(166, res.data);
+                    navigation.navigate('profile')
+
+                }).catch((error) => {
+                    console.log(error?.response?.data?.message);
+                })
+            }
+
+        } else {
+            if (phoneSecond && !phoneValidateFun(phoneSecond)) {
+                setPhoneSecondError('Telefon raqam nato\'g\'ri kiritildi!');
+            } else {
+                setPhoneSecondError('');
+            }
+            if (!name || /^\s*$/.test(name)) {
+                setNameError('Ism kiritish shart');
+            } else {
+                setNameError('');
+            }
+            if (!nameLastname || /^\s*$/.test(nameLastname)) {
+                setNameLastnameError('Familya kiritish shart');
+            } else {
+                setNameLastnameError('');
+            }
+            if (!address || /^\s*$/.test(address)) {
+                setAddressError('Manzil kiritish shart');
+            } else {
+                setAddressError('');
+            }
+
+            if (!date && !dateValue) {
+                setDateError("Tug'ilgan kiritish shart");
+            } else {
+                setDateError('');
+            }
+        }
+    }
+
+
 
     return (
         <View style={styles.container_all}>
@@ -190,7 +242,8 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
                     Shaxsiy ma'lumotlar
                 </Text>
             </View>
-            <ScrollView style={styles.container}>
+            <ScrollView
+                style={styles.container}>
                 <View style={{ marginTop: 18 }}>
                     <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Ism</Text>
                     <TextInput
@@ -217,7 +270,6 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
                     />
                     {nameLastnameError ? <Text style={styles.errorText}>{nameLastnameError}</Text> : null}
                 </View>
-
                 <View style={{ marginTop: 18 }}>
                     <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Qo'shimcha telefon raqam <Text style={styles.span_teg}>(ixtiyoriy)</Text></Text>
                     <TextInput
@@ -233,50 +285,37 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
                     />
                     {phoneSecondError ? <Text style={styles.errorText}>{phoneSecondError}</Text> : null}
                 </View>
-
                 <View style={{ marginTop: 18 }}>
+                    <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Manzil</Text>
+                    <TextInput
+                        style={!addressIsFocused ? styles.input : styles.inputFocus}
+                        placeholderTextColor="#898D8F"
+                        value={address}
+                        onChangeText={addressInputFun}
+                        placeholder="Manzilizni kiring"
+                        onFocus={() => setAddressIsFocused(true)}
+                        onBlur={() => setAddressIsFocused(false)}
+                    />
+                    {addressError ? <Text style={styles.errorText}>{addressError}</Text> : null}
+                </View>
+
+                <View style={{ marginTop: 18, marginBottom: 20 }}>
                     <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Tug'ilgan sana</Text>
                     <CustomDatePicker value={dateValue} onDateChange={handleDateChange}></CustomDatePicker>
                     {dateError ? <Text style={styles.errorText}>{dateError}</Text> : null}
                 </View>
 
 
-                <View style={{ marginTop: 18 }}>
-                    <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parol</Text>
-                    <TextInput
-                        style={!passwordIsFocused ? styles.input : styles.inputFocus}
-                        placeholderTextColor="#898D8F"
-                        value={password}
-                        onChangeText={PasswordInputFun}
-                        placeholder="Parolni kiriting"
-                        onFocus={() => setPasswordIsFocused(true)}
-                        onBlur={() => setPasswordIsFocused(false)}
-                        secureTextEntry={true}
-                    />
-                    {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-                </View>
+            </ScrollView>
 
-                <View style={{ marginTop: 18 }}>
-                    <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parolni takrorlang</Text>
-                    <TextInput
-                        style={!passwordReqIsFocused ? styles.input : styles.inputFocus}
-                        placeholderTextColor="#898D8F"
-                        value={passwordReq}
-                        onChangeText={passwordReqInputFun}
-                        placeholder="Parolni takrorlang"
-                        onFocus={() => setPasswordReqIsFocused(true)}
-                        onBlur={() => setPasswordReqIsFocused(false)}
-                        secureTextEntry={true}
-                    />
-                    {passwordReqError ? <Text style={styles.errorText}>{passwordReqError}</Text> : null}
-                </View>
-                <View>
+            {
+                !keyboardVisible ? (<View>
                     <TouchableOpacity
                         // style={isPressed styles.inbutton : styles.button}
                         onPressIn={() => handlePressIn()}
                         onPressOut={() => handlePressOut()}
                         activeOpacity={1}
-                    // onPress={saveData}
+                        onPress={updateDataFun}
                     >
                         <Animated.View style={[styles.button, { backgroundColor }]}>
                             <Text
@@ -287,9 +326,18 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
                         </Animated.View>
 
                     </TouchableOpacity>
-                </View>
-            </ScrollView>
-            <View style={{ marginTop: 20 }}></View>
+
+                </View>) : null
+            }
+
+            {
+                !keyboardVisible ? (<View style={{ marginTop: 20 }}></View>
+                ) : (<View style={{ marginTop: 0 }}></View>
+                )
+            }
+
+
+
         </View>
     );
 };
@@ -300,14 +348,13 @@ const styles = StyleSheet.create({
     container_all: {
         flex: 1,
         backgroundColor: '#FFFFFF',
-        overflow: 'scroll'
     },
     container: {
         width: '100%',
         backgroundColor: '#FFFFFF',
         paddingHorizontal: 10,
         paddingVertical: 10,
-        marginBottom: 30,
+        paddingBottom: 30,
         flex: 1,
     },
     header_con: {

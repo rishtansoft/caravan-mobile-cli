@@ -27,7 +27,7 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
     const [phoneSecond, setPhoneSecond] = useState<string>('');
     const [phoneSecondError, setPhoneSecondError] = useState<string>('');
     const [phoneSecondIsFocused, setPhoneSecondIsFocused] = useState<boolean>(false);
-    const [date, setDate] = useState<Date>();
+    const [date, setDate] = useState<Date | null>();
     const [dateError, setDateError] = useState<string>('');
     const [role, setRole] = useState<string>('');
     const [roleError, setRoleError] = useState<string>('');
@@ -97,12 +97,14 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
         setPhoneSecondError('');
     };
 
-    const formatDate = (date: Date): string => {
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    function formatDate(dateString: Date): string {
+        const date = new Date(dateString);
         const year = date.getFullYear();
-        return `${year}.${month}.${day}`; // Return formatted date as dd/mm/yyyy
-    };
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     const handleDateChange = (date: Date) => {
         setDate(date);
         setDateError('');
@@ -123,12 +125,12 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
 
     const saveData = async () => {
         if (
-            (phoneSecond && phoneSecond ? phoneValidateFun(phone) : true) || date && role
+            (phoneSecond && phoneSecond ? phoneValidateFun(phone) : true) && date && role
         ) {
             await axios.post(API_URL + '/api/auth/register/complete', {
                 "phone_2": phoneSecond ? '+' + phoneSecond : '',
                 "role": role,
-                "birthday": date,
+                "birthday": formatDate(date),
                 'user_id': user_id
             }).then((res) => {
                 console.log(119, res.data);
@@ -145,10 +147,15 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
 
             })
         } else {
-            if (phoneSecond && !phoneValidateFun(phone)) {
+            if (phoneSecond && !phoneValidateFun(phoneSecond)) {
                 setPhoneSecondError('Telefon raqam nato\'g\'ri kiritildi!');
             } else {
                 setPhoneSecondError('');
+            }
+            if (!date) {
+                setDateError("Tug'ilgan kiritish shart");
+            } else {
+                setDateError('');
             }
 
         }
@@ -200,7 +207,7 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
 
                     <View style={{ marginTop: 18 }}>
                         <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Tug'ilgan sana</Text>
-                        <CustomDatePicker onDateChange={handleDateChange}></CustomDatePicker>
+                        <CustomDatePicker value={null} onDateChange={handleDateChange}></CustomDatePicker>
                         {dateError ? <Text style={styles.errorText}>{dateError}</Text> : null}
                     </View>
                     <View style={{ flex: 1, marginTop: 18 }}>

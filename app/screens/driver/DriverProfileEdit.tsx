@@ -1,271 +1,577 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+    View,
+    Text,
+    TextInput,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    Modal
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import axios from "axios";
+import { GetData } from "../AsyncStorage/AsyncStorage";
+import { API_URL } from "@env";
+interface carTypes {
+    id: string,
+    name: string
+}
+
+interface SelectModalProps {
+    visible: boolean;
+    onClose: () => void;
+    onSelect: (item: any) => void;
+    items: Array<{ label: string; value: any }>;
+    title: string;
+}
+
+const SelectModal: React.FC<SelectModalProps> = ({
+    visible,
+    onClose,
+    onSelect,
+    items,
+    title,
+}) => {
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={onClose}
+        >
+            <TouchableOpacity onPress={onClose} style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>{title}</Text>
+                        <TouchableOpacity onPress={onClose}>
+                            <Text style={styles.closeButton}>✕</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <ScrollView style={styles.modalScroll}>
+                        {items.map((item, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={styles.modalItem}
+                                onPress={() => {
+                                    onSelect(item);
+                                    onClose();
+                                }}
+                            >
+                                <Text style={styles.modalItemText}>{item.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            </TouchableOpacity>
+        </Modal>
+    );
+};
+
+
 
 const DriverProfileEdit = ({ navigation }) => {
-  const [fullName, setFullName] = useState("Xumoyunmirzo Yakubjonov");
-  const [phoneNumber, setPhoneNumber] = useState("+998 99 842 79 79");
-  const [optionalPhone, setOptionalPhone] = useState("");
-  const [birthDate, setBirthDate] = useState("11/05/2006");
-  const [password, setPassword] = useState("password");
-  const [confirmPassword, setConfirmPassword] = useState("password");
-  const [driverLicense, setDriverLicense] = useState("");
-  const [carPassport, setCarPassport] = useState("");
+    const [fullName, setFullName] = useState("");
+    const [lastname, setLastname] = useState("");
+    // const [phoneNumber, setPhoneNumber] = useState("");
+    const [optionalPhone, setOptionalPhone] = useState("");
+    const [birthDate, setBirthDate] = useState("");
+    // const [password, setPassword] = useState("");
+    // const [confirmPassword, setConfirmPassword] = useState("");
+    const [driverLicense, setDriverLicense] = useState("");
+    const [carPassport, setCarPassport] = useState("");
+    const [user_id, setUser_id] = useState<string>('');
+    const [carName, setCarName] = useState<string>('');
+    const [token, setToken] = useState<string>('');
+    const [vehicleTypes, setVehicleTypes] = useState([]);
+    const [keyboardType, setKeyboardType] = useState<'default' | 'numeric'>('default');
+    const [keyboardTypeTextPas, setKeyboardTypeTextPas] = useState<'default' | 'numeric'>('default');
+    const [vehicleTypeModalVisible, setVehicleTypeModalVisible] = useState(false);
+    const [car_type, setCar_type] = useState<{ value: string; label: string } | null>(null);
+    useEffect(() => {
+        GetData('user_id').then((res) => {
+            if (res) {
+                // console.log(44, JSON.parse(res).user_id);
+                setUser_id(res)
 
-  const handleSave = () => {
-    console.log("Ma'lumotlar saqlandi");
-  };
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+        GetData('token').then((res) => {
+            if (res) {
+                setToken(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+    }, []);
 
-  return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.header_con}>
-        <View
-          style={{
-            width: "6%",
-          }}
-        >
-          <Icon
-            onPress={() => navigation.goBack()}
-            name="angle-left"
-            size={30}
-            color="#7257FF"
-          />
-        </View>
-        <Text style={styles.title}>Shaxsiy ma'lumotlar</Text>
-      </View>
+    useEffect(() => {
+        if (user_id && token) {
+            axios.get(API_URL + `/api/driver/profile?user_id=${user_id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }).then((res) => {
+                console.log(54, res.data);
+                setFullName(res.data.user?.firstname)
+                setLastname(res.data.user?.lastname)
+            }).catch((error) => {
+                console.log(56, error);
+            })
+        }
 
-      <View style={styles.InputWrapper}>
-        <Text style={styles.InputTitle}>Ism Familiya</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ism Familiya"
-          value={fullName}
-          onChangeText={setFullName}
-        />
-      </View>
+    }, [user_id, token]);
+    useEffect(() => {
+        axios.get(API_URL + '/api/admin/car-type/get-all')
+            .then((res) => {
+                if (res.data?.carTypes && res.data.carTypes.length > 0) {
+                    const newArr = res.data.carTypes.map((el: carTypes) => {
+                        return {
+                            value: el.id,
+                            label: el.name
+                        }
+                    })
+                    setVehicleTypes(newArr)
+                }
 
-      <View style={styles.InputWrapper}>
-        <Text style={styles.InputTitle}>Telefon raqam</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Telefon raqam"
-          value={phoneNumber}
-          keyboardType="phone-pad"
-          onChangeText={setPhoneNumber}
-        />
-      </View>
+            }).catch((error) => {
+                console.log(error);
 
-      <View style={styles.InputWrapper}>
-        <Text style={styles.InputTitle}>
-          Qo'shimcha telefon raqam (ixtiyoriy)
-        </Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Qo'shimcha telefon raqam (ixtiyoriy)"
-          value={optionalPhone}
-          keyboardType="phone-pad"
-          onChangeText={setOptionalPhone}
-        />
-      </View>
+            })
+    }, []);
 
-      <View style={styles.InputWrapper}>
-        <Text style={styles.InputTitle}>Tug'ilgan sana</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Tug'ilgan sana"
-          value={birthDate}
-          onChangeText={setBirthDate}
-        />
-      </View>
+    const splitText = (text: string, n: number): { text_1: string; text_2: string } => {
+        const text_1 = text.slice(0, n);
+        const text_2 = text.slice(n);
+        return { text_1, text_2 };
+    };
 
-      <View style={styles.InputWrapper}>
-        <Text style={styles.InputTitle}>Parol</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Parol"
-          secureTextEntry={true}
-          value={password}
-          onChangeText={setPassword}
-        />
-      </View>
+    const handleChangeTextTextPas = (input: string) => {
+        let formattedText = input.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const letters = formattedText.slice(0, 3).replace(/[^A-Z]/g, '');
+        const numbers = formattedText.slice(3).replace(/[^0-9]/g, '');
+        formattedText = letters + numbers;
+        if (formattedText.length > 10) {
+            formattedText = formattedText.slice(0, 10);
+        }
+        setCarPassport(formattedText);
+        if (letters.length === 3) {
+            setKeyboardTypeTextPas('numeric');
+        } else {
+            setKeyboardTypeTextPas('default');
+        }
+    };
 
-      <View style={styles.InputWrapper}>
-        <Text style={styles.InputTitle}>Parolni takrorlang</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Parolni takrorlang"
-          secureTextEntry={true}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
-      </View>
+    const handleChangeTextPrava = (input: string) => {
+        let formattedText = input.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const letters = formattedText.slice(0, 2).replace(/[^A-Z]/g, '');
+        const numbers = formattedText.slice(2).replace(/[^0-9]/g, '');
+        formattedText = letters + numbers;
+        if (formattedText.length > 9) {
+            formattedText = formattedText.slice(0, 9);
+        }
+        setDriverLicense(formattedText);
+        if (letters.length === 2) {
+            setKeyboardType('numeric');
+        } else {
+            setKeyboardType('default');
+        }
+    };
 
-      <View style={styles.InputWrapper}>
-        <Text style={styles.InputTitle}>Prava seriyasi va raqami</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Prava seriyasi va raqami"
-          value={driverLicense}
-          onChangeText={setDriverLicense}
-        />
-      </View>
+    const handleSave = () => {
+        if (fullName && lastname && car_type && carName && carPassport && driverLicense) {
+            if (token && user_id) {
+                const resData = {
+                    "firstname": fullName,
+                    "lastname": lastname,
+                    "car_type": car_type.value,
+                    "car_name": carName,
+                    "tex_pas_ser": splitText(carPassport, 3).text_1,
+                    "prava_ser": splitText(driverLicense, 2).text_1,
+                    "tex_pas_num": splitText(carPassport, 3).text_2,
+                    "prava_num": splitText(driverLicense, 2).text_2,
+                }
 
-      <View style={styles.imageUploadContainer}>
-        <Text style={styles.imageTitle}>Prava rasmi (ixtiyoriy)</Text>
-        <TouchableOpacity style={styles.imageUpload}>
-          <Ionicons name="camera-outline" size={32} color="blue" />
-        </TouchableOpacity>
-      </View>
+                axios.put(API_URL + `/api/driver/update-profile?user_id=${user_id}`,
+                    resData, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }).then((res) => {
+                    console.log(201, res.data);
+                }).catch((error) => {
+                    console.log(203, error?.response?.data?.message);
+                })
+            }
+        }
+    };
 
-      <View style={styles.InputWrapper}>
-        <Text style={styles.InputTitle}>
-          Mashina tex pasporti va seriya raqami
-        </Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Seriya raqami"
-          value={carPassport}
-          onChangeText={setCarPassport}
-        />
-      </View>
 
-      <View style={styles.imageUploadContainer}>
-        <Text style={styles.imageTitle}>Tex passport rasmi(ixtiyoriy)</Text>
-        <TouchableOpacity style={styles.imageUpload}>
-          <Ionicons name="camera-outline" size={32} color="blue" />
-        </TouchableOpacity>
-      </View>
+    return (
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.header_con}>
+                <View
+                    style={{
+                        width: "6%",
+                    }}
+                >
+                    <Icon
+                        onPress={() => navigation.goBack()}
+                        name="angle-left"
+                        size={30}
+                        color="#7257FF"
+                    />
+                </View>
+                <Text style={styles.title}>Shaxsiy ma'lumotlar</Text>
+            </View>
 
-      <View style={styles.InputWrapper}>
-        <Text style={styles.InputTitle}>Moshina nomi</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Moshina nomini kiriting"
-          value={carPassport}
-          onChangeText={setCarPassport}
-        />
-      </View>
-      <View style={styles.imageUploadContainer}>
-        <Text style={styles.imageTitle}>Mashina rasmi(ixtiyoriy)</Text>
-        <TouchableOpacity style={styles.imageUpload}>
-          <Ionicons name="camera-outline" size={32} color="blue" />
-        </TouchableOpacity>
-      </View>
+            <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>Ism</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Ism"
+                    placeholderTextColor="#898D8F"
+                    value={fullName}
+                    onChangeText={setFullName}
+                />
+            </View>
+            <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>Familiya</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Familiya"
+                    placeholderTextColor="#898D8F"
+                    value={lastname}
+                    onChangeText={setLastname}
+                />
+            </View>
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>Saqlash</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+            {/* <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>Telefon raqam</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Telefon raqam"
+                    placeholderTextColor="#898D8F"
+                    value={phoneNumber}
+                    keyboardType="phone-pad"
+                    onChangeText={setPhoneNumber}
+                />
+            </View> */}
+
+            <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>
+                    Qo'shimcha telefon raqam (ixtiyoriy)
+                </Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Qo'shimcha telefon raqam (ixtiyoriy)"
+                    value={optionalPhone}
+                    maxLength={12}
+                    placeholderTextColor="#898D8F"
+                    keyboardType="numeric"
+                    onChangeText={setOptionalPhone}
+                />
+            </View>
+
+            <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>Tug'ilgan sana</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Tug'ilgan sana"
+                    value={birthDate}
+                    placeholderTextColor="#898D8F"
+                    onChangeText={setBirthDate}
+                />
+            </View>
+
+            {/* <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>Parol</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Parol"
+                    secureTextEntry={true}
+                    placeholderTextColor="#898D8F"
+                    value={password}
+                    onChangeText={setPassword}
+                />
+            </View>
+
+            <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>Parolni takrorlang</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Parolni takrorlang"
+                    secureTextEntry={true}
+                    placeholderTextColor="#898D8F"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                />
+            </View> */}
+
+            <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>Prava seriyasi va raqami</Text>
+                <TextInput
+                    style={[styles.input, { textTransform: 'uppercase' }]}
+                    // placeholder="Prava seriyasi va raqami"
+                    value={driverLicense}
+                    placeholder="AB1234567"
+                    maxLength={9}
+                    keyboardType={keyboardType}
+                    placeholderTextColor="#898D8F"
+                    onChangeText={handleChangeTextPrava}
+                />
+            </View>
+
+            <View style={styles.imageUploadContainer}>
+                <Text style={styles.imageTitle}>Prava rasmi (ixtiyoriy)</Text>
+                <TouchableOpacity style={styles.imageUpload}>
+                    <Ionicons name="camera-outline" size={32} color="blue" />
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>
+                    Mashina tex pasporti va seriya raqami
+                </Text>
+
+                <TextInput
+                    style={[styles.input, { textTransform: 'uppercase' }]}
+                    placeholder="AAB1234567"
+                    value={carPassport}
+                    maxLength={10}
+                    keyboardType={keyboardTypeTextPas}
+                    placeholderTextColor="#898D8F"
+                    onChangeText={handleChangeTextTextPas}
+                />
+            </View>
+
+            <View style={styles.imageUploadContainer}>
+                <Text style={styles.imageTitle}>Tex passport rasmi(ixtiyoriy)</Text>
+                <TouchableOpacity style={styles.imageUpload}>
+                    <Ionicons name="camera-outline" size={32} color="blue" />
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>Moshina nomi</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Moshina nomini kiriting"
+                    value={carName}
+                    placeholderTextColor="#898D8F"
+                    onChangeText={setCarName}
+                />
+            </View>
+
+            <View style={styles.InputWrapper}>
+                <Text style={styles.InputTitle}>Mashina turi</Text>
+                <TouchableOpacity
+                    style={[
+                        styles.selectButton,
+                        // errors.vehicleTypeError && styles.errorInput
+                    ]}
+                    onPress={() => setVehicleTypeModalVisible(true)}
+                >
+                    <Text style={
+
+                        car_type ? styles.selectedText : styles.selectButtonText_plech
+                    }>
+                        {car_type ? car_type.label : "Mashina turini tanlang"}
+                    </Text>
+                </TouchableOpacity>
+
+            </View>
+
+            <View style={styles.imageUploadContainer}>
+                <Text style={styles.imageTitle}>Mashina rasmi(ixtiyoriy)</Text>
+                <TouchableOpacity style={styles.imageUpload}>
+                    <Ionicons name="camera-outline" size={32} color="blue" />
+                </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                <Text style={styles.saveButtonText}>Saqlash</Text>
+            </TouchableOpacity>
+
+            <SelectModal
+                visible={vehicleTypeModalVisible}
+                onClose={() => setVehicleTypeModalVisible(false)}
+                onSelect={setCar_type}
+                items={vehicleTypes}
+                title="Mashina turini tanlang"
+            />
+
+        </ScrollView>
+    );
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    padding: 10,
-    backgroundColor: "white",
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  InputWrapper: {
-    flexDirection: "column",
-    gap: 5,
-  },
-  InputTitle: {
-    color: "black",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  input: {
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    backgroundColor: "#fff",
-  },
-  picker: {
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    backgroundColor: "#fff",
-  },
-  imageUploadContainer: {
-    marginBottom: 15,
-  },
-  imageUpload: {
-    backgroundColor: "#F0EDFF",
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: "blue",
-    borderRadius: 16,
-    width: 100,
-    height: 100,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  imageRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  image: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  saveButton: {
-    backgroundColor: "#7257FF",
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 70,
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  header_con: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    width: "100%",
-    paddingLeft: 15,
-  },
-  title: {
-    color: "#131214",
-    textAlign: "center",
-    fontSize: 20,
-    lineHeight: 100,
-    width: "90%",
-    fontWeight: "600",
-  },
-  imageTitle: {
-    fontWeight: "600",
-    fontSize: 16,
-    color: "black",
-    marginBottom: 8,
-  },
+    modalScroll: {
+        maxHeight: '100%',
+    },
+
+    modalItem: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E8E9E9',
+    },
+    selectedText: {
+        color: '#000000',
+    },
+
+    selectButton: {
+        height: 48,
+        borderWidth: 1,
+        borderColor: '#E8E9E9',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        marginBottom: 15,
+
+    },
+    selectButtonText: {
+        color: '#131214',
+    },
+
+    modalItemText: {
+        fontSize: 16,
+        color: '#131214',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    selectButtonText_plech: {
+        color: "#898D8F"
+    },
+
+    modalContent: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        maxHeight: '70%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E8E9E9',
+    },
+    closeButton: {
+        fontSize: 20,
+        color: '#2d2d2d',
+    },
+    modalTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#131214',
+    },
+
+    scrollContainer: {
+        flexGrow: 1,
+        padding: 10,
+        backgroundColor: "white",
+    },
+    heading: {
+        fontSize: 24,
+        fontWeight: "bold",
+        color: "#333",
+        marginBottom: 20,
+        textAlign: "center",
+    },
+    InputWrapper: {
+        flexDirection: "column",
+        gap: 5,
+    },
+    InputTitle: {
+        color: "black",
+        fontWeight: "600",
+        fontSize: 16,
+    },
+    input: {
+        height: 50,
+        borderColor: "#ccc",
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 15,
+        marginBottom: 15,
+        backgroundColor: "#fff",
+        color: '#131214'
+    },
+    picker: {
+        height: 50,
+        borderColor: "#ccc",
+        borderWidth: 1,
+        borderRadius: 8,
+        marginBottom: 15,
+        backgroundColor: "#fff",
+    },
+    imageUploadContainer: {
+        marginBottom: 15,
+    },
+    imageUpload: {
+        backgroundColor: "#F0EDFF",
+        borderWidth: 2,
+        borderStyle: "dashed",
+        borderColor: "blue",
+        borderRadius: 16,
+        width: 100,
+        height: 100,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    imageRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    image: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+        marginRight: 10,
+    },
+    saveButton: {
+        backgroundColor: "#7257FF",
+        paddingVertical: 15,
+        borderRadius: 40,
+        alignItems: "center",
+        marginTop: 20,
+        marginBottom: 70,
+    },
+    saveButtonText: {
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "600",
+    },
+    header_con: {
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#fff",
+        width: "100%",
+        paddingLeft: 15,
+    },
+    title: {
+        color: "#131214",
+        textAlign: "center",
+        fontSize: 20,
+        lineHeight: 100,
+        width: "90%",
+        fontWeight: "600",
+    },
+    imageTitle: {
+        fontWeight: "600",
+        fontSize: 16,
+        color: "black",
+        marginBottom: 8,
+    },
 });
 
 export default DriverProfileEdit;
