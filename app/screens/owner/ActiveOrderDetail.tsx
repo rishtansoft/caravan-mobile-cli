@@ -277,6 +277,10 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
         }
     }, [token, user_id]);
 
+    const deleteFun = () => {
+
+    }
+
     return (
         <View style={styles.container_all}>
             <View style={styles.header_con}>

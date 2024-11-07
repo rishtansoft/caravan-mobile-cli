@@ -204,11 +204,15 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
                     if (res.data?.data && res.data.data.length > 0) {
                         const resdataFileter = filterByDriverStops(res.data?.data)
                         if (resdataFileter.length > 0) {
+                            console.log(207, resdataFileter);
+
                             const newData = resdataFileter.map((el) => {
+                                console.log(210, el.weight);
+
                                 return {
                                     id: el.id,
                                     status: el.load_status,
-                                    weight: el?.weight ? el?.weight : '',
+                                    weight: el.loadDetails.weight,
                                     sub_id: splitText(el.id).text_1,
                                     start_location: filertDriverStopOrder(el.driverStops, 0),
                                     end_location: filertDriverStopOrder(el.driverStops, 1),

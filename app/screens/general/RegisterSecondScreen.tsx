@@ -125,7 +125,7 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
 
     const saveData = async () => {
         if (
-            (phoneSecond && phoneSecond ? phoneValidateFun(phone) : true) && date && role
+            (phoneSecond && phoneSecond ? phoneValidateFun(phoneSecond) : true) && date && role
         ) {
             await axios.post(API_URL + '/api/auth/register/complete', {
                 "phone_2": phoneSecond ? '+' + phoneSecond : '',
@@ -147,6 +147,8 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
 
             })
         } else {
+            console.log(150, date);
+
             if (phoneSecond && !phoneValidateFun(phoneSecond)) {
                 setPhoneSecondError('Telefon raqam nato\'g\'ri kiritildi!');
             } else {
