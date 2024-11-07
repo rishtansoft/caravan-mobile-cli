@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,31 +8,140 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import axios from "axios";
+import { GetData } from "../AsyncStorage/AsyncStorage";
+import { API_URL } from "@env";
+import Icon from "react-native-vector-icons/FontAwesome";
 
-const LoadHistory = () => {
+const splitText = (text: string): { text_1: string } => {
+  const text_1 = text.slice(0, 8);
+  return { text_1 };
+};
+
+interface DriverStop {
+  load_id: string;
+  latitude: string;
+  longitude: string;
+  order: number;
+  start_time: string | null;
+  end_time: string | null;
+  location_name: string;
+}
+
+interface Cargo {
+  cargo_type: string;
+  driverStops: DriverStop[];
+  id: string;
+  loadDetails: any | null;
+  load_status: string;
+  user_id: string;
+  weight: string;
+}
+
+interface ResData {
+  id: string;
+  cargo_type: string;
+  weight: string;
+  sub_id: string;
+  start_location: string | undefined;
+  end_location: string | undefined;
+}
+
+const filertDriverStopOrder = (arr: DriverStop[], order: number) => {
+  const orderFilter = arr
+    .find((el) => el.order == order)
+    ?.location_name.split(",");
+  if (orderFilter && orderFilter.length > 0) {
+    const addresa = orderFilter[0];
+    return addresa;
+  } else {
+    return orderFilter?.join(" ");
+  }
+};
+
+const filterByDriverStops = (cargos: Cargo[]): Cargo[] => {
+  return cargos.filter(
+    (cargo) => cargo.driverStops && cargo.driverStops.length > 0
+  );
+};
+
+const LoadHistory: React.FC = () => {
+  const [user_id, setUser_id] = useState<string>("");
+  const [token, setToken] = useState<string>("");
+  const [resData, setResData] = useState<ResData[] | null>(null);
   const navigation = useNavigation();
   const [isModalVisible, setModalVisible] = useState(false);
-  const orders = [1, 1, 1, 1, 1, 1];
 
   // Royhatdan toliq o'tgan yoki yoqligini tekshirish asnc storage bilan tekshirish
   const userRegister = true;
 
-  const toggleModal = () => {
+  useEffect(() => {
+    GetData("user_id")
+      .then((res) => {
+        if (res) {
+          setUser_id(res);
+        }
+      })
+      .catch((error) => {
+        console.error("Xatolik yuz berdi:", error);
+      });
+    GetData("token")
+      .then((res) => {
+        if (res) {
+          setToken(res);
+        }
+      })
+      .catch((error) => {
+        console.error("Xatolik yuz berdi:", error);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (token && user_id) {
+      axios
+        .get(API_URL + `/api/loads/get-all-active-loads?user_id=${user_id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
+          console.log(
+            API_URL + `/api/loads/get-all-active-loads?user_id=${user_id}`
+          );
+
+          if (res.data?.data && res.data.data.length > 0) {
+            const resdataFileter = filterByDriverStops(res.data?.data);
+            if (resdataFileter.length > 0) {
+              const newData = resdataFileter.map((el) => {
+                return {
+                  id: el.id,
+                  cargo_type: el.cargo_type,
+                  weight: el?.weight ? el?.weight : "",
+                  sub_id: splitText(el.id).text_1,
+                  start_location: filertDriverStopOrder(el.driverStops, 0),
+                  end_location: filertDriverStopOrder(el.driverStops, 1),
+                };
+              });
+              if (newData && newData.length > 0) {
+                console.log(122, newData);
+
+                setResData(newData);
+              }
+            }
+          }
+        })
+        .catch((error) => {
+          console.log(132, error);
+        });
+    }
+  }, [token, user_id]);
+
+  const toggleModal = (id: string) => {
     if (userRegister) {
-      navigation.navigate("ActiveLoadDetail", { orderId: "55555" }); //Aynan shu buyurtma malumotlarini uzatish uchun ishlatildi
+      navigation.navigate("LoadHistoryDetails", { itemId: id }); //Aynan shu buyurtma malumotlarini uzatish uchun ishlatildi
     } else {
       setModalVisible(!isModalVisible);
     }
-  };
-
-  const goToHome = () => {
-    setModalVisible(!isModalVisible);
-  };
-
-  const goToProfile = () => {
-    setModalVisible(!isModalVisible);
-
-    navigation.navigate("Profil");
   };
 
   return (
@@ -41,29 +150,49 @@ const LoadHistory = () => {
       contentContainerStyle={{ flexGrow: 1 }}
     >
       <View style={styles.orders}>
-        <Text style={styles.sectionTitle}>Buyurtmalar</Text>
-        {orders.map((order, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.order}
-            onPress={toggleModal}
+        <View style={styles.header_con}>
+          <View
+            style={{
+              width: "6%",
+            }}
           >
-            <View style={styles.orderCard}>
-              <View style={styles.orderDetails}>
-                <Text style={styles.location}>Andijon</Text>
-                <Image source={require("../../assets/driver/referrer.png")} />
-                <Text style={styles.location}>Toshkent</Text>
+            <Icon
+              onPress={() => navigation.goBack()}
+              name="angle-left"
+              size={30}
+              color="#7257FF"
+            />
+          </View>
+          <View style={styles.title_cont}>
+            <Text style={styles.title}>
+              Buyurtmalar Tarixi
+            </Text>
+          </View>
+        </View>
+        {resData &&
+          resData.length > 0 &&
+          resData.map((order, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.order}
+              onPress={() => toggleModal(order.id)}
+            >
+              <View style={styles.orderCard}>
+                <View style={styles.orderDetails}>
+                  <Text style={styles.location}>{order.start_location}</Text>
+                  <Image source={require("../../assets/driver/referrer.png")} />
+                  <Text style={styles.location}>{order.end_location}</Text>
+                </View>
+                <View>
+                  <Text style={styles.orderNo}>#{order.sub_id}</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.orderNo}>#16005</Text>
+              <View style={styles.info}>
+                <Text style={styles.infoCategory}>{order.cargo_type}</Text>
+                <Text style={styles.infoCategory}>{order.weight}kg</Text>
               </View>
-            </View>
-            <View style={styles.info}>
-              <Text style={styles.infoCategory}>Oziq-ovqat</Text>
-              <Text style={styles.infoCategory}>104kg</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          ))}
       </View>
     </ScrollView>
   );
@@ -76,50 +205,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: "#F4F6F7",
   },
-  notificationBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#DADDDE",
-  },
-  image: {
-    width: 107,
-    height: 86,
-    marginRight: 16,
-  },
-  notificationText: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 18,
-    color: "#333",
-  },
-  switchContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    borderRadius: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#DADDDE",
-  },
-  switchText: {
-    color: "#333",
-    fontSize: 21,
-    fontWeight: "700",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    marginLeft: 10,
-  },
+
   orders: {
     flexDirection: "column",
     marginBottom: 80,
@@ -162,33 +248,7 @@ const styles = StyleSheet.create({
   orderNo: {
     color: "#898D8F",
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalView: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    alignItems: "center",
-  },
-  imageModal: {
-    width: 345,
-    height: 250,
-    marginBottom: 15,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  modalText: {
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 20,
-  },
+
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -216,6 +276,31 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
   },
+  header_con: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    width: "100%",
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    height: "auto",
+    gap:50
+  },
+  title: {
+    color: "#131214",
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "center",
+    paddingHorizontal: 10,
+  },
+  title_cont: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+
 });
 
 export default LoadHistory;
