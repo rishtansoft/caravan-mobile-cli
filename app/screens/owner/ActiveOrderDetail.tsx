@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, Alert } from 'react-native';
 import { ActiveLoadsDetailProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import IconFoundation from 'react-native-vector-icons/Foundation';
@@ -7,6 +7,66 @@ import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
 import FeatherIcons from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import axios from 'axios';
+import { GetData } from '../AsyncStorage/AsyncStorage';
+import { API_URL } from '@env';
+
+
+interface Main {
+    id: string;
+    status: string;
+    user_id: string;
+    name: string;
+    cargo_type: string;
+    receiver_phone: string;
+    payer: string;
+    description: string;
+    load_status: string;
+    createdAt: string;
+    updatedAt: string;
+    UserId: string | null;
+}
+
+interface Location {
+    id: string;
+    status: string;
+    load_id: string;
+    latitude: string;
+    longitude: string;
+    order: number;
+    start_time: string | null;
+    end_time: string | null;
+    location_name: string;
+    createdAt: string;
+    updatedAt: string;
+    AssignmentId: string | null;
+}
+
+interface CarType {
+    name: string;
+}
+
+interface LoadDetail {
+    id: string;
+    status: string;
+    load_id: string;
+    weight: number;
+    length: number;
+    width: number;
+    height: number;
+    car_type_id: string;
+    loading_time: string;
+    createdAt: string;
+    updatedAt: string;
+    CarType: CarType;
+}
+
+interface Result {
+    main: Main;
+    locations: Location[];
+    loadDetails: LoadDetail[];
+}
+
 
 const defaultData = {
     "status": "Yo'lda",
@@ -32,15 +92,15 @@ const defaultData = {
 
 const getBgColorKey = (key: string): string => {
     switch (key) {
-        case 'Qidirilmoqda':
+        case 'posted':
             return '#F0EDFF';
-        case 'Yukni olishga kelmoqda':
+        case 'assigned':
             return '#E5F0FF';
-        case 'Yuk ortilmoqda':
+        case 'picked_up':
             return '#FFEFB3';
-        case "Yo'lda":
+        case "in_transit":
             return '#FFE9D1';
-        case 'Manzilga yetib bordi':
+        case 'delivered':
             return '#D7F5E5';
         case 'Tushirilmoqda':
             return '#FFEFB3';
@@ -50,18 +110,37 @@ const getBgColorKey = (key: string): string => {
             return '#F0EDFF'; // Default rang
     }
 };
-
+const getStatusText = (key: string): string => {
+    switch (key) {
+        case 'posted':
+            return 'Qidirilmoqda';
+        case 'assigned':
+            return 'Yukni olishga kelmoqda';
+        case 'picked_up':
+            return 'Yuk ortilmoqda';
+        case "in_transit":
+            return "Yo'lda";
+        case 'delivered':
+            return 'Manzilga yetib bordi';
+        case 'Tushirilmoqda':
+            return '#FFEFB3';
+        case 'Yakunlangan':
+            return '#D7F5E5';
+        default:
+            return '#F0EDFF'; // Default rang
+    }
+};
 const getTextColorKey = (key: string): string => {
     switch (key) {
-        case 'Qidirilmoqda':
+        case 'posted':
             return '#5336E2';
-        case 'Yukni olishga kelmoqda':
+        case 'assigned':
             return '#0050C7';
-        case 'Yuk ortilmoqda':
+        case 'picked_up':
             return '#B26205';
-        case "Yo'lda":
+        case "in_transit":
             return '#E28F36';
-        case 'Manzilga yetib bordi':
+        case 'delivered':
             return '#006341';
         case 'Tushirilmoqda':
             return '#B26205';
@@ -71,11 +150,55 @@ const getTextColorKey = (key: string): string => {
             return '#5336E2'; // Default rang
     }
 };
-
+const splitText = (text: string,): { text_1: string } => {
+    const text_1 = text.slice(0, 8);
+    return { text_1 };
+};
 
 
 const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route }) => {
     const { itemId } = route.params;
+    const [user_id, setUser_id] = useState<string>('');
+    const [token, setToken] = useState<string>('');
+    const [result, setResult] = useState<Result | null>(null);
+
+    useEffect(() => {
+        GetData('user_id').then((res) => {
+            if (res) {
+                setUser_id(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+        GetData('token').then((res) => {
+            if (res) {
+                setToken(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+    }, []);
+
+    useEffect(() => {
+        if (token && user_id) {
+            axios.post(API_URL + `/api/loads/details?load_id=${itemId}`, {
+                user_id: user_id
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+                .then((res) => {
+                    console.log(134, res.data.result);
+
+                }).catch((error) => {
+                    console.log(132, error);
+                })
+        }
+    }, [token, user_id]);
+
+
+
     return (
         <View style={styles.container_all}>
             <View style={styles.header_con}>
@@ -88,7 +211,7 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                 </View>
                 <View style={styles.title_cont}>
                     <Text style={styles.title}>
-                        Buyurtma #{itemId}
+                        Buyurtma #{splitText(itemId).text_1}
                     </Text>
                     <View style={styles.link_bottom}>
                         <Text style={[styles.link_bottom_text, { backgroundColor: getBgColorKey(defaultData.status), color: getTextColorKey(defaultData.status) }]}>{defaultData.status}</Text>
@@ -127,7 +250,7 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                                 name="map-marker-plus-outline" size={25} color="#131214" />
                         </View>
                         <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Yuk manzili</Text>
+                            <Text style={styles.content_text_top}>To'xtab o'tish</Text>
                             <Text style={styles.content_text_bottom} numberOfLines={2}>
                                 {defaultData.cargo_details.stopover_address}
                             </Text>
@@ -139,7 +262,7 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                                 name="map-marker-check-outline" size={26} color="#131214" />
                         </View>
                         <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Yuk manzili</Text>
+                            <Text style={styles.content_text_top}>Yetkazish manzili</Text>
                             <Text style={styles.content_text_bottom} numberOfLines={2}>
                                 {defaultData.cargo_details.end_address}
                             </Text>

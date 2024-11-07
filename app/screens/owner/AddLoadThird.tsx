@@ -131,7 +131,7 @@ const AddLoadThird: React.FC<AddLoadThirdProps> = ({ navigation }) => {
                     user_id: user_id,
                     name: `Yuk- ${new Date()}`,
                     cargo_type: loadData.cargoType.value,
-                    receiver_phone: phone,
+                    receiver_phone: '+' + phone,
                     payer: payer,
                     description: comment ? comment : '',
                     origin_location: {

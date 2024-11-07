@@ -17,17 +17,21 @@ interface Location {
     description: string;
 }
 
+const splitText = (text: string,): { text_1: string } => {
+    const text_1 = text.slice(0, 8);
+    return { text_1 };
+};
 const getBgColorKey = (key: string): string => {
     switch (key) {
-        case 'Qidirilmoqda':
+        case 'posted':
             return '#F0EDFF';
-        case 'Yukni olishga kelmoqda':
+        case 'assigned':
             return '#E5F0FF';
-        case 'Yuk ortilmoqda':
+        case 'picked_up':
             return '#FFEFB3';
-        case "Yo'lda":
+        case "in_transit":
             return '#FFE9D1';
-        case 'Manzilga yetib bordi':
+        case 'delivered':
             return '#D7F5E5';
         case 'Tushirilmoqda':
             return '#FFEFB3';
@@ -37,18 +41,37 @@ const getBgColorKey = (key: string): string => {
             return '#F0EDFF'; // Default rang
     }
 };
-
+const getStatusText = (key: string): string => {
+    switch (key) {
+        case 'posted':
+            return 'Qidirilmoqda';
+        case 'assigned':
+            return 'Yukni olishga kelmoqda';
+        case 'picked_up':
+            return 'Yuk ortilmoqda';
+        case "in_transit":
+            return "Yo'lda";
+        case 'delivered':
+            return 'Manzilga yetib bordi';
+        case 'Tushirilmoqda':
+            return '#FFEFB3';
+        case 'Yakunlangan':
+            return '#D7F5E5';
+        default:
+            return '#F0EDFF'; // Default rang
+    }
+};
 const getTextColorKey = (key: string): string => {
     switch (key) {
-        case 'Qidirilmoqda':
+        case 'posted':
             return '#5336E2';
-        case 'Yukni olishga kelmoqda':
+        case 'assigned':
             return '#0050C7';
-        case 'Yuk ortilmoqda':
+        case 'picked_up':
             return '#B26205';
-        case "Yo'lda":
+        case "in_transit":
             return '#E28F36';
-        case 'Manzilga yetib bordi':
+        case 'delivered':
             return '#006341';
         case 'Tushirilmoqda':
             return '#B26205';
@@ -241,7 +264,7 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
                         name="angle-left" size={30} color="#7257FF" />
                 </View>
                 <Text style={styles.title}>
-                    Buyurtma #{itemId}
+                    Buyurtma #{splitText(itemId).text_1}
                 </Text>
             </View>
 
