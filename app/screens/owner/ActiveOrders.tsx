@@ -7,59 +7,6 @@ import axios from 'axios';
 import { GetData } from '../AsyncStorage/AsyncStorage';
 import { API_URL } from '@env';
 
-
-
-const defaultData = [
-    {
-        "start_location": "Andijon",
-        "end_location": "Toshkent",
-        "status": "Qidirilmoqda",
-        "weight": "75kg",
-        "id": "16005"
-    },
-    {
-        "start_location": "Namangan",
-        "end_location": "Farg'ona",
-        "status": "Yukni olishga kelmoqda",
-        "weight": "60kg",
-        "id": "16006"
-    },
-    {
-        "start_location": "Toshkent",
-        "end_location": "Qoraqalpoq",
-        "status": "Yuk ortilmoqda",
-        "weight": "1.5ton",
-        "id": "16007"
-    },
-    {
-        "start_location": "Xorazm",
-        "end_location": "Angren",
-        "status": "Yo'lda",
-        "weight": "200kg",
-        "id": "16008"
-    },
-    {
-        "start_location": "Qoraqalpoq",
-        "end_location": "Farg'ona",
-        "status": "Manzilga yetib bordi",
-        "weight": "800kg",
-        "id": "16009"
-    },
-    {
-        "start_location": "Namangan",
-        "end_location": "Qashqadaryo",
-        "status": "Tushirilmoqda",
-        "weight": "96kg",
-        "id": "16010"
-    },
-    {
-        "start_location": "Buxoro",
-        "end_location": "Surxandaryo",
-        "status": "Yakunlangan",
-        "weight": "65kg",
-        "id": "160011"
-    },
-]
 const splitText = (text: string,): { text_1: string } => {
     const text_1 = text.slice(0, 8);
     return { text_1 };
@@ -202,13 +149,12 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
             })
                 .then((res) => {
                     if (res.data?.data && res.data.data.length > 0) {
+                        console.log(207, res.data);
+
                         const resdataFileter = filterByDriverStops(res.data?.data)
                         if (resdataFileter.length > 0) {
-                            console.log(207, resdataFileter);
 
                             const newData = resdataFileter.map((el) => {
-                                console.log(210, el.weight);
-
                                 return {
                                     id: el.id,
                                     status: el.load_status,
@@ -290,7 +236,7 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
                 }
 
             </View>
-            <View style={{ marginTop: defaultData.length > 7 ? 20 : 15 }}></View>
+            <View style={{ marginTop: resData && resData.length > 7 ? 20 : 15 }}></View>
 
 
         </View>

@@ -12,11 +12,19 @@ import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
 interface Location {
-    coordinates: Position;
-    title: string;
-    description: string;
+    id: string;
+    status: string;
+    load_id: string;
+    latitude: string;
+    longitude: string;
+    order: number;
+    start_time: string | null;
+    end_time: string | null;
+    location_name: string;
+    createdAt: string;
+    updatedAt: string;
+    AssignmentId: string | null;
 }
-
 const splitText = (text: string,): { text_1: string } => {
     const text_1 = text.slice(0, 8);
     return { text_1 };
@@ -81,11 +89,32 @@ const getTextColorKey = (key: string): string => {
             return '#5336E2'; // Default rang
     }
 };
-
-
+interface LocationData {
+    id: string;
+    status: string;
+    load_id: string;
+    latitude: string;
+    longitude: string;
+    order: number;
+    start_time: string | null;
+    end_time: string | null;
+    location_name: string;
+    createdAt: string;
+    updatedAt: string;
+    AssignmentId: string | null;
+}
+const filertDriverStopOrder = (arr: LocationData[], order: number) => {
+    const orderFilter = arr.find((el) => el.order == order)?.location_name.split(',')
+    if (orderFilter && orderFilter.length > 0) {
+        const addresa = orderFilter[0]
+        return addresa
+    } else {
+        return orderFilter?.join(' ')
+    }
+}
 
 const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation }) => {
-    const { itemId, data } = route.params;
+    const { itemId, data, status } = route.params;
 
     const [currentLocation, setCurrentLocation] = useState<Position | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
@@ -93,56 +122,67 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
     const [estimatedTime, setEstimatedTime] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
 
-    // Predefined locations with correct [longitude, latitude] format
     const [locations, setLocations] = useState<Location[]>([
         {
-            coordinates: [71.21403317505282, 40.41584992170101], // Boshlang'ich nuqta
-            title: "Boshlang'ich nuqta",
-            description: "Andijondagi boshlang'ich nuqta"
+            id: data[0].id,
+            status: data[0].status,
+            load_id: data[0].load_id,
+            latitude: data[0].latitude,
+            longitude: data[0].longitude,
+            order: data[0].order,
+            start_time: data[0].start_time,
+            end_time: data[0].end_time,
+            location_name: data[0].location_name,
+            createdAt: data[0].createdAt,
+            updatedAt: data[0].updatedAt,
+            AssignmentId: data[0].AssignmentId
         },
         {
-            coordinates: [71.21403317505282, 40.41584992170101], // Will be updated with real location
-            title: "Hozirgi joylashuv",
-            description: "Sizning joylashuvingiz"
-        },
-        {
-            coordinates: [71.21447672853047, 40.40623817747], // Borish kerak bo'lgan joy
-            title: "Borish kerak bo'lgan joy",
-            description: "Manzil"
+            id: data[1].id,
+            status: data[1].status,
+            load_id: data[1].load_id,
+            latitude: data[1].latitude,
+            longitude: data[1].longitude,
+            order: data[1].order,
+            start_time: data[1].start_time,
+            end_time: data[1].end_time,
+            location_name: data[1].location_name,
+            createdAt: data[1].createdAt,
+            updatedAt: data[1].updatedAt,
+            AssignmentId: data[1].AssignmentId
         }
     ]);
 
-    // 40.40623817747, 
-
     const requestLocationPermission = async () => {
         try {
-            const permission = Platform.select({
-                android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
-                ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
-            });
+            const granted = await check(
+                Platform.OS === 'ios'
+                    ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
+                    : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION
+            );
 
-            if (!permission) {
-                setLocationPermissionError('Platform qo\'llab-quvvatlanmaydi');
-                return false;
-            }
-
-            const permissionStatus = await check(permission);
-
-            if (permissionStatus === RESULTS.GRANTED) {
+            if (granted === RESULTS.GRANTED) {
                 return true;
-            }
+            } else if (granted === RESULTS.DENIED) {
+                const requestResult = await request(
+                    Platform.OS === 'ios'
+                        ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
+                        : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION
+                );
 
-            const result = await request(permission);
-
-            if (result === RESULTS.GRANTED) {
-                return true;
+                if (requestResult === RESULTS.GRANTED) {
+                    return true;
+                } else {
+                    setLocationPermissionError('Joylashuv ruxsati berilmadi');
+                    return false;
+                }
             } else {
-                setLocationPermissionError('Joylashuv ruxsati rad etildi');
+                setLocationPermissionError('Joylashuv ruxsati berilmadi');
                 return false;
             }
         } catch (error) {
-            console.error('Joylashuv ruxsatini so\'rashda xatolik:', error);
-            setLocationPermissionError('Joylashuv ruxsatini so\'rashda xatolik');
+            console.error('Joylashuv ruxsatlarini tekshirishda xatolik:', error);
+            setLocationPermissionError('Joylashuv ruxsatlarini tekshirishda xatolik');
             return false;
         }
     };
@@ -152,24 +192,18 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
             const hasPermission = await requestLocationPermission();
 
             if (!hasPermission) {
+                setIsLoading(false);
                 return;
             }
 
             Geolocation.getCurrentPosition(
                 position => {
-                    const { longitude, latitude } = position.coords;
-                    // Update current location
-                    const updatedLocations = [...locations];
-                    updatedLocations[1] = {
-                        ...updatedLocations[1],
-                        coordinates: [longitude, latitude]
-                    };
-                    setLocations(updatedLocations);
-                    setCurrentLocation([longitude, latitude]);
+                    setCurrentLocation({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    });
                     setIsLoading(false);
-
-                    // Calculate route with all three points
-                    calculateFullRoute(updatedLocations);
+                    calculateFullRoute(locations);
                 },
                 error => {
                     console.error('Joylashuvni olishda xatolik:', error);
@@ -191,8 +225,8 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
 
     const calculateFullRoute = async (currentLocations: Location[]) => {
         try {
-            // Build coordinates string for all three points
-            const coordinatesString = `${currentLocations[0].coordinates[0]},${currentLocations[0].coordinates[1]};${currentLocations[1].coordinates[0]},${currentLocations[1].coordinates[1]};${currentLocations[2].coordinates[0]},${currentLocations[2].coordinates[1]}`;
+            // Uchta nuqta koordinatalari uchun qatorni tuzish
+            const coordinatesString = `${currentLocations[0].longitude},${currentLocations[0].latitude};${currentLocations[1].longitude},${currentLocations[1].latitude}`;
 
             const routeUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?geometries=geojson&access_token=${MAPBOX_ACCESS_TOKEN}`;
 
@@ -201,8 +235,6 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
 
             if (data.routes && data.routes[0]) {
                 setRouteCoordinates(data.routes[0].geometry.coordinates);
-                const timeInMinutes = Math.round(data.routes[0].duration / 60);
-                setEstimatedTime(`Taxminiy yetib borish vaqti: ${timeInMinutes} daqiqa`);
             } else {
                 console.error('No route found:', data);
                 Alert.alert('Xato', 'Yo\'nalish topilmadi');
@@ -215,14 +247,6 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
 
     useEffect(() => {
         getCurrentLocation();
-
-        const locationInterval = setInterval(() => {
-            getCurrentLocation();
-        }, 30000);
-
-        return () => {
-            clearInterval(locationInterval);
-        };
     }, []);
 
     const createRouteFeature = (coordinates: Position[]): Feature<Geometry> => ({
@@ -237,7 +261,7 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
-                <Text>Joylashuv aniqlanmoqda...</Text>
+                <Text style={{ color: '#000' }}>Joylashuv aniqlanmoqda...</Text>
             </View>
         );
     }
@@ -264,20 +288,14 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
                         name="angle-left" size={30} color="#7257FF" />
                 </View>
                 <Text style={styles.title}>
-                    Buyurtma #{splitText(itemId).text_1}
+                    Buyurtma #{itemId.slice(0, 8)}
                 </Text>
             </View>
-
-            {/* {estimatedTime && (
-                <View style={styles.timeContainer}>
-                    <Text style={styles.timeText}>{estimatedTime}</Text>
-                </View>
-            )} */}
 
             <MapboxGl.MapView style={styles.map}>
                 <MapboxGl.Camera
                     zoomLevel={12}
-                    centerCoordinate={locations[1].coordinates}
+                    centerCoordinate={[parseFloat(locations[0].longitude), parseFloat(locations[0].latitude)]}
                     animationDuration={0}
                 />
 
@@ -285,17 +303,17 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
                     <MapboxGl.PointAnnotation
                         key={index + ''}
                         id={`point-${index}`}
-                        coordinate={location.coordinates}
+                        coordinate={[parseFloat(location.longitude), parseFloat(location.latitude)]}
                     >
                         <View style={[
                             styles.markerContainer,
-                            { backgroundColor: index === 0 ? '#4CAF50' : index === 1 ? '#2196F3' : '#F44336' }
+                            { backgroundColor: index === 0 ? '#4CAF50' : '#F44336' }
                         ]}>
                             <Text style={styles.markerText}>{index + 1}</Text>
                         </View>
-                        <MapboxGl.Callout title={location.title}>
+                        <MapboxGl.Callout title={index === 0 ? "Boshlang'ich nuqta" : "Tugash nuqta"}>
                             <View style={styles.callout}>
-                                <Text style={styles.calloutText}>{location.description}</Text>
+                                <Text style={styles.calloutText}>{location.location_name}</Text>
                             </View>
                         </MapboxGl.Callout>
                     </MapboxGl.PointAnnotation>
@@ -322,17 +340,24 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
 
             }}>
                 <View style={styles.container}>
-                    <View style={styles.link_location_texts}>
-                        <Text style={styles.link_location_text}>Andijon</Text>
-                        <Fontisto name="arrow-switch" size={18} color="#B4A6FF" />
-                        <Text style={styles.link_location_text}>Toshkent</Text>
-                    </View>
-                    <View style={styles.link_bottom}>
-                        <Text style={[styles.link_bottom_text, { backgroundColor: getBgColorKey("Yo'lda"), color: getTextColorKey("Yo'lda") }]}>Yo'lda</Text>
-                        {/* <Text style={{ color: '#6E7375', fontSize: 14 }}>
-                            10 daqiqada yetib boradi</Text> */}
-                    </View>
+                    {
+                        data && data.length > 0 && <View style={styles.link_location_texts}>
+                            <Text style={styles.link_location_text}>{filertDriverStopOrder(data, 0)}</Text>
+                            <Fontisto name="arrow-switch" size={18} color="#B4A6FF" />
+                            <Text style={styles.link_location_text}>{filertDriverStopOrder(data, 1)}</Text>
+                        </View>
+                    }
 
+
+                    <View style={styles.link_bottom}>
+                        <Text style={[
+                            styles.link_bottom_text,
+                            {
+                                backgroundColor: getBgColorKey(status ?? ''),
+                                color: getTextColorKey(status ?? '')
+                            }
+                        ]}>{getStatusText(status ?? '')}</Text>
+                    </View>
                 </View>
             </View>
         </View>

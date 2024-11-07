@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, Alert, Modal } from 'react-native';
 import { ActiveLoadsDetailProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import IconFoundation from 'react-native-vector-icons/Foundation';
@@ -25,6 +25,8 @@ interface Main {
     createdAt: string;
     updatedAt: string;
     UserId: string | null;
+    is_round_trip: boolean;
+
 }
 
 interface Location {
@@ -95,30 +97,6 @@ interface CargoInfo {
     round_trip: string;
     order_comment: string;
 }
-
-
-const defaultData = {
-    "status": "Yo'lda",
-    "start_location": "Andijon",
-    "end_location": "Toshkent",
-    "cargo_details": {
-        "start_address": "Andijon viloyati, Baliqchi tumani, Islomobod MFY, Sultonov, B47",
-        "stopover_address": "Namangan viloyati, Chust tumani, Cho'pon MFY, Rasulov ko'chasi, A11",
-        "end_address": "Toshkent shahri, Chilonzor tumani, Novza avenue, 21-kvartal, A16"
-    },
-    "vehicle_details": {
-        "license_plate": "60A125BA",
-        "type": "Yopiq Labo"
-    },
-    "cargo_type": "Oziq ovqat mahsulotlari",
-    "cargo_weight": "203kg",
-    "loading_time": "30 daqiqa",
-    "receiver_phone": "+998 99 842 79 79",
-    "payer": "Yuk beruvchi",
-    "round_trip": "Ha",
-    "order_comment": "Lorem ipsum dolor amet sit."
-}
-
 const getBgColorKey = (key: string): string => {
     switch (key) {
         case 'posted':
@@ -207,6 +185,9 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
     const [token, setToken] = useState<string>('');
     const [result, setResult] = useState<CargoInfo | null>(null);
     const [locations, setLocations] = useState<Location[] | null>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+
     useEffect(() => {
         GetData('user_id').then((res) => {
             if (res) {
@@ -264,7 +245,7 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                                 "license_plate": "60A125BA",
                                 "type": resData.loadDetails[0].CarType.name
                             },
-                            "round_trip": "Ha",
+                            "round_trip": resData.main.is_round_trip ? "Ha" : "Yo'q",
                         }
                         if (newData) {
                             setResult(newData)
@@ -278,8 +259,26 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
     }, [token, user_id]);
 
     const deleteFun = () => {
-
+        if (token && user_id) {
+            axios.delete(API_URL + `/api/loads/deactivate?load_id=${itemId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                data: {
+                    user_id: user_id
+                }
+            }).then((res) => {
+                console.log(269, res.data);
+                navigation.navigate('active_loads')
+            }).catch((error) => {
+                console.log(272, error?.response?.data?.message);
+            })
+        }
     }
+
+    const handleNo = () => {
+        setIsVisible(false);
+    };
 
     return (
         <View style={styles.container_all}>
@@ -302,9 +301,12 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                         }
                     </View>
                 </View>
-                <IconFoundation
-                    onPress={() => navigation.navigate("active_loads_map", { itemId: itemId, data: locations })}
-                    name="map" size={30} color="#7257FF" />
+                {
+                    locations && locations.length > 0 && <IconFoundation
+                        onPress={() => navigation.navigate("active_loads_map", { itemId: itemId, data: locations, status: result?.status })}
+                        name="map" size={30} color="#7257FF" />
+                }
+
             </View>
             {
                 result && <ScrollView style={{ flex: 1, paddingBottom: 10 }}>
@@ -359,18 +361,6 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                         </View>
                     </View>
                     <View style={styles.container}>
-                        {/* <View style={styles.content}>
-                            <View>
-                                <Ionicons
-                                    name="car-outline" size={25} color="#131214" />
-                            </View>
-                            <View style={styles.content_text_container}>
-                                <Text style={styles.content_text_top}>Mashina raqami</Text>
-                                <Text style={[styles.content_text_bottom, { color: '#5336E2' }]} numberOfLines={2}>
-                                    {result.vehicle_details.license_plate}
-                                </Text>
-                            </View>
-                        </View> */}
                         <View style={styles.content}>
                             <View>
                                 <Ionicons
@@ -391,7 +381,7 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                             <View style={styles.content_text_container}>
                                 <Text style={styles.content_text_top}>Yuk vazni</Text>
                                 <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                    {result.cargo_weight}
+                                    {result.cargo_weight} kg
                                 </Text>
                             </View>
                         </View>
@@ -403,7 +393,7 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                             <View style={styles.content_text_container}>
                                 <Text style={styles.content_text_top}>Yuklash vaqti</Text>
                                 <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                    {result.loading_time}
+                                    {result.loading_time} soat
                                 </Text>
                             </View>
                         </View>
@@ -441,7 +431,7 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                             <View style={styles.content_text_container}>
                                 <Text style={styles.content_text_top}>Kim to'laydi</Text>
                                 <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                    {result.payer}
+                                    {result.payer == 'sender' ? "Yuk beruvchi" : "Yuk oluvchi"}
                                 </Text>
                             </View>
                         </View>
@@ -470,24 +460,53 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                             </View>
                         </View>
                     </View>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate("active_loads_map", { itemId: itemId, data: locations })}
-                        style={[styles.btn, { backgroundColor: '#7257FF', }]}>
-                        <Text style={[styles.btn_text, { color: '#fff' }]}>Xaritada ko'rish
-                        </Text>
-                        <IconFoundation
-                            name="map" size={25} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.btn, { backgroundColor: '#E8EBEB', marginBottom: 20 }]}>
-                        <Text style={[styles.btn_text, { color: '#131214' }]}>Buyurtmani bekor qilish </Text>
-                        <FeatherIcons
-                            name="x" size={25} color="#131214" />
-                    </TouchableOpacity>
+                    {
+                        locations && locations.length > 0 && <TouchableOpacity
+                            onPress={() => navigation.navigate("active_loads_map", { itemId: itemId, data: locations, status: result?.status })}
+                            style={[styles.btn, { backgroundColor: '#7257FF', marginBottom: result.status != 'posted' ? 20 : 0 }]}>
+                            <Text style={[styles.btn_text, { color: '#fff' }]}>Xaritada ko'rish
+                            </Text>
+                            <IconFoundation
+                                name="map" size={25} color="#fff" />
+                        </TouchableOpacity>
+                    }
+
+                    {
+                        result.status == 'posted' && <TouchableOpacity
+                            onPress={() => setIsVisible(true)}
+                            style={[styles.btn, { backgroundColor: '#E8EBEB', marginBottom: 20 }]}>
+                            <Text style={[styles.btn_text, { color: '#131214' }]}>Buyurtmani bekor qilish </Text>
+                            <FeatherIcons
+                                name="x" size={25} color="#131214" />
+                        </TouchableOpacity>
+                    }
+
                 </ScrollView>
             }
 
 
             <View style={{ marginTop: 65 }}></View>
+
+            <Modal
+                transparent
+                visible={isVisible}
+                animationType="slide"
+                onRequestClose={() => setIsVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalText}>Rostan ham ushbu yukni o'chirmoqchimisiz?</Text>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={[styles.button, { backgroundColor: '#cd1a17', }]} onPress={deleteFun}>
+                                <Text style={styles.buttonText}>Ha</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.button, { backgroundColor: '#7257FF', }]} onPress={handleNo}>
+                                <Text style={styles.buttonText}>Yo'q</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
 
 
@@ -502,6 +521,44 @@ const styles = StyleSheet.create({
         backgroundColor: '#F4F6F7',
         overflow: 'scroll'
     },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: 300,
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    modalText: {
+        fontSize: 22,
+        marginBottom: 20,
+        fontWeight: '600',
+        textAlign: 'center',
+        color: '#291F61',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    button: {
+        flex: 1,
+        marginHorizontal: 10,
+        paddingVertical: 10,
+        backgroundColor: '#007BFF',
+        borderRadius: 5,
+        alignItems: 'center',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+    },
+
     container: {
         backgroundColor: '#ffffff',
         paddingHorizontal: 10,

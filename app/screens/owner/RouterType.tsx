@@ -32,9 +32,9 @@ export type RootStackParamList = {
     contact_admin: undefined,
     terms_condition: undefined,
     active_loads_detail: { itemId: string },
-    active_loads_map: { itemId: string, data: Location[] | null },
+    active_loads_map: { itemId: string, data: Location[], status: string | undefined },
     history_detail: { itemId: string },
-    history_detail_map: { itemId: string },
+    history_detail_map: { itemId: string, data: Location[], status: string | undefined },
 
 
 };
