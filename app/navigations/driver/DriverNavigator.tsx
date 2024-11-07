@@ -9,6 +9,8 @@ import ProfileScreen from '../../screens/driver/DriverProfile';
 import DetailScreen from '../../screens/driver/ActiveLoadDetail';
 import TermsAndCondition from '../../screens/driver/TermsAndCondition';
 import DriverProfileEdit from '../../screens/driver/DriverProfileEdit';
+import ActiveLoadDetailMap from '../../screens/driver/ActiveLoadDetailMap';
+import LoadHistoryDetails from '../../screens/driver/LoadHistoryDetails';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -27,6 +29,11 @@ const HomeStack = () => {
         options={{ headerShown:false }} 
       />
       <Stack.Screen 
+        name="LoadHistoryDetails" 
+        component={LoadHistoryDetails} 
+        options={{ headerShown:false }} 
+      />
+      <Stack.Screen 
         name="TermsAndCondition" 
         component={TermsAndCondition} 
         options={{ headerShown:false }} 
@@ -34,6 +41,11 @@ const HomeStack = () => {
       <Stack.Screen 
         name="DriverProfileEdit" 
         component={DriverProfileEdit} 
+        options={{ headerShown:false }} 
+      />
+      <Stack.Screen 
+        name="ActiveLoadDetailMap" 
+        component={ActiveLoadDetailMap} 
         options={{ headerShown:false }} 
       />
     </Stack.Navigator>

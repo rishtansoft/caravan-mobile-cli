@@ -103,6 +103,8 @@ const HomeScreen: React.FC = () => {
                 }
             })
                 .then((res) => {
+                    console.log(API_URL + `/api/loads/get-all-active-loads?user_id=${user_id}`);
+                    
                     if (res.data?.data && res.data.data.length > 0) {
                         const resdataFileter = filterByDriverStops(res.data?.data)
                         if (resdataFileter.length > 0) {
@@ -133,7 +135,7 @@ const HomeScreen: React.FC = () => {
 
     const toggleModal = (id: string) => {
         if (userRegister) {
-            navigation.navigate('ActiveLoadDetail', { orderId: id });//Aynan shu buyurtma malumotlarini uzatish uchun ishlatildi
+            navigation.navigate('ActiveLoadDetail', { itemId: id });//Aynan shu buyurtma malumotlarini uzatish uchun ishlatildi
         } else {
             setModalVisible(!isModalVisible);
         }
