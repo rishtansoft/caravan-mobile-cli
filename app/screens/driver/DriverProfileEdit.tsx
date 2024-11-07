@@ -6,8 +6,12 @@ import {
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    Modal
+    Modal,
+    Image,
+    Alert
 } from "react-native";
+import CustomDatePicker from '../ui/DatePIker/DatePIker';
+
 import Icon from "react-native-vector-icons/FontAwesome";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import axios from "axios";
@@ -15,14 +19,20 @@ import { GetData } from "../AsyncStorage/AsyncStorage";
 import { API_URL } from "@env";
 interface carTypes {
     id: string,
-    name: string
+    name: string,
+    icon: string
 }
+
+const showErrorAlert = (message: string) => {
+    Alert.alert('Ogohlantirish', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
+};
+
 
 interface SelectModalProps {
     visible: boolean;
     onClose: () => void;
     onSelect: (item: any) => void;
-    items: Array<{ label: string; value: any }>;
+    items: Array<{ label: string; value: any, icon: string }>;
     title: string;
 }
 
@@ -33,6 +43,8 @@ const SelectModal: React.FC<SelectModalProps> = ({
     items,
     title,
 }) => {
+
+
     return (
         <Modal
             visible={visible}
@@ -59,6 +71,14 @@ const SelectModal: React.FC<SelectModalProps> = ({
                                 }}
                             >
                                 <Text style={styles.modalItemText}>{item.label}</Text>
+
+                                {/* <Image
+                                    source={{ uri: item.icon }}
+                                    style={{
+                                        width: 66,
+                                        height: 58,
+                                    }}
+                                /> */}
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
@@ -88,6 +108,10 @@ const DriverProfileEdit = ({ navigation }) => {
     const [keyboardTypeTextPas, setKeyboardTypeTextPas] = useState<'default' | 'numeric'>('default');
     const [vehicleTypeModalVisible, setVehicleTypeModalVisible] = useState(false);
     const [car_type, setCar_type] = useState<{ value: string; label: string } | null>(null);
+    const [date, setDate] = useState<Date | null>();
+    const [dateError, setDateError] = useState<string>('');
+    const [dateValue, setDateValue] = useState<string>('');
+
     useEffect(() => {
         GetData('user_id').then((res) => {
             if (res) {
@@ -117,6 +141,21 @@ const DriverProfileEdit = ({ navigation }) => {
                 console.log(54, res.data);
                 setFullName(res.data.user?.firstname)
                 setLastname(res.data.user?.lastname)
+                if (res.data?.user?.phone_2) {
+                    setOptionalPhone(res.data?.user?.phone_2.slice(1))
+                }
+                if (res.data?.driver?.name && res.data?.driver?.name != "unknown") {
+                    setCarName(res.data?.driver?.name)
+                }
+                if (res.data?.driver?.tex_pas_ser && res.data?.driver?.tex_pas_ser != "unknown" && res.data?.driver?.tex_pas_num && res.data?.driver?.tex_pas_num != "unknown") {
+                    setCarPassport(res.data?.driver?.tex_pas_ser + res.data?.driver?.tex_pas_num)
+                    setKeyboardTypeTextPas('numeric');
+                }
+                if (res.data?.driver?.prava_ser && res.data?.driver?.prava_ser != "unknown" && res.data?.driver?.prava_num && res.data?.driver?.prava_num != "unknown") {
+                    setDriverLicense(res.data?.driver?.prava_ser + res.data?.driver?.prava_num)
+                    setKeyboardType('numeric');
+                }
+
             }).catch((error) => {
                 console.log(56, error);
             })
@@ -130,7 +169,8 @@ const DriverProfileEdit = ({ navigation }) => {
                     const newArr = res.data.carTypes.map((el: carTypes) => {
                         return {
                             value: el.id,
-                            label: el.name
+                            label: el.name,
+                            icon: el.icon
                         }
                     })
                     setVehicleTypes(newArr)
@@ -180,14 +220,43 @@ const DriverProfileEdit = ({ navigation }) => {
         }
     };
 
+    const handleDateChange = (date: Date) => {
+        setDate(date);
+        setDateError('');
+    };
+
+
+    function formatDate(dateString: Date): string {
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    const phoneValidateFun = (value: string) => {
+        const phoneRegex = /^998\d{9}$/; // +998xxxxxxxxx phone format
+        if (value && phoneRegex.test(value)) {
+            return true;
+        } else {
+            return false;
+        }
+    };
+
     const handleSave = () => {
-        if (fullName && lastname && car_type && carName && carPassport && driverLicense) {
+        if (
+            fullName && lastname &&
+            car_type && carName &&
+            carPassport && driverLicense
+
+        ) {
             if (token && user_id) {
                 const resData = {
                     "firstname": fullName,
                     "lastname": lastname,
                     "car_type": car_type.value,
                     "car_name": carName,
+                    "phone_2": optionalPhone ? "+" + optionalPhone : null,
+                    'birthday': date ? formatDate(date) : dateValue,
                     "tex_pas_ser": splitText(carPassport, 3).text_1,
                     "prava_ser": splitText(driverLicense, 2).text_1,
                     "tex_pas_num": splitText(carPassport, 3).text_2,
@@ -201,11 +270,15 @@ const DriverProfileEdit = ({ navigation }) => {
                     }
                 }).then((res) => {
                     console.log(201, res.data);
+                    navigation.goBack()
                 }).catch((error) => {
                     console.log(203, error?.response?.data?.message);
                 })
             }
+        } else {
+            showErrorAlert("Ixtiyoriy bo'lmagan barcha qiymatlarni kiritish shart!")
         }
+
     };
 
 
@@ -278,13 +351,7 @@ const DriverProfileEdit = ({ navigation }) => {
 
             <View style={styles.InputWrapper}>
                 <Text style={styles.InputTitle}>Tug'ilgan sana</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Tug'ilgan sana"
-                    value={birthDate}
-                    placeholderTextColor="#898D8F"
-                    onChangeText={setBirthDate}
-                />
+                <CustomDatePicker value={dateValue} onDateChange={handleDateChange}></CustomDatePicker>
             </View>
 
             {/* <View style={styles.InputWrapper}>
@@ -417,6 +484,10 @@ const styles = StyleSheet.create({
         padding: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#E8E9E9',
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     },
     selectedText: {
         color: '#000000',

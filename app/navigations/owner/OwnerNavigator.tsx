@@ -41,8 +41,13 @@ const OwnerNavigation: React.FC<componentNameProps> = ({ page }) => {
 
     // Function to navigate based on active tab
     const handleTabChange = (tab: keyof RootStackParamList) => {
+        if (
+            tab == 'active_loads' || tab == 'home'
+            || tab == 'history' || tab == 'profile'
+        ) {
+            navigation.navigate(tab); // Use correct tab type
+        }
         setActiveTab(tab);
-        navigation.navigate(tab); // Use correct tab type
     };
 
     useEffect(() => {

@@ -155,8 +155,6 @@ const ProfileDataUpdate: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
         setPhoneSecondError('');
     };
     const handleDateChange = (date: Date) => {
-        console.log(156, date);
-
         setDate(date);
         setDateError('');
     };
