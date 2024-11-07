@@ -3,6 +3,21 @@ import { RouteProp } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 
+interface Location {
+    id: string;
+    status: string;
+    load_id: string;
+    latitude: string;
+    longitude: string;
+    order: number;
+    start_time: string | null;
+    end_time: string | null;
+    location_name: string;
+    createdAt: string;
+    updatedAt: string;
+    AssignmentId: string | null;
+}
+
 export type RootStackParamList = {
     home: undefined;
     active_loads: undefined,
@@ -17,7 +32,7 @@ export type RootStackParamList = {
     contact_admin: undefined,
     terms_condition: undefined,
     active_loads_detail: { itemId: string },
-    active_loads_map: { itemId: string },
+    active_loads_map: { itemId: string, data: Location[] | null },
     history_detail: { itemId: string },
     history_detail_map: { itemId: string },
 

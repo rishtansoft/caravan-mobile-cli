@@ -85,7 +85,7 @@ const getTextColorKey = (key: string): string => {
 
 
 const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation }) => {
-    const { itemId } = route.params;
+    const { itemId, data } = route.params;
 
     const [currentLocation, setCurrentLocation] = useState<Position | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
@@ -329,8 +329,8 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
                     </View>
                     <View style={styles.link_bottom}>
                         <Text style={[styles.link_bottom_text, { backgroundColor: getBgColorKey("Yo'lda"), color: getTextColorKey("Yo'lda") }]}>Yo'lda</Text>
-                        <Text style={{ color: '#6E7375', fontSize: 14 }}>
-                            10 daqiqada yetib boradi</Text>
+                        {/* <Text style={{ color: '#6E7375', fontSize: 14 }}>
+                            10 daqiqada yetib boradi</Text> */}
                     </View>
 
                 </View>

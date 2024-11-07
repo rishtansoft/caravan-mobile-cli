@@ -66,6 +66,35 @@ interface Result {
     locations: Location[];
     loadDetails: LoadDetail[];
 }
+interface StopoverAddress {
+    stopover_address: string | undefined;
+}
+
+interface CargoDetails {
+    start_address: string | undefined;
+    stopover_address: StopoverAddress[] | undefined;
+    end_address: string | undefined;
+}
+
+interface VehicleDetails {
+    license_plate: string;
+    type: string;
+}
+
+interface CargoInfo {
+    status: string;
+    start_location: string | undefined;
+    end_location: string | undefined;
+    cargo_details: CargoDetails;
+    vehicle_details: VehicleDetails;
+    cargo_type: string;
+    cargo_weight: number;
+    loading_time: string;
+    receiver_phone: string;
+    payer: string;
+    round_trip: string;
+    order_comment: string;
+}
 
 
 const defaultData = {
@@ -154,14 +183,30 @@ const splitText = (text: string,): { text_1: string } => {
     const text_1 = text.slice(0, 8);
     return { text_1 };
 };
+const filertDriverStopOrder = (arr: Location[], order: number) => {
+    const orderFilter = arr.find((el) => el.order == order)?.location_name.split(',')
+
+    if (orderFilter && orderFilter.length > 0) {
+        const addresa = orderFilter[0]
+        return addresa
+    } else {
+        return orderFilter?.join(' ')
+    }
+
+}
+
+const filertDriverStopOrderTextFull = (arr: Location[], order: number) => {
+    const orderFilter = arr.find((el) => el.order == order)?.location_name;
+    return orderFilter;
+}
 
 
 const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route }) => {
     const { itemId } = route.params;
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
-    const [result, setResult] = useState<Result | null>(null);
-
+    const [result, setResult] = useState<CargoInfo | null>(null);
+    const [locations, setLocations] = useState<Location[] | null>(null);
     useEffect(() => {
         GetData('user_id').then((res) => {
             if (res) {
@@ -191,13 +236,46 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                 .then((res) => {
                     console.log(134, res.data.result);
 
+                    if (res.data?.result) {
+                        const resData: Result = res.data.result;
+                        const stopLoaction = resData.locations.length > 2 && resData.locations.filter((el) => el.order != 0 && el.order != 1)
+                            .map((el) => {
+                                return {
+                                    stopover_address: filertDriverStopOrderTextFull(resData.locations, el.order)
+                                }
+                            })
+                        setLocations(resData.locations)
+                        const newData: CargoInfo = {
+                            status: resData.main.load_status,
+                            start_location: filertDriverStopOrder(resData.locations, 0),
+                            end_location: filertDriverStopOrder(resData.locations, 1),
+                            cargo_type: resData.main.cargo_type,
+                            cargo_weight: resData.loadDetails[0].weight,
+                            loading_time: resData.loadDetails[0].loading_time,
+                            receiver_phone: resData.main.receiver_phone,
+                            payer: resData.main.payer,
+                            order_comment: resData.main.description,
+                            "cargo_details": {
+                                "start_address": filertDriverStopOrderTextFull(resData.locations, 0),
+                                "stopover_address": resData.locations.length > 2 && stopLoaction && stopLoaction.length > 0 ? stopLoaction : [],
+                                "end_address": filertDriverStopOrderTextFull(resData.locations, 1)
+                            },
+                            "vehicle_details": {
+                                "license_plate": "60A125BA",
+                                "type": resData.loadDetails[0].CarType.name
+                            },
+                            "round_trip": "Ha",
+                        }
+                        if (newData) {
+                            setResult(newData)
+                        }
+                    }
+
                 }).catch((error) => {
                     console.log(132, error);
                 })
         }
     }, [token, user_id]);
-
-
 
     return (
         <View style={styles.container_all}>
@@ -214,187 +292,196 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                         Buyurtma #{splitText(itemId).text_1}
                     </Text>
                     <View style={styles.link_bottom}>
-                        <Text style={[styles.link_bottom_text, { backgroundColor: getBgColorKey(defaultData.status), color: getTextColorKey(defaultData.status) }]}>{defaultData.status}</Text>
-
+                        {
+                            result &&
+                            <Text style={[styles.link_bottom_text, { backgroundColor: getBgColorKey(result.status), color: getTextColorKey(result.status) }]}>{getStatusText(result.status)}</Text>
+                        }
                     </View>
-
                 </View>
                 <IconFoundation
-                    onPress={() => navigation.navigate("active_loads_map", { itemId: itemId })}
+                    onPress={() => navigation.navigate("active_loads_map", { itemId: itemId, data: locations })}
                     name="map" size={30} color="#7257FF" />
             </View>
-            <ScrollView style={{ flex: 1, paddingBottom: 10 }}>
-                <View style={styles.container}>
-                    <View style={styles.link_location_texts}>
-                        <Text style={styles.link_location_text}>{defaultData.start_location}</Text>
-                        <Fontisto name="arrow-switch" size={18} color="#B4A6FF" />
-                        <Text style={styles.link_location_text}>{defaultData.end_location}</Text>
-                    </View>
-                </View>
-                <View style={styles.container}>
-                    <View style={styles.content}>
-                        <View>
-                            <FeatherIcons
-                                name="map-pin" size={20} color="#131214" />
-                        </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Yuk manzili</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.cargo_details.start_address}
-                            </Text>
+            {
+                result && <ScrollView style={{ flex: 1, paddingBottom: 10 }}>
+                    <View style={styles.container}>
+                        <View style={styles.link_location_texts}>
+                            <Text style={styles.link_location_text}>{result.start_location}</Text>
+                            <Fontisto name="arrow-switch" size={18} color="#B4A6FF" />
+                            <Text style={styles.link_location_text}>{result.end_location}</Text>
                         </View>
                     </View>
-                    <View style={styles.content}>
-                        <View>
-                            <MaterialCommunityIcons
-                                name="map-marker-plus-outline" size={25} color="#131214" />
+                    <View style={styles.container}>
+                        <View style={styles.content}>
+                            <View>
+                                <FeatherIcons
+                                    name="map-pin" size={20} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Yuk manzili</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.cargo_details.start_address}
+                                </Text>
+                            </View>
                         </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>To'xtab o'tish</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.cargo_details.stopover_address}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.content}>
-                        <View>
-                            <MaterialCommunityIcons
-                                name="map-marker-check-outline" size={26} color="#131214" />
-                        </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Yetkazish manzili</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.cargo_details.end_address}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-                <View style={styles.container}>
-                    <View style={styles.content}>
-                        <View>
-                            <Ionicons
-                                name="car-outline" size={25} color="#131214" />
-                        </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Mashina raqami</Text>
-                            <Text style={[styles.content_text_bottom, { color: '#5336E2' }]} numberOfLines={2}>
-                                {defaultData.vehicle_details.license_plate}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.content}>
-                        <View>
-                            <Ionicons
-                                name="cube-outline" size={23} color="#131214" />
-                        </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Yuk turi</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.cargo_type}
-                            </Text>
+                        {
+                            result.cargo_details.stopover_address?.map((el, index) => (
+                                <View key={index} style={styles.content}>
+                                    <View>
+                                        <MaterialCommunityIcons
+                                            name="map-marker-plus-outline" size={25} color="#131214" />
+                                    </View>
+                                    <View style={styles.content_text_container}>
+                                        <Text style={styles.content_text_top}>To'xtab o'tish</Text>
+                                        <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                            {el.stopover_address}
+                                        </Text>
+                                    </View>
+                                </View>
+                            ))
+                        }
+
+                        <View style={styles.content}>
+                            <View>
+                                <MaterialCommunityIcons
+                                    name="map-marker-check-outline" size={26} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Yetkazish manzili</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.cargo_details.end_address}
+                                </Text>
+                            </View>
                         </View>
                     </View>
-                    <View style={styles.content}>
-                        <View>
-                            <Ionicons
-                                name="scale-outline" size={23} color="#131214" />
+                    <View style={styles.container}>
+                        {/* <View style={styles.content}>
+                            <View>
+                                <Ionicons
+                                    name="car-outline" size={25} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Mashina raqami</Text>
+                                <Text style={[styles.content_text_bottom, { color: '#5336E2' }]} numberOfLines={2}>
+                                    {result.vehicle_details.license_plate}
+                                </Text>
+                            </View>
+                        </View> */}
+                        <View style={styles.content}>
+                            <View>
+                                <Ionicons
+                                    name="cube-outline" size={23} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Yuk turi</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.cargo_type}
+                                </Text>
+                            </View>
                         </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Yuk vazni</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.cargo_weight}
-                            </Text>
+                        <View style={styles.content}>
+                            <View>
+                                <Ionicons
+                                    name="scale-outline" size={23} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Yuk vazni</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.cargo_weight}
+                                </Text>
+                            </View>
                         </View>
-                    </View>
-                    <View style={styles.content}>
-                        <View>
-                            <Ionicons
-                                name="time-outline" size={23} color="#131214" />
+                        <View style={styles.content}>
+                            <View>
+                                <Ionicons
+                                    name="time-outline" size={23} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Yuklash vaqti</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.loading_time}
+                                </Text>
+                            </View>
                         </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Yuklash vaqti</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.loading_time}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.content}>
-                        <View>
-                            <FeatherIcons
-                                name="truck" size={23} color="#131214" />
-                        </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Mashina turi</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.vehicle_details.type}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-                <View style={styles.container}>
-                    <View style={styles.content}>
-                        <View>
-                            <FeatherIcons
-                                name="phone-call" size={20} color="#131214" />
-                        </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Qabul qiluvchining telefon raqami</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.receiver_phone}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.content}>
-                        <View>
-                            <Ionicons
-                                name="logo-usd" size={20} color="#131214" />
-                        </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Kim to'laydi</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.payer}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.content}>
-                        <View>
-                            <Fontisto
-                                name="arrow-switch" size={20} color="#131214" />
-                        </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Borib qaytish</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.round_trip}
-                            </Text>
+                        <View style={styles.content}>
+                            <View>
+                                <FeatherIcons
+                                    name="truck" size={23} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Mashina turi</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.vehicle_details.type}
+                                </Text>
+                            </View>
                         </View>
                     </View>
-                    <View style={styles.content}>
-                        <View>
-                            <MaterialCommunityIcons
-                                name="message-reply-text-outline" size={20} color="#131214" />
+                    <View style={styles.container}>
+                        <View style={styles.content}>
+                            <View>
+                                <FeatherIcons
+                                    name="phone-call" size={20} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Qabul qiluvchining telefon raqami</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.receiver_phone}
+                                </Text>
+                            </View>
                         </View>
-                        <View style={styles.content_text_container}>
-                            <Text style={styles.content_text_top}>Buyurtma uchun sharh</Text>
-                            <Text style={styles.content_text_bottom} numberOfLines={2}>
-                                {defaultData.order_comment}
-                            </Text>
+                        <View style={styles.content}>
+                            <View>
+                                <Ionicons
+                                    name="logo-usd" size={20} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Kim to'laydi</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.payer}
+                                </Text>
+                            </View>
+                        </View>
+                        <View style={styles.content}>
+                            <View>
+                                <Fontisto
+                                    name="arrow-switch" size={20} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Borib qaytish</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.round_trip}
+                                </Text>
+                            </View>
+                        </View>
+                        <View style={styles.content}>
+                            <View>
+                                <MaterialCommunityIcons
+                                    name="message-reply-text-outline" size={20} color="#131214" />
+                            </View>
+                            <View style={styles.content_text_container}>
+                                <Text style={styles.content_text_top}>Buyurtma uchun sharh</Text>
+                                <Text style={styles.content_text_bottom} numberOfLines={2}>
+                                    {result.order_comment}
+                                </Text>
+                            </View>
                         </View>
                     </View>
-                </View>
-                <TouchableOpacity
-                    onPress={() => navigation.navigate("active_loads_map", { itemId: itemId })}
-                    style={[styles.btn, { backgroundColor: '#7257FF', }]}>
-                    <Text style={[styles.btn_text, { color: '#fff' }]}>Xaritada ko'rish
-                    </Text>
-                    <IconFoundation
-                        name="map" size={25} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.btn, { backgroundColor: '#E8EBEB', marginBottom: 20 }]}>
-                    <Text style={[styles.btn_text, { color: '#131214' }]}>Buyurtmani bekor qilish </Text>
-                    <FeatherIcons
-                        name="x" size={25} color="#131214" />
-                </TouchableOpacity>
-            </ScrollView>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate("active_loads_map", { itemId: itemId, data: locations })}
+                        style={[styles.btn, { backgroundColor: '#7257FF', }]}>
+                        <Text style={[styles.btn_text, { color: '#fff' }]}>Xaritada ko'rish
+                        </Text>
+                        <IconFoundation
+                            name="map" size={25} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.btn, { backgroundColor: '#E8EBEB', marginBottom: 20 }]}>
+                        <Text style={[styles.btn_text, { color: '#131214' }]}>Buyurtmani bekor qilish </Text>
+                        <FeatherIcons
+                            name="x" size={25} color="#131214" />
+                    </TouchableOpacity>
+                </ScrollView>
+            }
+
 
             <View style={{ marginTop: 65 }}></View>
 

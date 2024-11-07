@@ -157,7 +157,6 @@ interface ResData {
 
 const filertDriverStopOrder = (arr: DriverStop[], order: number) => {
     const orderFilter = arr.find((el) => el.order == order)?.location_name.split(',')
-    console.log(161, orderFilter);
 
     if (orderFilter && orderFilter.length > 0) {
         const addresa = orderFilter[0]

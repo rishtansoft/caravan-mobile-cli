@@ -123,7 +123,7 @@ const AddLoadThird: React.FC<AddLoadThirdProps> = ({ navigation }) => {
                         "address": el.name,
                         "lat": el.latitude,
                         "lon": el.longitude,
-                        "order": el.order
+                        "order": el.order,
                     }
                 }) : []
 
