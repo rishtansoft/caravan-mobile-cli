@@ -162,7 +162,7 @@ const AddLoadThird: React.FC<AddLoadThirdProps> = ({ navigation }) => {
                     }
                 }).then((res) => {
                     console.log(res.data);
-                    navigation.navigate("home")
+                    navigation.navigate('active_loads')
                 }).catch((error) => {
                     console.log(error?.response?.data?.message);
                     showErrorAlert(error?.response?.data?.message ? error?.response?.data?.message : error)

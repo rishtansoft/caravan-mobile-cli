@@ -12,6 +12,8 @@ import { GetData } from '../AsyncStorage/AsyncStorage';
 import { API_URL } from '@env';
 import EditProfileModal from '../ui/EditProfileModal/EditProfileModal';
 
+const MAX_IMAGE_SIZE = 200 * 1024; // 200 KB
+
 const showErrorAlert = (message: string) => {
     Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
 };
@@ -27,7 +29,52 @@ interface ImageUploadResponse {
     errorMessage?: string;
     assets?: Asset[];
 }
+const uploadImageToAPI = async (imageUri: string, userId: string, authToken: string,) => {
+    try {
+        const imageSize = await getImageSize(imageUri);
+        if (imageSize > MAX_IMAGE_SIZE) {
+            showErrorAlert('Rasm hajmi 200 KB dan oshmasligi kerak');
+            return;
+        }
 
+        const formData = new FormData();
+        const fileName = imageUri.split('/').pop() || 'photo.jpg';
+        const match = /\.(\w+)$/.exec(fileName);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+        formData.append('file', {
+            uri: Platform.OS === 'android' ? imageUri : imageUri.replace('file://', ''),
+            type: type,
+            name: fileName,
+        } as any);
+
+        const config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: `${API_URL}/api/auth/upload-profile-picture?user_id=${userId}`,
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'multipart/form-data',
+            },
+            data: formData,
+        };
+
+        const response = await axios.request(config);
+        return response.data;
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        throw error;
+    }
+};
+const getImageSize = async (imageUri: string): Promise<number> => {
+    try {
+        const response = await axios.get(imageUri, { responseType: 'blob' });
+        return response.data.size;
+    } catch (error) {
+        console.error('Rasm hajmini olishda xatolik:', error);
+        return 0;
+    }
+};
 
 const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     const [nightMode, setNightMode] = useState<boolean>(false);
@@ -41,7 +88,8 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const [imageChangeModal, setImageChangeModal] = useState(false);
-
+    const [img_url, setImg_url] = useState<string | null>(null);
+    const [dataUpdate, setDataUpdate] = useState<boolean>(false);
     useEffect(() => {
         GetData('user_id').then((res) => {
             if (res) {
@@ -73,6 +121,9 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                 setName(res.data.firstname)
                 setNameLastname(res.data.lastname)
                 setPhone(res.data.phone)
+                if (res.data?.user_img) {
+                    setImg_url(res.data.user_img)
+                }
 
             }).catch((error) => {
                 console.log(76, error);
@@ -82,6 +133,33 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
         }
 
     }, [user_id, token]);
+
+    useEffect(() => {
+        if (user_id && token && dataUpdate) {
+            axios.get(API_URL + `/api/auth/get-profile?user_id=${user_id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }).then((res) => {
+                console.log(73, res.data);
+                setName(res.data.firstname)
+                setNameLastname(res.data.lastname)
+                setPhone(res.data.phone)
+                if (res.data?.user_img) {
+                    setImg_url(res.data.user_img)
+                }
+                setDataUpdate(false)
+
+            }).catch((error) => {
+                console.log(76, error);
+
+                showErrorAlert(error?.response?.data?.message)
+            })
+        }
+
+    }, [user_id, token, dataUpdate]);
+
+
 
 
     const ImagePickerModal = () => (
@@ -93,10 +171,10 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
         >
             <TouchableOpacity onPress={() => setImageChangeModal(false)} style={styles.modalContainer}>
                 <View style={styles.modalContent}>
-                    <TouchableOpacity style={styles.modalButton} onPress={handleTakePhoto}>
+                    {/* <TouchableOpacity style={styles.modalButton} onPress={handleTakePhoto}>
                         <Icon name="camera" size={24} color="#5336E2" />
                         <Text style={styles.modalButtonText}>Kameradan rasmga olish</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
 
                     <TouchableOpacity style={styles.modalButton} onPress={handleChoosePhoto}>
                         <Icon name="image" size={24} color="#5336E2" />
@@ -150,8 +228,6 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
         );
     };
 
-
-
     const handleChoosePhoto = () => {
         const options: ImageLibraryOptions = {
             mediaType: 'photo',
@@ -165,13 +241,14 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
             } else if (response.errorCode) {
                 console.log('ImagePicker Error:', response.errorMessage);
             } else if (response.assets && response.assets[0].uri) {
-                await uploadImage(response.assets[0].uri);
+                await uploadImageToAPI(response.assets[0].uri, user_id, token,).then((res) => {
+                    setDataUpdate(true);
+                })
             }
         });
         setImageChangeModal(false);
     };
 
-    // Kameradan rasm olish funksiyasi
     const handleTakePhoto = () => {
         const options: CameraOptions = {
             mediaType: 'photo',
@@ -185,93 +262,25 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
             } else if (response.errorCode) {
                 console.log('Camera Error:', response.errorMessage);
             } else if (response.assets && response.assets[0].uri) {
-                await uploadImage(response.assets[0].uri);
+                await uploadImageToAPI(response.assets[0].uri, user_id, token);
             }
         });
         setImageChangeModal(false);
     };
-
-    const uploadImage = async (imageUri: string) => {
-        if (token && user_id) {
-            const formData = new FormData();
-
-            const fileName = imageUri.split('/').pop() || 'photo.jpg';
-            const match = /\.(\w+)$/.exec(fileName);
-            const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-            formData.append('profile_picture', {
-                uri: Platform.OS === 'android' ? imageUri : imageUri.replace('file://', ''),
-                type: type,
-                name: fileName,
-            } as any);
-
-            try {
-                const response = await axios.post<ImageResponse>(
-                    `${API_URL}/api/auth/upload-profile-picture?user_id=${user_id}`,
-                    formData,
-                    {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            'Authorization': `Bearer ${token}`,
-                        },
-                        params: {
-                            user_id: user_id
-                        }
-                    }
-                );
-
-                if (response.data) {
-                    console.log('Rasm yuklandi:', response.data);
-                    // setProfileImage(response.data.image_url);
-                    Alert.alert('Muvaffaqiyatli', 'Profil rasmi yangilandi');
-                }
-            } catch (error) {
-                console.error('Rasm yuklashda xatolik:', error);
-
-                if (axios.isAxiosError(error)) {
-                    console.log(error);
-                    console.log('Response data:', error.response?.data);
-                    console.log('Response status:', error.response?.status);
-                    console.log('Response headers:', error.response?.headers);
-                }
-
-                Alert.alert(
-                    'Xatolik',
-                    "Rasmni yuklashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring."
-                );
-            }
-
-        }
-    };
-
-
-
     const handleLanguageChange = (languageCode: string) => {
         setCurrentLanguage(languageCode);
-        // Bu yerda til o'zgarganda kerakli logikani yozish mumkin
-        // Masalan: i18n configuratsiyasi, AsyncStorage'ga saqlash va h.k.
     }
-
-
-
-
     const handleChangePhoneNumber = () => {
         setModalVisible(false);
         navigation.navigate('main_phone_update')
     };
-
     const handleChangePersonalInfo = () => {
         setModalVisible(false);
         navigation.navigate('profile_update')
     };
-
-
-
     const logoutFun = async () => {
         await handleLogout()
     }
-
-
 
     return (
         <View style={styles.container_all}>
@@ -292,7 +301,7 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                 <View style={styles.profileContainer}>
                     <TouchableOpacity onPress={() => setImageChangeModal(true)}>
                         <Image
-                            source={profileImage ? { uri: profileImage } : require('../../assets/img/owner/user.png')}
+                            source={img_url ? { uri: img_url } : require('../../assets/img/owner/user.png')}
                             style={styles.profileImage}
                         />
                         <View style={styles.editImageButton}>
