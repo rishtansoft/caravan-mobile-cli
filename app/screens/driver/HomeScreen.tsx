@@ -4,7 +4,6 @@ import {
     View,
     Text,
     Image,
-    Switch,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
@@ -73,8 +72,13 @@ const HomeScreen: React.FC = () => {
     const navigation = useNavigation();
     const [isSwitchOn, setIsSwitchOn] = useState(false);
     const [isModalVisible, setModalVisible] = useState(false);
-    const orders = [1, 1, 1, 1, 1, 1];
+   
+console.log(isSwitchOn);
 
+    if (isSwitchOn) {
+        console.log(user_id);
+        console.log(token);        
+    }
     // Royhatdan toliq o'tgan yoki yoqligini tekshirish asnc storage bilan tekshirish
     const userRegister = true;
 

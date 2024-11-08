@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TextInput, FlatList, TouchableOpacity, Text, Platform, Alert } from 'react-native';
+import { View, StyleSheet,  TouchableOpacity, Text, Platform, Alert } from 'react-native';
 import MapboxGl from '@rnmapbox/maps';
 import Geolocation from 'react-native-geolocation-service';
 import { Position, Feature, Geometry } from 'geojson';
