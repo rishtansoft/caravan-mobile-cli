@@ -244,7 +244,7 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
                                 placeholderTextColor="#898D8F"
                                 value={phone}
                                 onChangeText={phoneInputFun}
-                                placeholder="+998 __  ___  __  __"
+                                placeholder="998 __  ___  __  __"
                                 onFocus={() => setPhoneIsFocused(true)}
                                 onBlur={() => setPhoneIsFocused(false)}
                             />

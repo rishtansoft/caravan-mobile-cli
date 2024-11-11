@@ -103,7 +103,8 @@ const HomeScreen: React.FC = () => {
                 }
             })
                 .then((res) => {
-                    console.log(API_URL + `/api/loads/get-all-active-loads?user_id=${user_id}`);
+                    console.log(106, API_URL + `/api/loads/get-all-active-loads?user_id=${user_id}`);
+                    
                     
                     if (res.data?.data && res.data.data.length > 0) {
                         const resdataFileter = filterByDriverStops(res.data?.data)

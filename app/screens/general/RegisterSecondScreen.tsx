@@ -199,7 +199,7 @@ const RegisterSecondScreen: React.FC<RegisterSecondProps> = ({ navigation }) => 
                             placeholderTextColor="#898D8F"
                             value={phoneSecond}
                             onChangeText={phoneSecondInputFun}
-                            placeholder="+998 __  ___  __  __"
+                            placeholder="998 __  ___  __  __"
                             onFocus={() => setPhoneSecondIsFocused(true)}
                             onBlur={() => setPhoneSecondIsFocused(false)}
 

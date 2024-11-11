@@ -115,7 +115,6 @@ const DriverProfileEdit = ({ navigation }) => {
     useEffect(() => {
         GetData('user_id').then((res) => {
             if (res) {
-                // console.log(44, JSON.parse(res).user_id);
                 setUser_id(res)
 
             }
@@ -138,7 +137,6 @@ const DriverProfileEdit = ({ navigation }) => {
                     Authorization: `Bearer ${token}`
                 }
             }).then((res) => {
-                console.log(54, res.data);
                 setFullName(res.data.user?.firstname)
                 setLastname(res.data.user?.lastname)
                 if (res.data?.user?.phone_2) {
