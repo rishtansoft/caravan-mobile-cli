@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import IconFoundation from "react-native-vector-icons/Foundation";
@@ -252,7 +253,7 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
           }
         )
         .then((res) => {
-          console.log(134, res.data.result);
+          console.log(135, res.data.result);
 
           if (res.data?.result) {
             const resData: Result = res.data.result;
@@ -274,8 +275,8 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
               start_location: filertDriverStopOrder(resData.locations, 0),
               end_location: filertDriverStopOrder(resData.locations, 1),
               cargo_type: resData.main.cargo_type,
-              cargo_weight: resData.loadDetails[0].weight,
-              loading_time: resData.loadDetails[0].loading_time,
+              cargo_weight: resData?.loadDetails[0]?.weight,
+              loading_time: resData?.loadDetails[0]?.loading_time,
               receiver_phone: resData.main.receiver_phone,
               payer: resData.main.payer,
               order_comment: resData.main.description,
@@ -297,7 +298,7 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
               },
               vehicle_details: {
                 license_plate: "60A125BA",
-                type: resData.loadDetails[0].CarType.name,
+                type: resData?.loadDetails[0]?.CarType.name,
               },
               round_trip: "Ha",
             };
@@ -313,6 +314,32 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
   }, [token, user_id]);
 
   const deleteFun = () => {};
+
+  const assignLoadToDriver = () => {
+    if (user_id && itemId) {
+      axios.post(API_URL + `/api/loads/assign-load`, {user_id: user_id, load_id: itemId}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then(response => {
+          console.log(325, response.data);
+          if (response.data.message == "Load successfully assigned to driver") {
+              navigation.navigate("GetLoadNavigator", {
+                itemId: itemId,
+                data: locations,
+              })
+          } else {
+            Alert("Cannot assign load to driver")
+          }
+        })
+        .catch(err => {
+          console.log("Error assign load to driver", err);
+          Alert("Cannot assign load to driver")
+        })
+    }
+    
+  }
 
   return (
     <View style={styles.container_all}>
@@ -533,7 +560,7 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
             <IconFoundation name="map" size={25} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity
-          
+            onPress={assignLoadToDriver}
             style={[styles.btn, { backgroundColor: "#7257FF" ,marginBottom:20}]}
           >
             <Text style={[styles.btn_text, { color: "#fff" }]}>
