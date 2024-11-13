@@ -18,11 +18,6 @@ const showErrorAlert = (message: string) => {
     Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
 };
 
-interface ImageResponse {
-    image_url: string;
-    message: string;
-}
-
 interface ImageUploadResponse {
     didCancel?: boolean;
     errorCode?: string;

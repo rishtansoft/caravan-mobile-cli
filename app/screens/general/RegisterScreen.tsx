@@ -11,11 +11,13 @@ import {
     Keyboard,
     Alert
 } from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { RegisterProps } from './RouterType';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { StoreData, GetData, } from '../AsyncStorage/AsyncStorage';
+import PasswordInput from '../ui/PasswordInput/PasswordInput';
 
 interface ListItem {
     text: string;
@@ -23,6 +25,25 @@ interface ListItem {
 
 const showErrorAlert = (message: string) => {
     Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
+};
+
+const PasswordRequirements = () => {
+    const items = [
+        { id: '1', text: "Parol 8 ta belgidan kam bo'lmasligi kerak" },
+        { id: '2', text: 'Kamida bitta katta xarf' },
+        { id: '3', text: 'Kamida bitta belgi' },
+    ];
+
+    return (
+        <View style={{ marginTop: 8 }}>
+            {items.map((item) => (
+                <View key={item.id} style={styles.listItem}>
+                    <Text style={styles.bullet}>•</Text>
+                    <Text style={styles.itemText}>{item.text}</Text>
+                </View>
+            ))}
+        </View>
+    );
 };
 
 
@@ -39,6 +60,8 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
     const [password, setPassword] = useState<string>('');
     const [passwordError, setPasswordError] = useState<string>('');
     const [passwordIsFocused, setPasswordIsFocused] = useState<boolean>(false);
+    const [showPassword, setShowPassword] = useState(true);
+
     const [passwordReq, setPasswordReq] = useState<string>('');
     const [passwordReqError, setPasswordReqError] = useState<string>('');
     const [passwordReqIsFocused, setPasswordReqIsFocused] = useState<boolean>(false);
@@ -80,6 +103,9 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
         }).start();
     };
 
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
 
     const phoneInputFun = (values: string) => {
@@ -228,14 +254,18 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
                 </Text>
             </View>
 
+
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.container}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
             >
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <ScrollView contentContainerStyle={styles.scrollContainer}
-                        showsVerticalScrollIndicator={false}>
+                <ScrollView
+                    style={styles.scrollContainer}
+                    contentContainerStyle={styles.scrollContentContainer}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View>
                         <View>
                             <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Telefon raqam</Text>
                             <TextInput
@@ -278,37 +308,22 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
                         </View>
                         <View style={{ marginTop: 18 }}>
                             <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parol</Text>
-                            <TextInput
-                                style={!passwordIsFocused ? styles.input : styles.inputFocus}
-                                placeholderTextColor="#898D8F"
+                            <PasswordInput
                                 value={password}
                                 onChangeText={PasswordInputFun}
                                 placeholder="Parolni kiriting"
-                                onFocus={() => setPasswordIsFocused(true)}
-                                onBlur={() => setPasswordIsFocused(false)}
-                                secureTextEntry={true}
                             />
                             {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
                         </View>
-                        <View style={{ marginTop: 8 }}>
-                            <FlatList
-                                data={items}
-                                renderItem={renderItem}
-                                keyExtractor={item => item.id}
-                                style={styles.flatList}
-                            />
-                        </View>
+
+                        <PasswordRequirements />
+
                         <View style={{ marginTop: 18 }}>
                             <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parolni takrorlang</Text>
-                            <TextInput
-                                style={!passwordReqIsFocused ? styles.input : styles.inputFocus}
-                                placeholderTextColor="#898D8F"
+                            <PasswordInput
                                 value={passwordReq}
                                 onChangeText={passwordReqInputFun}
                                 placeholder="Parolni takrorlang"
-                                onFocus={() => setPasswordReqIsFocused(true)}
-                                onBlur={() => setPasswordReqIsFocused(false)}
-                                secureTextEntry={true}
                             />
                             {passwordReqError ? <Text style={styles.errorText}>{passwordReqError}</Text> : null}
                         </View>
@@ -317,8 +332,8 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
                         }}>
                             <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18 }}>Akkountingiz bormi?   <Text onPress={() => navigation.navigate('login')} style={{ color: '#7257FF', fontWeight: '600' }}>Kirish</Text></Text>
                         </View>
-                    </ScrollView>
-                </TouchableWithoutFeedback>
+                    </View>
+                </ScrollView>
             </KeyboardAvoidingView>
 
             {!keyboardVisible && <View style={{
@@ -358,8 +373,27 @@ const styles = StyleSheet.create({
         position: 'relative',
         overflow: 'scroll',
         height: 100,
-
     },
+    inputContainer: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+
+        // borderWidth: 1,
+        // borderColor: '#E6E9EB',
+        // borderRadius: 8,
+    },
+    icon: {
+        padding: 10,
+        zIndex: 99999
+    },
+    scrollContentContainer: {
+        flexGrow: 1,
+        paddingBottom: 40, // Klaviatura ostida qo'shimcha padding
+    },
+
     header_con: {
         display: 'flex',
         flexDirection: 'row',
@@ -379,12 +413,14 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         color: '#131214',
         borderRadius: 8,
+        zIndex: 99,
         paddingLeft: 15,
     },
     inputFocus: {
         borderColor: '#7257FF',
         width: '100%',
         borderWidth: 2,
+        zIndex: 99,
         color: '#131214',
         borderRadius: 8,
         paddingLeft: 15,
@@ -395,7 +431,7 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     scrollContainer: {
-        paddingBottom: 35,
+        paddingBottom: 40,
         flexGrow: 1,
     },
     errorText: {
