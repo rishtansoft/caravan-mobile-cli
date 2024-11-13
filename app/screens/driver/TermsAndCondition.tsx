@@ -53,7 +53,7 @@ const TermsAndCondition: React.FC<TermsConditionProps> = ({ navigation }) => {
           }}
         >
           <Icon
-            onPress={() => navigation.navigate("Home")}
+            onPress={() => navigation.navigate('profile')}
             name="angle-left"
             size={30}
             color="#7257FF"

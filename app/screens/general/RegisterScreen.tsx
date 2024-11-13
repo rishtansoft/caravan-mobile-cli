@@ -215,6 +215,7 @@ const RegisterScreen: React.FC<RegisterProps> = ({ navigation }) => {
 
             });
         } else {
+
             if (!phone) {
                 setPhoneError('Telefon raqam kiritish shart!');
             } else if (!phoneValidateFun(phone)) {

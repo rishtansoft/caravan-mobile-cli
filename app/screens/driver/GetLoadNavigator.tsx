@@ -14,6 +14,7 @@ import { Position } from 'geojson';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { ActiveLoadsDetailMapProps } from './RouterType';
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -26,7 +27,7 @@ interface PositionInterface {
     latitude: number,
     address?: string
 }
-const GetLoadNavigator = ({navigation, route}) => {
+const GetLoadNavigator: React.FC<ActiveLoadsDetailMapProps> = ({ navigation, route }) => {
 
     const [currentLocation, setCurrentLocation] = useState<PositionInterface | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
@@ -44,7 +45,7 @@ const GetLoadNavigator = ({navigation, route}) => {
 
     useEffect(() => {
         if (route.params?.data[0]?.longitude) {
-            setLoadStartAddress({latitude: route.params.data[0].latitude, longitude: route.params.data[0].longitude})
+            setLoadStartAddress({ latitude: route.params.data[0].latitude, longitude: route.params.data[0].longitude })
         }
     }, [])
 
@@ -53,7 +54,7 @@ const GetLoadNavigator = ({navigation, route}) => {
             const permission = Platform.OS === 'ios'
                 ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
                 : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
-            
+
             const granted = await check(permission);
 
             if (granted === RESULTS.GRANTED) {
@@ -78,7 +79,7 @@ const GetLoadNavigator = ({navigation, route}) => {
 
             if (data.routes && data.routes[0]) {
                 setRouteCoordinates(data.routes[0].geometry.coordinates);
-                
+
                 const distanceKm = (data.routes[0].distance / 1000).toFixed(1);
                 const durationMinutes = Math.round(data.routes[0].duration / 60);
                 const hours = Math.floor(durationMinutes / 60);
@@ -86,8 +87,8 @@ const GetLoadNavigator = ({navigation, route}) => {
 
                 setRemainingDistance(`${distanceKm} km`);
                 setEstimatedTime(
-                    hours > 0 
-                        ? `${hours} soat ${minutes} daqiqa` 
+                    hours > 0
+                        ? `${hours} soat ${minutes} daqiqa`
                         : `${minutes} daqiqa`
                 );
 
@@ -185,7 +186,7 @@ const GetLoadNavigator = ({navigation, route}) => {
                         setLocationPermissionError('Joriy joylashuvni olishda xatolik');
                         setIsLoading(false);
                     },
-                    { 
+                    {
                         enableHighAccuracy: true,
                         timeout: 15000,
                         maximumAge: 10000
@@ -213,7 +214,7 @@ const GetLoadNavigator = ({navigation, route}) => {
                 <ActivityIndicator size="large" color="#7257FF" />
                 <Text style={styles.loadingText}>Joylashuv aniqlanmoqda...</Text>
             </View>
-        );r56yguk
+        ); // r56yguk
     }
 
 
@@ -226,7 +227,7 @@ const GetLoadNavigator = ({navigation, route}) => {
                 heading: 0
             });
         }
-      };
+    };
 
     return (
         <View style={styles.container}>
@@ -246,7 +247,7 @@ const GetLoadNavigator = ({navigation, route}) => {
             ) : (
                 // Normal mode header
                 <View style={styles.header}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.backButton}
                         onPress={() => navigation.goBack()}
                     >
@@ -259,7 +260,7 @@ const GetLoadNavigator = ({navigation, route}) => {
                 </View>
             )}
 
-            <MapboxGl.MapView 
+            <MapboxGl.MapView
                 ref={mapRef}
                 style={styles.map}
                 styleURL={MapboxGl.StyleURL.Light}
@@ -288,7 +289,7 @@ const GetLoadNavigator = ({navigation, route}) => {
                             styles.navigationArrow,
                             { transform: [{ rotate: `${currentLocation?.bearing || 0}deg` }] }
                         ]}>
-                            <Icon name="location-arrow"  size={35} color="#7257FF" />
+                            <Icon name="location-arrow" size={35} color="#7257FF" />
 
                         </View>
                     </MapboxGl.MarkerView>
@@ -345,7 +346,7 @@ const GetLoadNavigator = ({navigation, route}) => {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.showMeButton} onPress={recenterCamera}>
-                <Icon name='car' style = {styles.showMeButtonIcon}></Icon>
+                <Icon name='car' style={styles.showMeButtonIcon}></Icon>
             </TouchableOpacity>
         </View>
     );
@@ -466,11 +467,11 @@ const styles = StyleSheet.create({
         color: "black",
         padding: 10,
         borderRadius: 5,
-      },
-      showMeButtonIcon: {
+    },
+    showMeButtonIcon: {
         color: 'black',
         fontWeight: 'bold',
-      },
+    },
 });
 
 

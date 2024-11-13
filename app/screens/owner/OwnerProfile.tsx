@@ -18,6 +18,7 @@ const showErrorAlert = (message: string) => {
     Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
 };
 
+
 interface ImageUploadResponse {
     didCancel?: boolean;
     errorCode?: string;
@@ -85,11 +86,22 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     const [imageChangeModal, setImageChangeModal] = useState(false);
     const [img_url, setImg_url] = useState<string | null>(null);
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
+    const [unique_id, setUnique_id] = useState<string>('');
+
     useEffect(() => {
         GetData('user_id').then((res) => {
             if (res) {
                 // console.log(44, JSON.parse(res).user_id);
                 setUser_id(res)
+
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+        GetData('unique_id').then((res) => {
+            if (res) {
+                // console.log(44, JSON.parse(res).user_id);
+                setUnique_id(res)
 
             }
         }).catch((error) => {
@@ -136,7 +148,6 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                     Authorization: `Bearer ${token}`
                 }
             }).then((res) => {
-                console.log(73, res.data);
                 setName(res.data.firstname)
                 setNameLastname(res.data.lastname)
                 setPhone(res.data.phone)
@@ -306,6 +317,8 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                     <View>
                         <Text style={styles.profileName}>{name} {nameLastname}</Text>
                         <Text style={styles.profilePhone}>{phone}</Text>
+                        <Text style={styles.profilePhone}>ID: {unique_id}</Text>
+
                     </View>
                 </View>
                 <TouchableOpacity

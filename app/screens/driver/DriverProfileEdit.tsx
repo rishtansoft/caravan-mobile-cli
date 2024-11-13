@@ -14,19 +14,18 @@ import {
 import CustomDatePicker from '../ui/DatePIker/DatePIker';
 import Icon from "react-native-vector-icons/FontAwesome";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { ProfileDataUpdateProps } from "./RouterType";
+
 import axios from "axios";
 import { GetData } from "../AsyncStorage/AsyncStorage";
 import { API_URL } from "@env";
 import { launchCamera, launchImageLibrary, ImageLibraryOptions, CameraOptions, Asset } from 'react-native-image-picker';
-
 const MAX_IMAGE_SIZE = 200 * 1024; // 200 KB
-
 interface carTypes {
     id: string,
     name: string,
     icon: string
 }
-
 const showErrorAlert = (message: string) => {
     Alert.alert('Ogohlantirish', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
 };
@@ -82,17 +81,19 @@ const getImageSize = async (imageUri: string): Promise<number> => {
         return 0;
     }
 };
-
-
+interface carTypeApi {
+    value: string;
+    label: string;
+    icon: string;
+}
 interface SelectModalProps {
     visible: boolean;
     onClose: () => void;
     onSelect: (item: any) => void;
-    items: Array<{ label: string; value: any, icon: string }>;
+    items: carTypeApi[] | null;
     title: string;
 
 }
-
 interface ImgModalProp {
     visible: boolean;
     onClose: () => void;
@@ -100,9 +101,7 @@ interface ImgModalProp {
     imgTextPasdeleteFun: () => void;
     img_url: string,
     img_type: string,
-
 }
-
 const SelectModal: React.FC<SelectModalProps> = ({
     visible,
     onClose,
@@ -125,34 +124,36 @@ const SelectModal: React.FC<SelectModalProps> = ({
                             <Text style={styles.closeButton}>✕</Text>
                         </TouchableOpacity>
                     </View>
-                    <ScrollView style={styles.modalScroll}>
-                        {items.map((item, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={styles.modalItem}
-                                onPress={() => {
-                                    onSelect(item);
-                                    onClose();
-                                }}
-                            >
-                                <Text style={styles.modalItemText}>{item.label}</Text>
+                    {
+                        items && items.length > 0 && <ScrollView style={styles.modalScroll}>
+                            {items.map((item, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={styles.modalItem}
+                                    onPress={() => {
+                                        onSelect(item);
+                                        onClose();
+                                    }}
+                                >
+                                    <Text style={styles.modalItemText}>{item.label}</Text>
 
-                                {/* <Image
+                                    {/* <Image
                                     source={{ uri: item.icon }}
                                     style={{
                                         width: 66,
                                         height: 58,
                                     }}
                                 /> */}
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    }
+
                 </View>
             </TouchableOpacity>
         </Modal>
     );
 };
-
 const ImgModal: React.FC<ImgModalProp> = ({
     onClose,
     imgPravadeleteFun,
@@ -197,25 +198,21 @@ const ImgModal: React.FC<ImgModalProp> = ({
     )
 }
 
-const DriverProfileEdit = ({ navigation }) => {
+const DriverProfileEdit: React.FC<ProfileDataUpdateProps> = ({ navigation }) => {
     const [fullName, setFullName] = useState("");
     const [lastname, setLastname] = useState("");
-    // const [phoneNumber, setPhoneNumber] = useState("");
     const [optionalPhone, setOptionalPhone] = useState("");
-    // const [password, setPassword] = useState("");
-    // const [confirmPassword, setConfirmPassword] = useState("");
     const [driverLicense, setDriverLicense] = useState("");
     const [carPassport, setCarPassport] = useState("");
     const [user_id, setUser_id] = useState<string>('');
     const [carName, setCarName] = useState<string>('');
     const [token, setToken] = useState<string>('');
-    const [vehicleTypes, setVehicleTypes] = useState([]);
+    const [vehicleTypes, setVehicleTypes] = useState<carTypeApi[] | null>(null);
     const [keyboardType, setKeyboardType] = useState<'default' | 'numeric'>('default');
     const [keyboardTypeTextPas, setKeyboardTypeTextPas] = useState<'default' | 'numeric'>('default');
     const [vehicleTypeModalVisible, setVehicleTypeModalVisible] = useState(false);
     const [car_type, setCar_type] = useState<{ value: string; label: string } | null>(null);
     const [date, setDate] = useState<Date | null>();
-    const [dateError, setDateError] = useState<string>('');
     const [dateValue, setDateValue] = useState<string>('');
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
     const [prava_img, setPrava_img] = useState<string | null>(null);
@@ -223,6 +220,16 @@ const DriverProfileEdit = ({ navigation }) => {
     const [imgModal, setImgModal] = useState<boolean>(false);
     const [img_url, setimg_url] = useState<string>('');
     const [img_type, setImg_type] = useState<string>('');
+    const [car_type_id, setcar_type_id] = useState<string | null>(null);
+    // error state
+    const [nameError, setNameError] = useState<string>('');
+    const [lastnameError, setLastnameError] = useState<string>('');
+    const [phoneError, setPhoneError] = useState<string>('');
+    const [dateError, setDateError] = useState<string>('');
+    const [driverLicenseError, setDriverLicenseError] = useState("");
+    const [carPassportError, setCarPassportError] = useState<string>("");
+    const [carNameError, setCarNameError] = useState<string>('');
+    const [car_typeError, setCar_typeError] = useState<string>('')
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -242,6 +249,25 @@ const DriverProfileEdit = ({ navigation }) => {
         });
     }, []);
     useEffect(() => {
+        axios.get(API_URL + '/api/admin/car-type/get-all')
+            .then((res) => {
+                if (res.data?.carTypes && res.data.carTypes.length > 0) {
+                    const newArr = res.data.carTypes.map((el: carTypes) => {
+                        return {
+                            value: el.id,
+                            label: el.name,
+                            icon: el.icon
+                        }
+                    })
+                    setVehicleTypes(newArr)
+                }
+
+            }).catch((error) => {
+                console.log(error);
+
+            })
+    }, []);
+    useEffect(() => {
         if (user_id && token) {
             axios.get(API_URL + `/api/driver/profile?user_id=${user_id}`, {
                 headers: {
@@ -250,6 +276,9 @@ const DriverProfileEdit = ({ navigation }) => {
             }).then((res) => {
                 setFullName(res.data.user?.firstname)
                 setLastname(res.data.user?.lastname)
+                if (res.data?.driver?.car_type_id) {
+                    setcar_type_id(res.data.driver.car_type_id)
+                }
                 if (res.data?.user?.birthday) {
                     setDateValue(res.data?.user?.birthday)
                 }
@@ -281,25 +310,7 @@ const DriverProfileEdit = ({ navigation }) => {
         }
 
     }, [user_id, token]);
-    useEffect(() => {
-        axios.get(API_URL + '/api/admin/car-type/get-all')
-            .then((res) => {
-                if (res.data?.carTypes && res.data.carTypes.length > 0) {
-                    const newArr = res.data.carTypes.map((el: carTypes) => {
-                        return {
-                            value: el.id,
-                            label: el.name,
-                            icon: el.icon
-                        }
-                    })
-                    setVehicleTypes(newArr)
-                }
 
-            }).catch((error) => {
-                console.log(error);
-
-            })
-    }, []);
     useEffect(() => {
         if (user_id && token && dataUpdate) {
             axios.get(API_URL + `/api/driver/profile?user_id=${user_id}`, {
@@ -416,26 +427,6 @@ const DriverProfileEdit = ({ navigation }) => {
             });
         }
     };
-    const handleChoosePhotoCar = () => {
-        if (token && user_id) {
-            const options: ImageLibraryOptions = {
-                mediaType: 'photo',
-                quality: 1,
-                selectionLimit: 1,
-            };
-            launchImageLibrary(options, async (response: ImageUploadResponse) => {
-                if (response.didCancel) {
-                    console.log('Foydalanuvchi rasmni tanlamadi');
-                } else if (response.errorCode) {
-                    console.log('ImagePicker Error:', response.errorMessage);
-                } else if (response.assets && response.assets[0].uri) {
-                    await uploadImageToAPI(response.assets[0].uri, user_id, token, `${API_URL}/api/driver/upload-tex-passport?user_id=${user_id}`).then((res) => {
-                        setDataUpdate(true);
-                    })
-                }
-            });
-        }
-    };
     const deleteImgPravaFun = () => {
         if (token && user_id) {
             setImgModal(false)
@@ -473,19 +464,23 @@ const DriverProfileEdit = ({ navigation }) => {
             })
         }
     }
-
     const handleSave = () => {
         if (
-            fullName && lastname &&
-            car_type && carName &&
-            carPassport && driverLicense
+            fullName && !/^\s*$/.test(fullName)
+            && lastname && !/^\s*$/.test(lastname)
+            && (car_type || car_type_id)
+            && carName && !/^\s*$/.test(carName)
+            && carPassport && carPassport.length == 10
+            && driverLicense && driverLicense.length == 9
+            && (optionalPhone ? phoneValidateFun(optionalPhone) : true)
+            && (date || dateValue)
 
         ) {
             if (token && user_id) {
                 const resData = {
                     "firstname": fullName,
                     "lastname": lastname,
-                    "car_type": car_type.value,
+                    "car_type": car_type ? car_type.value : car_type_id,
                     "car_name": carName,
                     "phone_2": optionalPhone ? "+" + optionalPhone : null,
                     'birthday': date ? formatDate(date) : dateValue,
@@ -494,9 +489,6 @@ const DriverProfileEdit = ({ navigation }) => {
                     "tex_pas_num": splitText(carPassport, 3).text_2,
                     "prava_num": splitText(driverLicense, 2).text_2,
                 }
-                console.log(267, resData);
-
-
                 axios.put(API_URL + `/api/driver/update-profile?user_id=${user_id}`,
                     resData, {
                     headers: {
@@ -504,13 +496,57 @@ const DriverProfileEdit = ({ navigation }) => {
                     }
                 }).then((res) => {
                     console.log(201, res.data);
-                    navigation.goBack()
+                    navigation.navigate('profile')
                 }).catch((error) => {
                     console.log(203, error?.response?.data?.message);
                 })
             }
         } else {
-            showErrorAlert("Ixtiyoriy bo'lmagan barcha qiymatlarni kiritish shart!")
+            if (!fullName || /^\s*$/.test(fullName)) {
+                setNameError("Ism kiritish shart!");
+            } else {
+                setNameError("");
+            }
+            if (!lastname || /^\s*$/.test(lastname)) {
+                setLastnameError("Familiya kiritish shart!");
+            } else {
+                setLastnameError("");
+            }
+            if (!car_type && !car_type_id) {
+                setCar_typeError("Mashina turi tanlash shart!");
+            } else {
+                setCar_typeError("");
+            }
+            if (!carName || /^\s*$/.test(carName)) {
+                setCarNameError("Mashina nomini kiritish shart!");
+            } else {
+                setCarNameError("");
+            }
+            if (!carPassport) {
+                setCarPassportError("Tex passportni kiritish shart!");
+            } else if (carPassport.length !== 10) {
+                setCarPassportError("Tex passport to'rg'ri kiriting!");
+            } else {
+                setCarPassportError("")
+            }
+            if (!driverLicense) {
+                setDriverLicenseError("Prava seriyasini kiritish shart!");
+            } else if (driverLicense.length !== 9) {
+                setDriverLicenseError("Prava seriyasini to'rg'ri kiriting!");
+            } else {
+                setDriverLicenseError("");
+            }
+            if (optionalPhone && !phoneValidateFun(optionalPhone)) {
+                setPhoneError('Telefon raqam nato\'g\'ri kiritildi!');
+            } else {
+                setPhoneError('');
+            }
+            if (!date && !dateValue) {
+                setDateError("Tug'ilgan sana kiritish shart!");
+            } else {
+                setDateError("");
+            }
+
         }
 
     };
@@ -524,7 +560,7 @@ const DriverProfileEdit = ({ navigation }) => {
                     }}
                 >
                     <Icon
-                        onPress={() => navigation.goBack()}
+                        onPress={() => navigation.navigate('profile')}
                         name="angle-left"
                         size={30}
                         color="#7257FF"
@@ -542,6 +578,8 @@ const DriverProfileEdit = ({ navigation }) => {
                     value={fullName}
                     onChangeText={setFullName}
                 />
+                {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+
             </View>
             <View style={styles.InputWrapper}>
                 <Text style={styles.InputTitle}>Familiya</Text>
@@ -552,6 +590,8 @@ const DriverProfileEdit = ({ navigation }) => {
                     value={lastname}
                     onChangeText={setLastname}
                 />
+                {lastnameError ? <Text style={styles.errorText}>{lastnameError}</Text> : null}
+
             </View>
             <View style={styles.InputWrapper}>
                 <Text style={styles.InputTitle}>
@@ -566,13 +606,17 @@ const DriverProfileEdit = ({ navigation }) => {
                     keyboardType="numeric"
                     onChangeText={setOptionalPhone}
                 />
+                {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
+
             </View>
 
             <View style={styles.InputWrapper}>
                 <Text style={styles.InputTitle}>Tug'ilgan sana</Text>
                 <CustomDatePicker value={dateValue} onDateChange={handleDateChange}></CustomDatePicker>
+                {dateError ? <Text style={styles.errorText}>{dateError}</Text> : null}
+
             </View>
-            <View style={styles.InputWrapper}>
+            <View style={[styles.InputWrapper, { marginTop: 10 }]}>
                 <Text style={styles.InputTitle}>Prava seriyasi va raqami</Text>
                 <TextInput
                     style={[styles.input, { textTransform: 'uppercase' }]}
@@ -584,6 +628,8 @@ const DriverProfileEdit = ({ navigation }) => {
                     placeholderTextColor="#898D8F"
                     onChangeText={handleChangeTextPrava}
                 />
+                {driverLicenseError ? <Text style={styles.errorText}>{driverLicenseError}</Text> : null}
+
             </View>
 
             <View style={styles.imageUploadContainer}>
@@ -615,7 +661,6 @@ const DriverProfileEdit = ({ navigation }) => {
                 <Text style={styles.InputTitle}>
                     Mashina tex pasporti va seriya raqami
                 </Text>
-
                 <TextInput
                     style={[styles.input, { textTransform: 'uppercase' }]}
                     placeholder="AAB1234567"
@@ -625,6 +670,7 @@ const DriverProfileEdit = ({ navigation }) => {
                     placeholderTextColor="#898D8F"
                     onChangeText={handleChangeTextTextPas}
                 />
+                {carPassportError ? <Text style={styles.errorText}>{carPassportError}</Text> : null}
             </View>
 
             <View style={styles.imageUploadContainer}>
@@ -661,6 +707,8 @@ const DriverProfileEdit = ({ navigation }) => {
                     placeholderTextColor="#898D8F"
                     onChangeText={setCarName}
                 />
+                {carNameError ? <Text style={styles.errorText}>{carNameError}</Text> : null}
+
             </View>
 
             <View style={styles.InputWrapper}>
@@ -673,13 +721,18 @@ const DriverProfileEdit = ({ navigation }) => {
                     onPress={() => setVehicleTypeModalVisible(true)}
                 >
                     <Text style={
-
-                        car_type ? styles.selectedText : styles.selectButtonText_plech
+                        (car_type_id && vehicleTypes && vehicleTypes.length > 0
+                            && vehicleTypes.find((el) => el.value == car_type_id)?.label) ||
+                            car_type ? styles.selectedText : styles.selectButtonText_plech
                     }>
-                        {car_type ? car_type.label : "Mashina turini tanlang"}
+                        {
+                            car_type ? car_type.label : car_type_id && vehicleTypes && vehicleTypes.length > 0 &&
+                                vehicleTypes.find((el) => el.value == car_type_id) && vehicleTypes.find((el) => el.value == car_type_id)?.label ?
+                                vehicleTypes.find((el) => el.value == car_type_id)?.label
+                                : "Mashina turini tanlang"}
                     </Text>
                 </TouchableOpacity>
-
+                {car_typeError ? <Text style={styles.errorText}>{car_typeError}</Text> : null}
             </View>
 
             {/* <View style={styles.imageUploadContainer}>
@@ -718,6 +771,11 @@ const DriverProfileEdit = ({ navigation }) => {
 const styles = StyleSheet.create({
     modalScroll: {
         maxHeight: '100%',
+    },
+    errorText: {
+        color: 'red',
+        lineHeight: 14,
+        marginBottom: 6
     },
     cancelButton: {
         marginTop: 10,
@@ -769,8 +827,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         backgroundColor: '#FFFFFF',
         justifyContent: 'center',
-        marginBottom: 15,
-
     },
     selectButtonText: {
         color: '#131214',
@@ -828,6 +884,7 @@ const styles = StyleSheet.create({
     InputWrapper: {
         flexDirection: "column",
         gap: 5,
+        marginBottom: 15,
     },
     InputTitle: {
         color: "black",
@@ -840,7 +897,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 8,
         paddingHorizontal: 15,
-        marginBottom: 15,
         backgroundColor: "#fff",
         color: '#131214'
     },

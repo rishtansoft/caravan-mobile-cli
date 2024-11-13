@@ -1,4 +1,3 @@
-import { useNavigation } from "@react-navigation/native";
 import React, { useState, useEffect } from "react";
 import {
     View,
@@ -9,15 +8,18 @@ import {
     StyleSheet,
     TouchableOpacity,
     Modal,
+
 } from "react-native";
 import axios from 'axios';
 import { GetData } from '../AsyncStorage/AsyncStorage';
 import { API_URL } from '@env'
 import CustomSwitch from "../ui/switch/Switch";
+import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 const splitText = (text: string,): { text_1: string } => {
     const text_1 = text.slice(0, 8);
     return { text_1 };
 };
+import { ActiveLoadsProps } from './RouterType';
 
 interface DriverStop {
     load_id: string;
@@ -66,17 +68,20 @@ const filterByDriverStops = (cargos: Cargo[]): Cargo[] => {
 
 
 
-const HomeScreen: React.FC = () => {
+const HomeScreen: React.FC<ActiveLoadsProps> = ({
+    navigation
+}) => {
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
     const [resData, setResData] = useState<ResData[] | null>(null);
-    const navigation = useNavigation();
     const [isSwitchOn, setIsSwitchOn] = useState(false);
     const [isModalVisible, setModalVisible] = useState(false);
-    const orders = [1, 1, 1, 1, 1, 1];
+    const [dataUpdate, setDataUpdate] = useState<boolean>(false);
+    const [inRegister, setInRegister] = useState<boolean>(false);
 
     // Royhatdan toliq o'tgan yoki yoqligini tekshirish asnc storage bilan tekshirish
     const userRegister = true;
+
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -95,17 +100,67 @@ const HomeScreen: React.FC = () => {
         });
     }, []);
 
+
+
+
     useEffect(() => {
         if (token && user_id) {
+            setResData(null)
+
+            axios.post(`${API_URL}/api/auth//check-driver?user_id=${user_id}`, {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            }).then((res) => {
+                setInRegister(res.data?.success)
+                if (res.data?.success) {
+                    axios.get(API_URL + `/api/loads/get-all-active-loads?user_id=${user_id}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    })
+                        .then((res) => {
+                            if (res.data?.data && res.data.data.length > 0) {
+                                const resdataFileter = filterByDriverStops(res.data?.data)
+                                if (resdataFileter.length > 0) {
+                                    const newData = resdataFileter.map((el) => {
+                                        return {
+                                            id: el.id,
+                                            cargo_type: el.cargo_type,
+                                            weight: el?.weight ? el.loadDetails[0].weight : '',
+                                            sub_id: splitText(el.id).text_1,
+                                            start_location: filertDriverStopOrder(el.driverStops, 0),
+                                            end_location: filertDriverStopOrder(el.driverStops, 1),
+                                        }
+                                    });
+                                    if (newData && newData.length > 0) {
+
+                                        setResData(newData)
+                                    }
+                                }
+                            }
+                        }).catch((error) => {
+                            console.log(132, error);
+                        })
+                }
+            }).catch((error) => {
+                console.log(error);
+
+            })
+        }
+    }, [token, user_id,],);
+
+    useEffect(() => {
+        if (token && user_id && dataUpdate) {
             axios.get(API_URL + `/api/loads/get-all-active-loads?user_id=${user_id}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             })
                 .then((res) => {
-                    console.log(106, API_URL + `/api/loads/get-all-active-loads?user_id=${user_id}`);
-                    
-                    
+                    console.log(214, res);
+
+                    setDataUpdate(false)
                     if (res.data?.data && res.data.data.length > 0) {
                         const resdataFileter = filterByDriverStops(res.data?.data)
                         if (resdataFileter.length > 0) {
@@ -113,14 +168,13 @@ const HomeScreen: React.FC = () => {
                                 return {
                                     id: el.id,
                                     cargo_type: el.cargo_type,
-                                    weight: el?.weight ? el?.weight : '',
+                                    weight: el?.weight ? el.loadDetails[0].weight : '',
                                     sub_id: splitText(el.id).text_1,
                                     start_location: filertDriverStopOrder(el.driverStops, 0),
                                     end_location: filertDriverStopOrder(el.driverStops, 1),
                                 }
                             });
                             if (newData && newData.length > 0) {
-                                console.log(122, newData);
 
                                 setResData(newData)
                             }
@@ -130,13 +184,13 @@ const HomeScreen: React.FC = () => {
                     console.log(132, error);
                 })
         }
-    }, [token, user_id]);
+    }, [token, user_id, dataUpdate]);
 
     const toggleSwitch = () => setIsSwitchOn((previousState) => !previousState);
 
     const toggleModal = (id: string) => {
         if (userRegister) {
-            navigation.navigate('ActiveLoadDetail', { itemId: id });//Aynan shu buyurtma malumotlarini uzatish uchun ishlatildi
+            navigation.navigate('active_loads_detail', { itemId: id });//Aynan shu buyurtma malumotlarini uzatish uchun ishlatildi
         } else {
             setModalVisible(!isModalVisible);
         }
@@ -149,7 +203,7 @@ const HomeScreen: React.FC = () => {
     const goToProfile = () => {
         setModalVisible(!isModalVisible);
 
-        navigation.navigate("Profil");
+        navigation.navigate('profile');
     };
 
     return (
@@ -157,16 +211,19 @@ const HomeScreen: React.FC = () => {
             style={styles.container}
             contentContainerStyle={{ flexGrow: 1 }}
         >
-            <View style={styles.notificationBox}>
-                <Image
-                    source={require("../../assets/driver/missing-info-register.png")}
-                    style={styles.image}
-                />
-                <Text style={styles.notificationText}>
-                    Ro'yxatdan o'tishni tugatish uchun, iltimos, ma'lumotlaringizni to'liq
-                    to'ldiring, yana bir necha qadam qoldi!
-                </Text>
-            </View>
+            {
+                !inRegister && <View style={styles.notificationBox}>
+                    <Image
+                        source={require("../../assets/driver/missing-info-register.png")}
+                        style={styles.image}
+                    />
+                    <Text style={styles.notificationText}>
+                        Ro'yxatdan o'tishni tugatish uchun, iltimos, ma'lumotlaringizni to'liq
+                        to'ldiring, yana bir necha qadam qoldi! <Text onPress={() => navigation.navigate('profile_update')} style={{ color: '#7257FF', fontWeight: '600' }}>  Ro'yxatdan o'tish</Text>
+                    </Text>
+                </View>
+            }
+
 
             <View style={styles.switchContainer}>
                 <Text style={styles.switchText}>Bo'sh sifatida ko'rsatish</Text>
@@ -174,11 +231,19 @@ const HomeScreen: React.FC = () => {
                 <CustomSwitch
                     onValueChange={toggleSwitch}
                     value={isSwitchOn}
+                    disabled={!inRegister}
                 />
             </View>
 
             <View style={styles.orders}>
-                <Text style={styles.sectionTitle}>Aktiv buyurtmalar</Text>
+                <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 10, marginVertical: 10 }}>
+                    <Text style={styles.sectionTitle}>Aktiv buyurtmalar </Text>
+                    <TouchableOpacity disabled={!inRegister} onPress={() => setDataUpdate(true)}>
+                        <FontAwesomeIcon
+                            name="refresh" size={25} color={!inRegister ? "#898D8F" : "#7257FF"} />
+                    </TouchableOpacity>
+                </View>
+
                 {resData && resData.length > 0 && resData.map((order, index) => (
                     <TouchableOpacity
                         key={index}
@@ -210,7 +275,7 @@ const HomeScreen: React.FC = () => {
                 animationType="slide"
                 transparent={true}
                 visible={isModalVisible}
-                onRequestClose={toggleModal}
+            // onRequestClose={toggleModal}
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalView}>
@@ -287,6 +352,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginBottom: 10,
         marginLeft: 10,
+        color: "#291F61",
     },
     orders: {
         flexDirection: "column",
