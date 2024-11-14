@@ -17,6 +17,7 @@ import axios from "axios";
 import { GetData } from "../AsyncStorage/AsyncStorage";
 import { API_URL } from "@env";
 import { ActiveLoadsDetailProps } from "./RouterType";
+import { useIsFocused } from '@react-navigation/native';
 
 
 interface Main {
@@ -194,6 +195,8 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
     const [token, setToken] = useState<string>("");
     const [result, setResult] = useState<CargoInfo | null>(null);
     const [locations, setLocations] = useState<Location[] | null>(null);
+    const isFocused = useIsFocused();
+
     useEffect(() => {
         GetData("user_id")
             .then((res) => {
@@ -230,7 +233,6 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
                     }
                 )
                 .then((res) => {
-                    console.log(135, res.data.result);
 
                     if (res.data?.result) {
                         const resData: Result = res.data.result;

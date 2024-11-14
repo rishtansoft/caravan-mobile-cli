@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     View,
     Text,
@@ -15,6 +15,8 @@ import { GetData } from '../AsyncStorage/AsyncStorage';
 import { API_URL } from '@env'
 import CustomSwitch from "../ui/switch/Switch";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
+import { useIsFocused } from '@react-navigation/native';
+
 const splitText = (text: string,): { text_1: string } => {
     const text_1 = text.slice(0, 8);
     return { text_1 };
@@ -78,6 +80,7 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
     const [isModalVisible, setModalVisible] = useState(false);
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
     const [inRegister, setInRegister] = useState<boolean>(false);
+    const isFocused = useIsFocused();
 
     // Royhatdan toliq o'tgan yoki yoqligini tekshirish asnc storage bilan tekshirish
     const userRegister = true;
@@ -100,6 +103,53 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
         });
     }, []);
 
+    const fetchLoadData = useCallback(() => {
+        if (!token || !user_id) return;
+
+        axios.post(`${API_URL}/api/auth//check-driver?user_id=${user_id}`, {}, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+        }).then((res) => {
+            setInRegister(res.data?.success)
+            if (res.data?.success) {
+                axios.get(API_URL + `/api/loads/get-all-active-loads?user_id=${user_id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+                    .then((res) => {
+                        if (res.data?.data && res.data.data.length > 0) {
+                            const resdataFileter = filterByDriverStops(res.data?.data)
+                            if (resdataFileter.length > 0) {
+                                const newData = resdataFileter.map((el) => ({
+                                    id: el.id,
+                                    cargo_type: el.cargo_type,
+                                    weight: el?.weight ? el.loadDetails[0].weight : '',
+                                    sub_id: splitText(el.id).text_1,
+                                    start_location: filertDriverStopOrder(el.driverStops, 0),
+                                    end_location: filertDriverStopOrder(el.driverStops, 1),
+                                }));
+                                if (newData && newData.length > 0) {
+                                    setResData(newData)
+                                }
+                            }
+                        }
+                    }).catch((error) => {
+                        console.log('Load data error:', error);
+                    })
+            }
+        }).catch((error) => {
+            console.log('Check driver error:', error);
+        })
+    }, [token, user_id]);
+
+
+    useEffect(() => {
+        if (isFocused) {
+            fetchLoadData();
+        }
+    }, [isFocused, fetchLoadData]);
 
 
 

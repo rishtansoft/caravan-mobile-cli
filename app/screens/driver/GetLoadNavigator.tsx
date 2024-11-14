@@ -7,6 +7,7 @@ import {
     Platform,
     Alert,
     ActivityIndicator,
+    Modal
 } from 'react-native';
 
 import MapboxGl from '@rnmapbox/maps';
@@ -16,6 +17,10 @@ import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { ActiveLoadsDetailMapProps } from './RouterType';
+import axios from 'axios';
+import { API_URL } from '@env';
+import { GetData } from '../AsyncStorage/AsyncStorage';
+import io from 'socket.io-client';
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -24,12 +29,37 @@ interface PositionInterface {
     latitude: number,
     address?: string
 }
+interface Location {
+    id: string;
+    status: string;
+    load_id: string;
+    latitude: string;
+    longitude: string;
+    order: number;
+    start_time: string | null;
+    end_time: string | null;
+    location_name: string;
+    createdAt: string;
+    updatedAt: string;
+    AssignmentId: string | null;
+}
 
-    const GetLoadNavigator: React.FC<ActiveLoadsDetailMapProps> = ({ navigation, route }) => {
+const showErrorAlert = (message: string) => {
+    Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
+}
+
+const filterOrderFun = (arr: Location[], order: number) => {
+    const oneData = arr.find((el) => el.order == order);
+    return oneData
+}
+
+const GetLoadNavigator: React.FC<ActiveLoadsDetailMapProps> = ({ navigation, route }) => {
 
     const [currentLocation, setCurrentLocation] = useState<PositionInterface | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
     const [navigationStarted, setNavigationStarted] = useState(false);
+    const [navigationStarted_2, setNavigationStarted_2] = useState(true);
+    const [navigationStarted_3, setNavigationStarted_3] = useState(false);
     const [remainingDistance, setRemainingDistance] = useState<string>('');
     const [estimatedTime, setEstimatedTime] = useState<string>('');
     const [currentSpeed, setCurrentSpeed] = useState<number>(0);
@@ -40,10 +70,104 @@ interface PositionInterface {
     const watchId = useRef<number | null>(null);
     const mapRef = useRef<MapboxGl.MapView | null>(null);
     const cameraRef = useRef<MapboxGl.Camera | null>(null);
+    const [isVisible, setIsVisible] = useState(false);
+    const [iCame, setICame] = useState<boolean>(false);
+    const [departure, setDeparture] = useState<boolean>(false);
+    const [user_id, setUser_id] = useState<string>('');
+    const [token, setToken] = useState<string>('');
+    const [unique_id, setUnique_id] = useState<string>('');
+    const socketRef = useRef<any>(null);
+    const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const initializeSocket = (userId: string, uniqueId: string) => {
+        socketRef.current = io(API_URL, {
+            query: {
+                user_id: userId,
+                unique_id: uniqueId,
+                role: 'driver' // Assuming the role is always 'driver' for this component
+            },
+            transports: ['websocket'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
+
+        socketRef.current.on('connect', () => {
+            console.log('Connected to Socket.IO server');
+        });
+
+        socketRef.current.on('connect_error', (error: any) => {
+            console.error('Socket connection error:', error);
+        });
+
+        socketRef.current.on('error', (error: any) => {
+            console.error('Socket.IO error:', error);
+        });
+
+        socketRef.current.on('disconnect', (reason: string) => {
+            console.log('Disconnected from Socket.IO server:', reason);
+        });
+    };
+
+    useEffect(() => {
+        GetData('user_id').then((res) => {
+            if (res) {
+                setUser_id(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+        GetData('unique_id').then((res) => {
+            if (res) {
+                setUnique_id(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+
+        GetData('token').then((res) => {
+            if (res) {
+                setToken(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+
+        const fetchUserData = async () => {
+            try {
+                const userId = await GetData('user_id');
+                const uniqueId = await GetData('unique_id');
+
+                if (userId) setUser_id(userId);
+                if (uniqueId) setUnique_id(uniqueId);
+
+                if (userId && uniqueId) {
+                    initializeSocket(userId, uniqueId);
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        };
+
+        fetchUserData();
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
+            if (locationIntervalRef.current) {
+                clearInterval(locationIntervalRef.current);
+            }
+        };
+
+    }, []);
+
+
+
 
     useEffect(() => {
         if (route.params?.data[0]?.longitude) {
-            setLoadStartAddress({ latitude: route.params.data[0].latitude, longitude: route.params.data[0].longitude })
+            setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
         }
     }, [])
 
@@ -96,8 +220,20 @@ interface PositionInterface {
                 }
             }
         } catch (error) {
-            console.error('Route calculation error:', error);
+            console.log('Route calculation error:', error);
             Alert.alert('Xato', 'Yo\'nalishni hisoblashda xatolik yuz berdi');
+        }
+    };
+
+    // ----------------------------Socket-------------------------------------------
+
+    const emitLocationUpdate = (location: PositionInterface) => {
+        if (socketRef.current && user_id) {
+            socketRef.current.emit('locationUpdate', {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                driverId: user_id
+            });
         }
     };
 
@@ -110,7 +246,6 @@ interface PositionInterface {
 
         setNavigationStarted(true);
 
-        // Initial camera position for navigation mode
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
                 centerCoordinate: [currentLocation.longitude, currentLocation.latitude],
@@ -120,17 +255,25 @@ interface PositionInterface {
             });
         }
 
+        // Start periodic location updates
+        locationIntervalRef.current = setInterval(() => {
+            if (currentLocation) {
+                emitLocationUpdate(currentLocation);
+                console.log(262, currentLocation);
+
+            }
+        }, 60000); // Every minute
+
         watchId.current = Geolocation.watchPosition(
             position => {
                 const newLocation: PositionInterface = {
                     latitude: position.coords.latitude,
-                    longitude: position.coords.longitude
+                    longitude: position.coords.longitude,
                 };
                 setCurrentLocation(newLocation);
                 setCurrentSpeed(position.coords.speed || 0);
                 calculateRoute(newLocation);
 
-                // Update camera in navigation mode
                 if (cameraRef.current) {
                     cameraRef.current.setCamera({
                         centerCoordinate: [newLocation.longitude, newLocation.latitude],
@@ -153,11 +296,128 @@ interface PositionInterface {
         );
     };
 
+    const startNavigationDeparture = async () => {
+        const hasPermission = await requestLocationPermission();
+        if (!hasPermission) {
+            Alert.alert('Xato', 'Navigatsiya uchun joylashuv ruxsati kerak');
+            return;
+        }
+
+        setNavigationStarted(true);
+
+        if (currentLocation && cameraRef.current) {
+            cameraRef.current.setCamera({
+                centerCoordinate: [currentLocation.longitude, currentLocation.latitude],
+                zoomLevel: 18,
+                pitch: 60,
+                heading: 0
+            });
+        }
+
+        // Start periodic location updates
+        locationIntervalRef.current = setInterval(() => {
+            if (currentLocation) {
+                emitLocationUpdate(currentLocation);
+                console.log(262, currentLocation);
+
+            }
+        }, 60000); // Every minute
+
+        watchId.current = Geolocation.watchPosition(
+            position => {
+                const newLocation: PositionInterface = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                };
+                setCurrentLocation(newLocation);
+                setCurrentSpeed(position.coords.speed || 0);
+                calculateRoute(newLocation);
+
+                if (cameraRef.current) {
+                    cameraRef.current.setCamera({
+                        centerCoordinate: [newLocation.longitude, newLocation.latitude],
+                        zoomLevel: 18,
+                        pitch: 60,
+                        heading: position.coords.heading || 0
+                    });
+                }
+            },
+            error => {
+                console.error('Location tracking error:', error);
+                Alert.alert('Xato', 'Joylashuvni kuzatishda xatolik yuz berdi');
+            },
+            {
+                enableHighAccuracy: true,
+                distanceFilter: 5,
+                interval: 1000,
+                fastestInterval: 500
+            }
+        );
+    };
+
+
+
+    // ------------------------------------------------------------------------------------
+
+
+    // const startNavigation = async () => {
+    //     const hasPermission = await requestLocationPermission();
+    //     if (!hasPermission) {
+    //         Alert.alert('Xato', 'Navigatsiya uchun joylashuv ruxsati kerak');
+    //         return;
+    //     }
+
+    //     setNavigationStarted(true);
+
+    //     // Initial camera position for navigation mode
+    //     if (currentLocation && cameraRef.current) {
+    //         cameraRef.current.setCamera({
+    //             centerCoordinate: [currentLocation.longitude, currentLocation.latitude],
+    //             zoomLevel: 18,
+    //             pitch: 60,
+    //             heading: 0
+    //         });
+    //     }
+
+    //     watchId.current = Geolocation.watchPosition(
+    //         position => {
+    //             const newLocation: PositionInterface = {
+    //                 latitude: position.coords.latitude,
+    //                 longitude: position.coords.longitude
+    //             };
+    //             setCurrentLocation(newLocation);
+    //             setCurrentSpeed(position.coords.speed || 0);
+    //             calculateRoute(newLocation);
+
+    //             // Update camera in navigation mode
+    //             if (cameraRef.current) {
+    //                 cameraRef.current.setCamera({
+    //                     centerCoordinate: [newLocation.longitude, newLocation.latitude],
+    //                     zoomLevel: 18,
+    //                     pitch: 60,
+    //                     heading: position.coords.heading || 0
+    //                 });
+    //             }
+    //         },
+    //         error => {
+    //             console.error('Location tracking error:', error);
+    //             Alert.alert('Xato', 'Joylashuvni kuzatishda xatolik yuz berdi');
+    //         },
+    //         {
+    //             enableHighAccuracy: true,
+    //             distanceFilter: 5,
+    //             interval: 1000,
+    //             fastestInterval: 500
+    //         }
+    //     );
+    // };
+
     const stopNavigation = () => {
         if (watchId.current !== null) {
             Geolocation.clearWatch(watchId.current);
         }
-        setNavigationStarted(false);
+        // setNavigationStarted(false);
+        setIsVisible(true)
     };
 
     useEffect(() => {
@@ -216,6 +476,72 @@ interface PositionInterface {
     }
 
 
+    const iCameFun = () => {
+        if (token && user_id) {
+            const resData = {
+                user_id: user_id,
+                load_id: route.params.data[0].load_id,
+                current_longitude: currentLocation?.longitude,
+                current_latitude: currentLocation?.latitude,
+                start_longitude: Number(filterOrderFun(route.params.data, 0)?.longitude),
+                start_latitude: Number(filterOrderFun(route.params.data, 0)?.latitude)
+            }
+            console.log(resData);
+
+
+            axios.post(`${API_URL}/api/driver/arrived-luggage`, resData, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            }
+            ).then((res) => {
+                if (res.data.success) {
+                    console.log(res.data);
+                    setIsVisible(false)
+                    setICame(true);
+                } else {
+                    setIsVisible(false);
+                    showErrorAlert(res.data?.message)
+                }
+            }).catch((error) => {
+                console.log(266, error);
+
+            })
+        }
+    }
+
+    const iCameUploadFun = () => {
+        if (token && user_id) {
+            const resData = {
+                user_id: user_id,
+                load_id: route.params.data[0].load_id,
+            }
+            console.log(resData);
+
+
+            axios.post(`${API_URL}/api/driver/start-loading`, resData, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            }
+            ).then((res) => {
+                if (res.data.success) {
+                    setNavigationStarted_2(false)
+                } else {
+                    showErrorAlert(res.data?.message)
+                }
+            }).catch((error) => {
+                console.log(328, error);
+
+            })
+        }
+    }
+
+    const loadUploadFun = () => {
+        setICame(false);
+        setDeparture(true);
+    }
+
     const recenterCamera = () => {
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -226,6 +552,16 @@ interface PositionInterface {
             });
         }
     };
+
+    const newAddressFun = () => {
+        setIsVisible(false)
+        const endAdres = filterOrderFun(route.params.data, 1)
+        if (endAdres) {
+            setLoadStartAddress({ latitude: Number(endAdres?.latitude), longitude: Number(endAdres?.longitude) })
+            startNavigationDeparture()
+        }
+
+    }
 
     return (
         <View style={styles.container}>
@@ -334,18 +670,64 @@ interface PositionInterface {
                 </MapboxGl.PointAnnotation>
             </MapboxGl.MapView>
 
-            <TouchableOpacity
-                style={[styles.startButton, navigationStarted && styles.stopButton]}
-                onPress={navigationStarted ? stopNavigation : startNavigation}
-            >
-                <Text style={styles.buttonText}>
-                    {navigationStarted ? 'To\'xtatish' : 'Ketdik'}
-                </Text>
-            </TouchableOpacity>
+            {
+                !iCame && !departure && <TouchableOpacity
+                    style={[styles.startButton, navigationStarted && styles.stopButton]}
+                    onPress={navigationStarted ? stopNavigation : startNavigation}
+                >
+                    <Text style={styles.buttonText}>
+                        {navigationStarted ? 'To\'xtatish' : 'Ketdik'}
+                    </Text>
+                </TouchableOpacity>
+            }
+            {
+                iCame && !departure && <TouchableOpacity
+                    style={[styles.startButton, navigationStarted_2 && styles.stopButton]}
+                    onPress={navigationStarted_2 ? iCameUploadFun : loadUploadFun}
+                >
+                    <Text style={styles.buttonText}>
+                        {navigationStarted_2 ? 'Yukni olishga keladim' : 'Yuklashni boshlash'}
+                    </Text>
+                </TouchableOpacity>
+            }
+
+            {
+                !iCame && departure && <TouchableOpacity
+                    style={[styles.startButton, navigationStarted_3 && styles.stopButton]}
+                    onPress={navigationStarted_3 ? stopNavigation : newAddressFun}
+                >
+                    <Text style={styles.buttonText}>
+                        {navigationStarted_3 ? "Yetib keldim" : 'Ketdik'}
+                    </Text>
+                </TouchableOpacity>
+            }
+
+
 
             <TouchableOpacity style={styles.showMeButton} onPress={recenterCamera}>
                 <Icon name='car' style={styles.showMeButtonIcon}></Icon>
             </TouchableOpacity>
+
+            <Modal
+                transparent
+                visible={isVisible}
+                animationType="slide"
+                onRequestClose={() => setIsVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalText}>Yetib kelgannizga aminmisiz?</Text>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={[styles.button, { backgroundColor: '#cd1a17', }]} onPress={iCameFun}>
+                                <Text style={styles.buttonText}>Ha</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.button, { backgroundColor: '#7257FF', }]} onPress={() => setIsVisible(false)}>
+                                <Text style={styles.buttonText}>Yo'q</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -360,6 +742,39 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#FFFFFF',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: 300,
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    modalText: {
+        fontSize: 22,
+        marginBottom: 20,
+        fontWeight: '600',
+        textAlign: 'center',
+        color: '#291F61',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    button: {
+        flex: 1,
+        marginHorizontal: 10,
+        paddingVertical: 10,
+        backgroundColor: '#007BFF',
+        borderRadius: 5,
+        alignItems: 'center',
     },
     loadingText: {
         marginTop: 10,
