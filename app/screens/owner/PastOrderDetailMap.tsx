@@ -5,7 +5,7 @@ import Geolocation from 'react-native-geolocation-service';
 import { Position, Feature, Geometry } from 'geojson';
 import { MAPBOX_ACCESS_TOKEN } from '@env';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { ActiveLoadsDetailMapProps } from './RouterType';
+import { HistoryDetailMapProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
 
@@ -113,7 +113,7 @@ const filertDriverStopOrder = (arr: LocationData[], order: number) => {
     }
 }
 
-const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation }) => {
+const ActiveOrderMap: React.FC<HistoryDetailMapProps> = ({ route, navigation }) => {
     const { itemId, data, status } = route.params;
 
     const [currentLocation, setCurrentLocation] = useState<Position | null>(null);

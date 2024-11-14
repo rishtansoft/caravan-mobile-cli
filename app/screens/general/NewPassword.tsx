@@ -16,6 +16,8 @@ import { GetData, StoreData } from '../AsyncStorage/AsyncStorage';
 const showErrorAlert = (message: string) => {
     Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
 };
+import PasswordInput from '../ui/PasswordInput/PasswordInput';
+
 interface ListItem {
     text: string;
 }
@@ -187,15 +189,11 @@ const NewPassword: React.FC<NewPasswordProps> = (
             <View>
                 <View style={{ marginTop: 18 }}>
                     <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Yangi parol</Text>
-                    <TextInput
-                        style={!passwordIsFocused ? styles.input : styles.inputFocus}
-                        placeholderTextColor="#898D8F"
+                    <PasswordInput
                         value={password}
                         onChangeText={PasswordInputFun}
                         placeholder="Yangi parolni kiriting"
-                        onFocus={() => setPasswordIsFocused(true)}
-                        onBlur={() => setPasswordIsFocused(false)}
-                        secureTextEntry={true}
+
                     />
                     {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
                 </View>
@@ -209,15 +207,10 @@ const NewPassword: React.FC<NewPasswordProps> = (
                 </View>
                 <View style={{ marginTop: 18 }}>
                     <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parolni takrorlang</Text>
-                    <TextInput
-                        style={!passwordReqIsFocused ? styles.input : styles.inputFocus}
-                        placeholderTextColor="#898D8F"
+                    <PasswordInput
                         value={passwordReq}
                         onChangeText={passwordReqInputFun}
                         placeholder="Parolni takrorlang"
-                        onFocus={() => setPasswordReqIsFocused(true)}
-                        onBlur={() => setPasswordReqIsFocused(false)}
-                        secureTextEntry={true}
                     />
                     {passwordReqError ? <Text style={styles.errorText}>{passwordReqError}</Text> : null}
                 </View>

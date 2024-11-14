@@ -23,35 +23,35 @@ const slides: Slide[] = [
     {
         key: '1',
         image: require('../../assets/img/silder.png'),
-        text: 'Create the best design system ever 1',
-        sub_text: 'Full access to 1000+ UI components, Style library, icons and illustration.'
+        text: 'Eng yaxshi dizayn tizimini yarating 1',
+        sub_text: "1000+ UI komponentlariga, Uslublar kutubxonasiga, piktogramma va rasmlarga to'liq kirish."
     },
     {
         key: '2',
         image: require('../../assets/img/silder.png'),
-        text: 'Create the best design system ever 2',
-        sub_text: 'Full access to 1000+ UI components, Style library, icons and illustration.'
+        text: 'Eng yaxshi dizayn tizimini yarating 2',
+        sub_text: "1000+ UI komponentlariga, Uslublar kutubxonasiga, piktogramma va rasmlarga to'liq kirish."
 
     },
     {
         key: '3',
         image: require('../../assets/img/silder.png'),
-        text: 'Create the best design system ever 3',
-        sub_text: 'Full access to 1000+ UI components, Style library, icons and illustration.'
+        text: 'Eng yaxshi dizayn tizimini yarating 3',
+        sub_text: "1000+ UI komponentlariga, Uslublar kutubxonasiga, piktogramma va rasmlarga to'liq kirish."
 
     },
     {
         key: '4',
         image: require('../../assets/img/silder.png'),
-        text: 'Create the best design system ever 4',
-        sub_text: 'Full access to 1000+ UI components, Style library, icons and illustration.'
+        text: 'Eng yaxshi dizayn tizimini yarating 4',
+        sub_text: "1000+ UI komponentlariga, Uslublar kutubxonasiga, piktogramma va rasmlarga to'liq kirish."
 
     },
     {
         key: '5',
         image: require('../../assets/img/silder.png'),
-        text: 'Create the best design system ever 5',
-        sub_text: 'Full access to 1000+ UI components, Style library, icons and illustration.'
+        text: 'Eng yaxshi dizayn tizimini yarating 5',
+        sub_text: "1000+ UI komponentlariga, Uslublar kutubxonasiga, piktogramma va rasmlarga to'liq kirish."
 
     },
 ];

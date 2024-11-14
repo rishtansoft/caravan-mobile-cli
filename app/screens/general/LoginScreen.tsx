@@ -15,6 +15,7 @@ import { API_URL } from '@env';
 import { StoreData, GetData, } from '../AsyncStorage/AsyncStorage';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../../store/UserData';
+import PasswordInput from '../ui/PasswordInput/PasswordInput';
 
 // interface LoginProps {
 //     // navigation: LoginScreenNavigationProp;
@@ -241,15 +242,10 @@ const LoginScreen: React.FC<LoginProps> = ({ navigation }) => {
                     marginTop: 20
                 }}>
                     <Text style={{ marginBottom: 5, color: '#131214', fontSize: 18, fontWeight: 600 }}>Parol</Text>
-                    <TextInput
-                        style={!isFocusedPasword ? styles.input : styles.inputFocus}
+                    <PasswordInput
                         value={valuePasword}
-                        secureTextEntry={true}
-                        placeholderTextColor="#898D8F"
                         onChangeText={onPasswordFun}
                         placeholder="Parol kiriting"
-                        onFocus={() => setIsFocusedPasword(true)}  // Focus bo'lganda
-                        onBlur={() => setIsFocusedPasword(false)}   // Focusdan chiqqanda
                     />
                     {errorMessagePassword ? <Text style={styles.errorText}>{errorMessagePassword}</Text> : null}
 

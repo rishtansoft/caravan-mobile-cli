@@ -14,7 +14,7 @@ interface componentNameProps {
 const UserRole: React.FC<componentNameProps> = ({ roles, name }) => {
 
     if (roles === 'driver') {
-        return <DriverNavigation />;
+        return <DriverNavigation page={name} />;
     } else if (roles === 'cargo_owner') {
         return <OwnerNavigation page={name} />;
     }

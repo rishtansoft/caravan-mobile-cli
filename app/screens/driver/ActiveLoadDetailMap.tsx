@@ -5,7 +5,7 @@ import Geolocation from 'react-native-geolocation-service';
 import { Position, Feature, Geometry } from 'geojson';
 import { MAPBOX_ACCESS_TOKEN } from '@env';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { ActiveLoadsDetailMapProps } from './RouterType';
+import {ActiveLoadsDetailMapProps  } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
 
@@ -260,7 +260,7 @@ const ActiveLoadDetailMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navig
                     width: '6%'
                 }}>
                     <Icon
-                        onPress={() => navigation.navigate('ActiveLoadDetail', { itemId: itemId })}
+                        onPress={() => navigation.navigate('active_loads_detail', { itemId: itemId })}
                         name="angle-left" size={30} color="#7257FF" />
                 </View>
                 <Text style={styles.title}>
