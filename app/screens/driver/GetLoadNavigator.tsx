@@ -8,6 +8,7 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
+
 import MapboxGl from '@rnmapbox/maps';
 import Geolocation from 'react-native-geolocation-service';
 import { Position } from 'geojson';
@@ -17,16 +18,12 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
-const DESTINATION = {
-    latitude: 40.360662616387124,
-    longitude: 71.27842449580187
-};
 interface PositionInterface {
     longitude: number,
     latitude: number,
     address?: string
 }
-const GetLoadNavigator = ({navigation, route}) => {
+const GetLoadNavigator = ({route}) => {
 
     const [currentLocation, setCurrentLocation] = useState<PositionInterface | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
