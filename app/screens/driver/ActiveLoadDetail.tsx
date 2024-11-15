@@ -303,7 +303,7 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
             })
                 .then(response => {
                     if (response.data.message == "Load successfully assigned to driver") {
-                        navigation.navigate('active_loads_map', {
+                        navigation.navigate('active_loads_map_appointed', {
                             itemId: itemId,
                             data: locations,
                             status: result?.status
@@ -314,7 +314,6 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
                 })
                 .catch(err => {
                     console.log(318, err.message)
-//                     console.log(318, "Error assign load to driver", err);
                     Alert.alert('Hatolik', "Cannot assign load to driver")
                 })
         }
@@ -330,7 +329,7 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
                     }}
                 >
                     <Icon
-                        onPress={() => navigation.goBack()}
+                        onPress={() => navigation.navigate('active_loads')}
                         name="angle-left"
                         size={30}
                         color="#7257FF"

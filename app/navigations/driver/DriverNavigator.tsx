@@ -74,13 +74,13 @@ const DriverNavigator: React.FC<componentNameProps> = ({ page }) => {
                     component={DetailScreen}
                     options={{ headerShown: false }}
                 />
-                {/* <Stack.Screen
+                <Stack.Screen
                     name='active_loads_map'
                     component={ActiveLoadDetailMap}
                     options={{ headerShown: false }}
-                /> */}
+                />
                 <Stack.Screen
-                    name='active_loads_map'
+                    name='active_loads_map_appointed'
                     component={GetLoadNavigator}
                     options={{ headerShown: false }}
                 />

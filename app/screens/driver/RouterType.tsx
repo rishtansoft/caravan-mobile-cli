@@ -28,13 +28,14 @@ export type RootStackParamList = {
     contact_admin: undefined,
     terms_condition: undefined,
     active_loads_detail: { itemId: string },
+    active_loads_map_appointed: { itemId: string, data: Location[], status: string | undefined },
     active_loads_map: { itemId: string, data: Location[], status: string | undefined },
     history_detail: { itemId: string },
     history_detail_map: { itemId: string, data: Location[], status: string | undefined },
 
 
 };
-
+//-------------------------------------------------------------------------------------------------------------------------------------------
 export type ActiveLoadsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'active_loads'>;
 export type HistoryScreenNavigationProp = StackNavigationProp<RootStackParamList, 'history'>;
 export type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'profile'>;
@@ -47,6 +48,8 @@ export type ActiveLoadsDetailMapScreenNavigationProp = StackNavigationProp<RootS
 export type MainPhoneUpdateScreenNavigationProp = StackNavigationProp<RootStackParamList, 'main_phone_update'>;
 export type MainPhoneUpdateSmcCodeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'main_phone_update_sms_code'>;
 export type HistoryDetailMapCodeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'history_detail_map'>;
+export type ActiveLoadsMapAppointedCodeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'active_loads_map_appointed'>;
+//-------------------------------------------------------------------------------------------------------------------------------------------
 
 export type ActiveLoadsType = NativeStackScreenProps<RootStackParamList, 'active_loads'>;
 export type HistoryType = NativeStackScreenProps<RootStackParamList, 'history'>;
@@ -57,10 +60,11 @@ export type HistoryDetailType = NativeStackScreenProps<RootStackParamList, 'hist
 export type TermsConditionType = NativeStackScreenProps<RootStackParamList, 'terms_condition'>;
 export type ProfileDataUpdateType = NativeStackScreenProps<RootStackParamList, 'profile_update'>;
 export type ActiveLoadsDetailMapType = NativeStackScreenProps<RootStackParamList, 'active_loads_map'>;
-
 export type MainPhoneUpdateType = NativeStackScreenProps<RootStackParamList, 'main_phone_update'>;
 export type MainPhoneUpdateSmcCodeType = NativeStackScreenProps<RootStackParamList, 'main_phone_update_sms_code'>;
 export type HistoryDetailMapCodeType = NativeStackScreenProps<RootStackParamList, 'history_detail_map'>;
+export type ActiveLoadsMapAppointedCodeType = NativeStackScreenProps<RootStackParamList, 'active_loads_map_appointed'>;
+//-------------------------------------------------------------------------------------------------------------------------------------------
 
 export type ActiveLoadsRouteProp = RouteProp<RootStackParamList, 'active_loads'>;
 export type HistoryRouteProp = RouteProp<RootStackParamList, 'history'>;
@@ -71,11 +75,17 @@ export type HistoryDetailRouteProp = RouteProp<RootStackParamList, 'history_deta
 export type TermsConditionRouteProp = RouteProp<RootStackParamList, 'terms_condition'>;
 export type ProfileDataUpdateRouteProp = RouteProp<RootStackParamList, 'profile_update'>;
 export type ActiveLoadsDetailMapRouteProp = RouteProp<RootStackParamList, 'active_loads_map'>;
-
 export type MainPhoneUpdateRouteProp = RouteProp<RootStackParamList, 'main_phone_update'>;
 export type MainPhoneUpdateSmcCodeRouteProp = RouteProp<RootStackParamList, 'main_phone_update_sms_code'>;
 export type HistoryDetailMapCodeRouteProp = RouteProp<RootStackParamList, 'history_detail_map'>;
+export type ActiveLoadsMapAppointedCodeRouteProp = RouteProp<RootStackParamList, 'active_loads_map_appointed'>;
+//-------------------------------------------------------------------------------------------------------------------------------------------
 
+
+export interface ActiveLoadsMapAppointedProps {
+    navigation: ActiveLoadsMapAppointedCodeScreenNavigationProp;
+    route: ActiveLoadsMapAppointedCodeRouteProp;
+}
 
 export interface HistoryDetailMapProps {
     navigation: HistoryDetailMapCodeScreenNavigationProp;

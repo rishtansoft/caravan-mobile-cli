@@ -16,7 +16,7 @@ import { Position } from 'geojson';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { ActiveLoadsDetailMapProps } from './RouterType';
+import { ActiveLoadsMapAppointedProps } from './RouterType';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
@@ -53,7 +53,7 @@ const filterOrderFun = (arr: Location[], order: number) => {
     return oneData
 }
 
-const GetLoadNavigator: React.FC<ActiveLoadsDetailMapProps> = ({ navigation, route }) => {
+const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, route }) => {
 
     const [currentLocation, setCurrentLocation] = useState<PositionInterface | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
@@ -163,21 +163,21 @@ const GetLoadNavigator: React.FC<ActiveLoadsDetailMapProps> = ({ navigation, rou
     }, []);
 
 
-//     useEffect(() => {
-//         if (route.params?.data[0]?.longitude) {
-//             setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
-//         }
-//     }, [])
+    //     useEffect(() => {
+    //         if (route.params?.data[0]?.longitude) {
+    //             setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
+    //         }
+    //     }, [])
 
-useEffect(() => {
-    console.log("Route params data:", route.params?.data);
-    if (route.params?.data && route.params.data.length > 0 && route.params.data[0].longitude) {
-        setLoadStartAddress({
-            latitude: Number(route.params.data[0].latitude),
-            longitude: Number(route.params.data[0].longitude)
-        });
-    }
-}, []);
+    useEffect(() => {
+        console.log("Route params data:", route.params?.data);
+        if (route.params?.data && route.params.data.length > 0 && route.params.data[0].longitude) {
+            setLoadStartAddress({
+                latitude: Number(route.params.data[0].latitude),
+                longitude: Number(route.params.data[0].longitude)
+            });
+        }
+    }, []);
 
 
     const requestLocationPermission = async () => {
@@ -205,20 +205,20 @@ useEffect(() => {
         try {
 
             // `start` va `loadStartAddress` mavjudligini tekshirish
-                    if (!start || !start.longitude || !start.latitude) {
-                        console.log("Start manzili yetarli emas:", start);
-                        Alert.alert("Xato", "Boshlanish manzili mavjud emas.");
-                        return;
-                    }
+            if (!start || !start.longitude || !start.latitude) {
+                console.log("Start manzili yetarli emas:", start);
+                Alert.alert("Xato", "Boshlanish manzili mavjud emas.");
+                return;
+            }
 
-                    console.log(203, start)
-                    if (!loadStartAddress || !loadStartAddress.longitude || !loadStartAddress.latitude) {
-                        console.log("Yuk manzili yetarli emas:", loadStartAddress);
-                        Alert.alert("Xato", "Yuk manzili mavjud emas.");
-                        return;
-                    }
+            console.log(203, start)
+            if (!loadStartAddress || !loadStartAddress.longitude || !loadStartAddress.latitude) {
+                console.log("Yuk manzili yetarli emas:", loadStartAddress);
+                Alert.alert("Xato", "Yuk manzili mavjud emas.");
+                return;
+            }
 
-                console.log(210)
+            console.log(210)
             const response = await fetch(
                 `https://api.mapbox.com/directions/v5/mapbox/driving/${start.longitude},${start.latitude};${loadStartAddress.longitude},${loadStartAddress.latitude}?geometries=geojson&overview=full&steps=true&access_token=pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q`
             );
@@ -244,7 +244,7 @@ useEffect(() => {
                     setNextManeuver(data.routes[0].steps[0].maneuver.instruction);
                 }
 
-            console.log(208)
+                console.log(208)
             }
         } catch (error) {
             console.log(221, 'Route calculation error:', error);
@@ -446,6 +446,27 @@ useEffect(() => {
         ); // r56yguk
     }
 
+    const startNewLoad = () => {
+        if (token && user_id) {
+            startNavigation();
+            axios.post(`${API_URL}/api/driver/arring-to-get-load`, {
+                user_id: user_id,
+                load_id: route.params.data[0].load_id,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            }).then((res) => {
+                console.log(460, res.data);
+
+            }).catch((error) => {
+                console.log(463, error);
+
+            })
+        }
+
+    }
+
 
     const iCameFun = () => {
         if (token && user_id) {
@@ -511,6 +532,20 @@ useEffect(() => {
     const loadUploadFun = () => {
         setICame(false);
         setDeparture(true);
+        axios.post(`${API_URL}/api/driver/finish-pickup-load`, {
+            user_id: user_id,
+            load_id: route.params.data[0].load_id,
+        }, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+        }).then((res) => {
+            console.log(543, res.data);
+
+        }).catch((error) => {
+            console.log(546, error);
+
+        })
     }
 
     const recenterCamera = () => {
@@ -644,7 +679,7 @@ useEffect(() => {
             {
                 !iCame && !departure && <TouchableOpacity
                     style={[styles.startButton, navigationStarted && styles.stopButton]}
-                    onPress={navigationStarted ? stopNavigation : startNavigation}
+                    onPress={navigationStarted ? stopNavigation : startNewLoad}
                 >
                     <Text style={styles.buttonText}>
                         {navigationStarted ? 'To\'xtatish' : 'Ketdik'}
@@ -657,7 +692,7 @@ useEffect(() => {
                     onPress={navigationStarted_2 ? iCameUploadFun : loadUploadFun}
                 >
                     <Text style={styles.buttonText}>
-                        {navigationStarted_2 ? 'Yukni olishga keladim' : 'Yuklashni boshlash'}
+                        {navigationStarted_2 ? 'Yukni olishga keladim' : 'Yukni yuklashni yakunlash'}
                     </Text>
                 </TouchableOpacity>
             }
