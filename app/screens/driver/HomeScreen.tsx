@@ -208,8 +208,6 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
                 }
             })
                 .then((res) => {
-                    console.log(214, res);
-
                     setDataUpdate(false)
                     if (res.data?.data && res.data.data.length > 0) {
                         const resdataFileter = filterByDriverStops(res.data?.data)
@@ -283,7 +281,9 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
                     value={isSwitchOn}
                     disabled={!inRegister}
                 />
+
             </View>
+
 
             <View style={styles.orders}>
                 <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 10, marginVertical: 10 }}>

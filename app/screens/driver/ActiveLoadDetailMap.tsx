@@ -94,23 +94,7 @@ const ActiveLoadDetailMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navig
     const [isLoading, setIsLoading] = useState(true);
 
     // Predefined locations with correct [longitude, latitude] format
-    const [locations, setLocations] = useState<Location[]>([
-        {
-            coordinates: [71.21403317505282, 40.41584992170101], // Boshlang'ich nuqta
-            title: "Boshlang'ich nuqta",
-            description: "Andijondagi boshlang'ich nuqta"
-        },
-        {
-            coordinates: [71.21403317505282, 40.41584992170101], // Will be updated with real location
-            title: "Hozirgi joylashuv",
-            description: "Sizning joylashuvingiz"
-        },
-        {
-            coordinates: [71.21447672853047, 40.40623817747], // Borish kerak bo'lgan joy
-            title: "Borish kerak bo'lgan joy",
-            description: "Manzil"
-        }
-    ]);
+    const [locations, setLocations] = useState<Location[]>([]);
 
     // 40.40623817747, 
 
@@ -155,10 +139,12 @@ const ActiveLoadDetailMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navig
                 return;
             }
 
+            console.log(142)
             Geolocation.getCurrentPosition(
                 position => {
                     const { longitude, latitude } = position.coords;
                     // Update current location
+                    console.log(146, position.coords)
                     const updatedLocations = [...locations];
                     updatedLocations[1] = {
                         ...updatedLocations[1],
@@ -167,7 +153,7 @@ const ActiveLoadDetailMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navig
                     setLocations(updatedLocations);
                     setCurrentLocation([longitude, latitude]);
                     setIsLoading(false);
-
+                    console.log(154, updatedLocations)
                     // Calculate route with all three points
                     calculateFullRoute(updatedLocations);
                 },
@@ -191,10 +177,11 @@ const ActiveLoadDetailMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navig
 
     const calculateFullRoute = async (currentLocations: Location[]) => {
         try {
+            console.log(178, currentLocations)
             // Build coordinates string for all three points
             const coordinatesString = `${currentLocations[0].coordinates[0]},${currentLocations[0].coordinates[1]};${currentLocations[1].coordinates[0]},${currentLocations[1].coordinates[1]};${currentLocations[2].coordinates[0]},${currentLocations[2].coordinates[1]}`;
 
-            const routeUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?geometries=geojson&access_token=${MAPBOX_ACCESS_TOKEN}`;
+            const routeUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?geometries=geojson&access_token=pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q`;
 
             const response = await fetch(routeUrl);
             const data = await response.json();
@@ -208,14 +195,15 @@ const ActiveLoadDetailMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navig
                 Alert.alert('Xato', 'Yo\'nalish topilmadi');
             }
         } catch (error) {
-            console.error('Yo\'nalishni hisoblashda xatolik:', error);
+            console.error(195, 'Yo\'nalishni hisoblashda xatolik:', error);
             Alert.alert('Xato', 'Yo\'nalishni hisoblashda xatolik yuz berdi');
         }
     };
 
     useEffect(() => {
+        console.log(204)
         getCurrentLocation();
-
+        console.log(205)
         const locationInterval = setInterval(() => {
             getCurrentLocation();
         }, 30000);

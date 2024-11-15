@@ -142,6 +142,7 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
 
     useEffect(() => {
         if (token && user_id) {
+            console.log(145)
             axios.get(API_URL + `/api/loads/get-user-all-loads?user_id=${user_id}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -149,22 +150,24 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
             })
                 .then((res) => {
                     if (res.data?.data && res.data.data.length > 0) {
-                        console.log(207, res.data);
 
                         const resdataFileter = filterByDriverStops(res.data?.data)
+
                         if (resdataFileter.length > 0) {
 
                             const newData = resdataFileter.map((el) => {
                                 return {
                                     id: el.id,
                                     status: el.load_status,
-                                    weight: el.loadDetails.weight,
+                                    weight: el.loadDetails?.weight,
                                     sub_id: splitText(el.id).text_1,
                                     start_location: filertDriverStopOrder(el.driverStops, 0),
                                     end_location: filertDriverStopOrder(el.driverStops, 1),
                                 }
                             });
+                            console.log(169)
                             if (newData && newData.length > 0) {
+
                                 setResData(newData)
                             }
                         }

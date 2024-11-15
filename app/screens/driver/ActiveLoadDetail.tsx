@@ -302,7 +302,6 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
                 },
             })
                 .then(response => {
-                    console.log(325, response.data);
                     if (response.data.message == "Load successfully assigned to driver") {
                         navigation.navigate('active_loads_map', {
                             itemId: itemId,
@@ -310,11 +309,12 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
                             status: result?.status
                         })
                     } else {
-                        Alert.alert('Hatolik', "Cannot assign load to driver")
+                        Alert.alert('Hatolik', response.data.error)
                     }
                 })
                 .catch(err => {
-                    console.log("Error assign load to driver", err);
+                    console.log(318, err.message)
+//                     console.log(318, "Error assign load to driver", err);
                     Alert.alert('Hatolik', "Cannot assign load to driver")
                 })
         }

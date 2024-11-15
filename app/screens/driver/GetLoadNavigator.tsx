@@ -163,13 +163,22 @@ const GetLoadNavigator: React.FC<ActiveLoadsDetailMapProps> = ({ navigation, rou
     }, []);
 
 
+//     useEffect(() => {
+//         if (route.params?.data[0]?.longitude) {
+//             setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
+//         }
+//     }, [])
 
+useEffect(() => {
+    console.log("Route params data:", route.params?.data);
+    if (route.params?.data && route.params.data.length > 0 && route.params.data[0].longitude) {
+        setLoadStartAddress({
+            latitude: Number(route.params.data[0].latitude),
+            longitude: Number(route.params.data[0].longitude)
+        });
+    }
+}, []);
 
-    useEffect(() => {
-        if (route.params?.data[0]?.longitude) {
-            setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
-        }
-    }, [])
 
     const requestLocationPermission = async () => {
         try {
@@ -194,6 +203,22 @@ const GetLoadNavigator: React.FC<ActiveLoadsDetailMapProps> = ({ navigation, rou
 
     const calculateRoute = async (start: Position) => {
         try {
+
+            // `start` va `loadStartAddress` mavjudligini tekshirish
+                    if (!start || !start.longitude || !start.latitude) {
+                        console.log("Start manzili yetarli emas:", start);
+                        Alert.alert("Xato", "Boshlanish manzili mavjud emas.");
+                        return;
+                    }
+
+                    console.log(203, start)
+                    if (!loadStartAddress || !loadStartAddress.longitude || !loadStartAddress.latitude) {
+                        console.log("Yuk manzili yetarli emas:", loadStartAddress);
+                        Alert.alert("Xato", "Yuk manzili mavjud emas.");
+                        return;
+                    }
+
+                console.log(210)
             const response = await fetch(
                 `https://api.mapbox.com/directions/v5/mapbox/driving/${start.longitude},${start.latitude};${loadStartAddress.longitude},${loadStartAddress.latitude}?geometries=geojson&overview=full&steps=true&access_token=pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q`
             );
@@ -218,9 +243,11 @@ const GetLoadNavigator: React.FC<ActiveLoadsDetailMapProps> = ({ navigation, rou
                 if (data.routes[0].steps && data.routes[0].steps[0]) {
                     setNextManeuver(data.routes[0].steps[0].maneuver.instruction);
                 }
+
+            console.log(208)
             }
         } catch (error) {
-            console.log('Route calculation error:', error);
+            console.log(221, 'Route calculation error:', error);
             Alert.alert('Xato', 'Yo\'nalishni hisoblashda xatolik yuz berdi');
         }
     };
@@ -355,62 +382,6 @@ const GetLoadNavigator: React.FC<ActiveLoadsDetailMapProps> = ({ navigation, rou
         );
     };
 
-
-
-    // ------------------------------------------------------------------------------------
-
-
-    // const startNavigation = async () => {
-    //     const hasPermission = await requestLocationPermission();
-    //     if (!hasPermission) {
-    //         Alert.alert('Xato', 'Navigatsiya uchun joylashuv ruxsati kerak');
-    //         return;
-    //     }
-
-    //     setNavigationStarted(true);
-
-    //     // Initial camera position for navigation mode
-    //     if (currentLocation && cameraRef.current) {
-    //         cameraRef.current.setCamera({
-    //             centerCoordinate: [currentLocation.longitude, currentLocation.latitude],
-    //             zoomLevel: 18,
-    //             pitch: 60,
-    //             heading: 0
-    //         });
-    //     }
-
-    //     watchId.current = Geolocation.watchPosition(
-    //         position => {
-    //             const newLocation: PositionInterface = {
-    //                 latitude: position.coords.latitude,
-    //                 longitude: position.coords.longitude
-    //             };
-    //             setCurrentLocation(newLocation);
-    //             setCurrentSpeed(position.coords.speed || 0);
-    //             calculateRoute(newLocation);
-
-    //             // Update camera in navigation mode
-    //             if (cameraRef.current) {
-    //                 cameraRef.current.setCamera({
-    //                     centerCoordinate: [newLocation.longitude, newLocation.latitude],
-    //                     zoomLevel: 18,
-    //                     pitch: 60,
-    //                     heading: position.coords.heading || 0
-    //                 });
-    //             }
-    //         },
-    //         error => {
-    //             console.error('Location tracking error:', error);
-    //             Alert.alert('Xato', 'Joylashuvni kuzatishda xatolik yuz berdi');
-    //         },
-    //         {
-    //             enableHighAccuracy: true,
-    //             distanceFilter: 5,
-    //             interval: 1000,
-    //             fastestInterval: 500
-    //         }
-    //     );
-    // };
 
     const stopNavigation = () => {
         if (watchId.current !== null) {

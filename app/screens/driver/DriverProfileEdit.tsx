@@ -274,8 +274,8 @@ const DriverProfileEdit: React.FC<ProfileDataUpdateProps> = ({ navigation }) => 
                     Authorization: `Bearer ${token}`
                 }
             }).then((res) => {
-                setFullName(res.data.user?.firstname)
-                setLastname(res.data.user?.lastname)
+                setFullName(res.data.user?.firstname.trim())
+                setLastname(res.data.user?.lastname.trim())
                 if (res.data?.driver?.car_type_id) {
                     setcar_type_id(res.data.driver.car_type_id)
                 }
