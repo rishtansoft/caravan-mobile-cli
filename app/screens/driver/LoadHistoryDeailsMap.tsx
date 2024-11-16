@@ -16,7 +16,7 @@ import { Position } from 'geojson';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { ActiveLoadsMapAppointedProps } from './RouterType';
+import { HistoryDetailMapProps } from './RouterType';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
@@ -47,14 +47,73 @@ interface Location {
 const showErrorAlert = (message: string) => {
     Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
 }
-
 const filterOrderFun = (arr: Location[], order: number) => {
     const oneData = arr.find((el) => el.order == order);
     return oneData
 }
 
-const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, route }) => {
+const getBgColorKey = (key: string): string => {
+    switch (key) {
+        case "posted":
+            return "#F0EDFF";
+        case "assigned":
+            return "#E5F0FF";
+        case "picked_up":
+            return "#FFEFB3";
+        case "in_transit":
+            return "#FFE9D1";
+        case "delivered":
+            return "#D7F5E5";
+        case "Tushirilmoqda":
+            return "#FFEFB3";
+        case "Yakunlangan":
+            return "#D7F5E5";
+        default:
+            return "#F0EDFF"; // Default rang
+    }
+};
+const getStatusText = (key: string): string => {
+    switch (key) {
+        case "posted":
+            return "Qidirilmoqda";
+        case "assigned":
+            return "Yukni olishga kelmoqda";
+        case "picked_up":
+            return "Yuk ortilmoqda";
+        case "in_transit":
+            return "Yo'lda";
+        case "delivered":
+            return "Manzilga yetib bordi";
+        case "Tushirilmoqda":
+            return "#FFEFB3";
+        case "Yakunlangan":
+            return "#D7F5E5";
+        default:
+            return "#F0EDFF"; // Default rang
+    }
+};
+const getTextColorKey = (key: string): string => {
+    switch (key) {
+        case "posted":
+            return "#5336E2";
+        case "assigned":
+            return "#0050C7";
+        case "picked_up":
+            return "#B26205";
+        case "in_transit":
+            return "#E28F36";
+        case "delivered":
+            return "#006341";
+        case "Tushirilmoqda":
+            return "#B26205";
+        case "Yakunlangan":
+            return "#006341";
+        default:
+            return "#5336E2"; // Default rang
+    }
+};
 
+const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, route }) => {
     const [currentLocation, setCurrentLocation] = useState<PositionInterface | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
     const [navigationStarted, setNavigationStarted] = useState(false);
@@ -78,6 +137,33 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
     const [unique_id, setUnique_id] = useState<string>('');
     const socketRef = useRef<any>(null);
     const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        console.log(142, route.params.status);
+        if (route.params.status == 'assigned') {
+            setICame(false);
+            setDeparture(false);
+            setNavigationStarted(false)
+        } else if (route.params.status == 'in_transit_get_load') {
+            setICame(false);
+            setDeparture(false);
+            setNavigationStarted(false)
+            // startNewLoad()
+        } else if (route.params.status == 'arrived_picked_up') {
+            setICame(true);
+            setDeparture(false);
+            setNavigationStarted_2(true)
+        } else if (route.params.status == 'picked_up') {
+            setICame(true);
+            setDeparture(false);
+            setNavigationStarted_2(false)
+        } else if (route.params.status == 'in_transit') {
+            setICame(false);
+            setDeparture(true);
+            setNavigationStarted_3(false)
+            // newAddressFun()
+        }
+    }, [route.params]);
 
     const initializeSocket = (userId: string, uniqueId: string) => {
         socketRef.current = io(API_URL, {
@@ -163,21 +249,24 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
     }, []);
 
 
-    //     useEffect(() => {
-    //         if (route.params?.data[0]?.longitude) {
-    //             setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
-    //         }
-    //     }, [])
+    // useEffect(() => {
+    //     if (route.params?.data[0]?.longitude) {
+    //         setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
+    //     }
+    // }, [])
 
-    useEffect(() => {
-        console.log("Route params data:", route.params?.data);
-        if (route.params?.data && route.params.data.length > 0 && route.params.data[0].longitude) {
-            setLoadStartAddress({
-                latitude: Number(route.params.data[0].latitude),
-                longitude: Number(route.params.data[0].longitude)
-            });
-        }
-    }, []);
+    // useEffect(() => {
+    //     console.log("Route params data:", route.params?.data);
+    //     if (route.params?.data && route.params.data.length > 0 && route.params.data[0].longitude) {
+    //         const endAdres = filterOrderFun(route.params.data, 0)
+    //         if (endAdres) {
+    //             setLoadStartAddress({
+    //                 latitude: Number(endAdres.latitude),
+    //                 longitude: Number(endAdres.longitude)
+    //             });
+    //         }
+    //     }
+    // }, []);
 
 
     const requestLocationPermission = async () => {
@@ -329,8 +418,8 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
             Alert.alert('Xato', 'Navigatsiya uchun joylashuv ruxsati kerak');
             return;
         }
-
         setNavigationStarted(true);
+
 
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -446,7 +535,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         ); // r56yguk
     }
 
-    const startNewLoad = () => {
+    function startNewLoad() {
         if (token && user_id) {
             startNavigation();
             axios.post(`${API_URL}/api/driver/arring-to-get-load`, {
@@ -464,8 +553,8 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
 
             })
         }
-
     }
+
     const iCameFun = () => {
         if (token && user_id) {
             const resData = {
@@ -476,8 +565,6 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                 start_longitude: Number(filterOrderFun(route.params.data, 0)?.longitude),
                 start_latitude: Number(filterOrderFun(route.params.data, 0)?.latitude)
             }
-            console.log(resData);
-
 
             axios.post(`${API_URL}/api/driver/arrived-luggage`, resData, {
                 headers: {
@@ -490,6 +577,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                     setIsVisible(false)
                     setICame(true);
                     stopNavigation()
+
                 } else {
                     setIsVisible(false);
                     showErrorAlert(res.data?.message)
@@ -558,12 +646,17 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
     };
     const newAddressFun = () => {
         setIsVisible(false)
+
         const endAdres = filterOrderFun(route.params.data, 1)
         if (endAdres) {
-            setLoadStartAddress({ latitude: Number(endAdres?.latitude), longitude: Number(endAdres?.longitude) })
-            startNavigationDeparture()
+            console.log(657, endAdres);
+
+            setLoadStartAddress({ latitude: Number(endAdres.latitude), longitude: Number(endAdres.longitude) })
         }
+        setNavigationStarted(true);
+
         setNavigationStarted_3(true);
+        startNavigationDeparture()
 
 
     };
@@ -606,6 +699,9 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
             })
         }
     }
+
+
+
 
     return (
         <View style={styles.container}>
@@ -724,6 +820,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                     </Text>
                 </TouchableOpacity>
             }
+
             {
                 iCame && !departure && <TouchableOpacity
                     style={[styles.startButton, navigationStarted_2 && styles.stopButton]}
@@ -932,5 +1029,5 @@ const styles = StyleSheet.create({
 });
 
 
-export default GetLoadNavigator;
+export default LoadHistoryDeailsMap;
 

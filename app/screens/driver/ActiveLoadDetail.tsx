@@ -196,6 +196,7 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
     const [result, setResult] = useState<CargoInfo | null>(null);
     const [locations, setLocations] = useState<Location[] | null>(null);
     const isFocused = useIsFocused();
+    const [driver_id, setDriver_id] = useState('');
 
     useEffect(() => {
         GetData("user_id")
@@ -235,6 +236,7 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
                 .then((res) => {
 
                     if (res.data?.result) {
+                        setDriver_id(res.data.result.driver_id)
                         const resData: Result = res.data.result;
                         const stopLoaction =
                             resData.locations.length > 2 &&
@@ -295,7 +297,7 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
     const deleteFun = () => { };
 
     const assignLoadToDriver = () => {
-        if (user_id && itemId && locations) {
+        if (user_id && itemId && locations && driver_id) {
             axios.post(API_URL + `/api/loads/assign-load`, { user_id: user_id, load_id: itemId }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -306,7 +308,8 @@ const ActiveLoadDetail: React.FC<ActiveLoadsDetailProps> = ({
                         navigation.navigate('active_loads_map_appointed', {
                             itemId: itemId,
                             data: locations,
-                            status: result?.status
+                            status: result?.status,
+                            driver_id: driver_id
                         })
                     } else {
                         Alert.alert('Hatolik', response.data.error)

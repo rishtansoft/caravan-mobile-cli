@@ -191,6 +191,8 @@ const LoadHistoryDetails: React.FC<HistoryDetailProps> = ({
     const [token, setToken] = useState<string>("");
     const [result, setResult] = useState<CargoInfo | null>(null);
     const [locations, setLocations] = useState<Location[] | null>(null);
+    const [driver_id, setDriver_id] = useState('');
+
     useEffect(() => {
         GetData("user_id")
             .then((res) => {
@@ -230,6 +232,7 @@ const LoadHistoryDetails: React.FC<HistoryDetailProps> = ({
                     console.log(134, res.data.result);
 
                     if (res.data?.result) {
+                        setDriver_id(res.data.result.driver_id)
                         const resData: Result = res.data.result;
                         const stopLoaction =
                             resData.locations.length > 2 &&
@@ -244,6 +247,8 @@ const LoadHistoryDetails: React.FC<HistoryDetailProps> = ({
                                     };
                                 });
                         setLocations(resData.locations);
+                        console.log(250, resData.main.load_status);
+
                         const newData: CargoInfo = {
                             status: resData.main.load_status,
                             start_location: filertDriverStopOrder(resData.locations, 0),
@@ -298,7 +303,7 @@ const LoadHistoryDetails: React.FC<HistoryDetailProps> = ({
                     }}
                 >
                     <Icon
-                        onPress={() => navigation.navigate('active_loads')}
+                        onPress={() => navigation.navigate('history')}
                         name="angle-left"
                         size={30}
                         color="#7257FF"
@@ -310,10 +315,10 @@ const LoadHistoryDetails: React.FC<HistoryDetailProps> = ({
                 {
                     locations && locations.length > 0 && <IconFoundation
                         onPress={() =>
-                            navigation.navigate('history_detail_map', {
+                            navigation.navigate('active_loads_map', {
                                 itemId: itemId,
                                 data: locations,
-                                status: result?.status
+                                status: result?.status,
                             })
                         }
                         name="map"
@@ -495,12 +500,13 @@ const LoadHistoryDetails: React.FC<HistoryDetailProps> = ({
                         </View>
                     </View>
                     {
-                        locations && locations.length > 0 && <TouchableOpacity
+                        locations && locations.length > 0 && result.status != 'delivered' && <TouchableOpacity
                             onPress={() =>
                                 navigation.navigate('history_detail_map', {
                                     itemId: itemId,
                                     data: locations,
-                                    status: result.status
+                                    status: result.status,
+                                    driver_id: driver_id
                                 })
                             }
                             style={[
@@ -509,7 +515,7 @@ const LoadHistoryDetails: React.FC<HistoryDetailProps> = ({
                             ]}
                         >
                             <Text style={[styles.btn_text, { color: "#131214" }]}>
-                                Xaritada korish
+                                Mazilni davom etirish
                             </Text>
                             <IconFoundation name="map" size={25} color="#000" />
                         </TouchableOpacity>

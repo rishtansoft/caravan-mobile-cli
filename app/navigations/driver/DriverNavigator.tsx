@@ -17,6 +17,7 @@ import GetLoadNavigator from '../../screens/driver/GetLoadNavigator';
 import Navbar from '../../screens/driver/Navbar';
 import MainPhoneUpdate from '../../screens/driver/MainPhoneUpdate';
 import MainPhoneUpdateSmcCode from '../../screens/driver/MainPhoneUpdateSmcCode';
+import LoadHistoryDeailsMap from '../../screens/driver/LoadHistoryDeailsMap';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 interface componentNameProps {
@@ -93,6 +94,11 @@ const DriverNavigator: React.FC<componentNameProps> = ({ page }) => {
                 <Stack.Screen
                     name='history_detail'
                     component={LoadHistoryDetails}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                    name='history_detail_map'
+                    component={LoadHistoryDeailsMap}
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
