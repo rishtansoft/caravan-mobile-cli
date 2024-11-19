@@ -20,7 +20,7 @@ import { HistoryDetailMapProps } from './RouterType';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
-import io from 'socket.io-client';
+import { useSocketConnection } from './useSocketConnection';
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -113,6 +113,26 @@ const getTextColorKey = (key: string): string => {
     }
 };
 
+const filterStatusData = (arr: Location[], status: string,) => {
+    if (status == 'in_transit') {
+        const data = filterOrderFun(arr, 1);
+        if (data) {
+            return {
+                latitude: Number(data.latitude),
+                longitude: Number(data.longitude)
+            }
+        }
+    } else {
+        const data = filterOrderFun(arr, 0);
+        if (data) {
+            return {
+                latitude: Number(data.latitude),
+                longitude: Number(data.longitude)
+            }
+        }
+    }
+}
+
 const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, route }) => {
     const [currentLocation, setCurrentLocation] = useState<PositionInterface | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
@@ -125,7 +145,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     const [isLoading, setIsLoading] = useState(true);
     const [locationPermissionError, setLocationPermissionError] = useState<string | null>(null);
     const [nextManeuver, setNextManeuver] = useState<string>('');
-    const [loadStartAddress, setLoadStartAddress] = useState<PositionInterface | null>({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
+    const [loadStartAddress, setLoadStartAddress] = useState<PositionInterface | null | undefined>(filterStatusData(route.params.data, route.params.status))
     const watchId = useRef<number | null>(null);
     const mapRef = useRef<MapboxGl.MapView | null>(null);
     const cameraRef = useRef<MapboxGl.Camera | null>(null);
@@ -139,7 +159,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        console.log(142, route.params.status);
         if (route.params.status == 'assigned') {
             setICame(false);
             setDeparture(false);
@@ -161,40 +180,53 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             setICame(false);
             setDeparture(true);
             setNavigationStarted_3(false)
-            // newAddressFun()
+            newAddressFun()
         }
     }, [route.params]);
-
-    const initializeSocket = (userId: string, uniqueId: string) => {
-        socketRef.current = io(API_URL, {
-            query: {
-                user_id: userId,
-                unique_id: uniqueId,
-                role: 'driver' // Assuming the role is always 'driver' for this component
-            },
-            transports: ['websocket'],
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000
+    useEffect(() => {
+        GetData('user_id').then((res) => {
+            if (res) {
+                setUser_id(res);
+                // Initialize socket service when user_id is available
+                if (unique_id) {
+                    const socketService = SocketBackgroundService.getInstance();
+                    socketService.initialize(res, unique_id);
+                }
+            }
         });
 
-        socketRef.current.on('connect', () => {
-            console.log('Connected to Socket.IO server');
+        GetData('unique_id').then((res) => {
+            if (res) {
+                setUnique_id(res);
+                // Initialize socket service when unique_id is available
+                if (user_id) {
+                    const socketService = SocketBackgroundService.getInstance();
+                    socketService.initialize(user_id, res);
+                }
+            }
         });
 
-        socketRef.current.on('connect_error', (error: any) => {
-            console.error('Socket connection error:', error);
-        });
+        return () => {
+            // Don't disconnect socket when leaving the page
+            // SocketBackgroundService will handle connection lifecycle
+        };
+    }, [user_id, unique_id]);
+    useEffect(() => {
+        if (currentLocation && navigationStarted) {
+            locationIntervalRef.current = setInterval(() => {
+                const socketService = SocketBackgroundService.getInstance();
+                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+                console.log(1, currentLocation);
 
-        socketRef.current.on('error', (error: any) => {
-            console.error('Socket.IO error:', error);
-        });
+            }, 60000);
+        }
 
-        socketRef.current.on('disconnect', (reason: string) => {
-            console.log('Disconnected from Socket.IO server:', reason);
-        });
-    };
-
+        return () => {
+            if (locationIntervalRef.current) {
+                clearInterval(locationIntervalRef.current);
+            }
+        };
+    }, [currentLocation, navigationStarted]);
     useEffect(() => {
         GetData('user_id').then((res) => {
             if (res) {
@@ -219,56 +251,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             console.error('Xatolik yuz berdi:', error);
         });
 
-        const fetchUserData = async () => {
-            try {
-                const userId = await GetData('user_id');
-                const uniqueId = await GetData('unique_id');
-
-                if (userId) setUser_id(userId);
-                if (uniqueId) setUnique_id(uniqueId);
-
-                if (userId && uniqueId) {
-                    initializeSocket(userId, uniqueId);
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            }
-        };
-
-        fetchUserData();
-
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.disconnect();
-            }
-            if (locationIntervalRef.current) {
-                clearInterval(locationIntervalRef.current);
-            }
-        };
-
     }, []);
-
-
-    // useEffect(() => {
-    //     if (route.params?.data[0]?.longitude) {
-    //         setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
-    //     }
-    // }, [])
-
-    // useEffect(() => {
-    //     console.log("Route params data:", route.params?.data);
-    //     if (route.params?.data && route.params.data.length > 0 && route.params.data[0].longitude) {
-    //         const endAdres = filterOrderFun(route.params.data, 0)
-    //         if (endAdres) {
-    //             setLoadStartAddress({
-    //                 latitude: Number(endAdres.latitude),
-    //                 longitude: Number(endAdres.longitude)
-    //             });
-    //         }
-    //     }
-    // }, []);
-
-
     const requestLocationPermission = async () => {
         try {
             const permission = Platform.OS === 'ios'
@@ -289,7 +272,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             return false;
         }
     };
-
     const calculateRoute = async (start: Position) => {
         try {
 
@@ -300,7 +282,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 return;
             }
 
-            console.log(203, start)
             if (!loadStartAddress || !loadStartAddress.longitude || !loadStartAddress.latitude) {
                 console.log("Yuk manzili yetarli emas:", loadStartAddress);
                 Alert.alert("Xato", "Yuk manzili mavjud emas.");
@@ -342,17 +323,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     };
 
     // ----------------------------Socket-------------------------------------------
-
-    const emitLocationUpdate = (location: PositionInterface) => {
-        if (socketRef.current && user_id) {
-            socketRef.current.emit('locationUpdate', {
-                latitude: location.latitude,
-                longitude: location.longitude,
-                driverId: route.params.driver_id
-            });
-        }
-    };
-
     const startNavigation = async () => {
         const hasPermission = await requestLocationPermission();
         if (!hasPermission) {
@@ -374,8 +344,10 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         // Start periodic location updates
         locationIntervalRef.current = setInterval(() => {
             if (currentLocation) {
-                emitLocationUpdate(currentLocation);
-                console.log(262, currentLocation);
+                const socketService = SocketBackgroundService.getInstance();
+
+                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+                console.log(2, currentLocation);
 
             }
         }, 60000); // Every minute
@@ -411,7 +383,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
         );
     };
-
     const startNavigationDeparture = async () => {
         const hasPermission = await requestLocationPermission();
         if (!hasPermission) {
@@ -433,8 +404,9 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         // Start periodic location updates
         locationIntervalRef.current = setInterval(() => {
             if (currentLocation) {
-                emitLocationUpdate(currentLocation);
-                console.log(262, currentLocation);
+                const socketService = SocketBackgroundService.getInstance();
+                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+                console.log(3, currentLocation);
 
             }
         }, 60000); // Every minute
@@ -470,8 +442,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
         );
     };
-
-
     const stopNavigation = () => {
         if (watchId.current !== null) {
             Geolocation.clearWatch(watchId.current);
@@ -479,7 +449,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         clearInterval(locationIntervalRef.current)
         setNavigationStarted(false);
     };
-
     useEffect(() => {
         const initializeLocation = async () => {
             try {
@@ -525,7 +494,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
         };
     }, []);
-
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
@@ -533,8 +501,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 <Text style={styles.loadingText}>Joylashuv aniqlanmoqda...</Text>
             </View>
         ); // r56yguk
-    }
-
+    };
     function startNewLoad() {
         if (token && user_id) {
             startNavigation();
@@ -553,8 +520,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
             })
         }
-    }
-
+    };
     const iCameFun = () => {
         if (token && user_id) {
             const resData = {
@@ -578,6 +544,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                     setICame(true);
                     stopNavigation()
 
+
                 } else {
                     setIsVisible(false);
                     showErrorAlert(res.data?.message)
@@ -587,7 +554,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
             })
         }
-    }
+    };
     const iCameUploadFun = () => {
         if (token && user_id) {
             const resData = {
@@ -613,7 +580,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
             })
         }
-    }
+    };
     const loadUploadFun = () => {
         setICame(false);
         setDeparture(true);
@@ -633,7 +600,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             console.log(546, error);
 
         })
-    }
+    };
     const recenterCamera = () => {
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -644,23 +611,12 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             });
         }
     };
-    const newAddressFun = () => {
+    function newAddressFun() {
         setIsVisible(false)
-
-        const endAdres = filterOrderFun(route.params.data, 1)
-        if (endAdres) {
-            console.log(657, endAdres);
-
-            setLoadStartAddress({ latitude: Number(endAdres.latitude), longitude: Number(endAdres.longitude) })
-        }
         setNavigationStarted(true);
-
         setNavigationStarted_3(true);
         startNavigationDeparture()
-
-
-    };
-
+    }
     const stopLoadFinish = () => {
         if (token && user_id) {
             const resData = {
@@ -698,9 +654,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
             })
         }
-    }
-
-
+    };
 
 
     return (
@@ -761,7 +715,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                     >
                         <View style={[
                             styles.navigationArrow,
-                            { transform: [{ rotate: `${currentLocation?.bearing || 0}deg` }] }
+                            { transform: [{ rotate: `${currentLocation?.latitude || 0}deg` }] }
                         ]}>
                             <Icon name="location-arrow" size={35} color="#7257FF" />
 
