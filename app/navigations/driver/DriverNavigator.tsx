@@ -18,7 +18,6 @@ import Navbar from '../../screens/driver/Navbar';
 import MainPhoneUpdate from '../../screens/driver/MainPhoneUpdate';
 import MainPhoneUpdateSmcCode from '../../screens/driver/MainPhoneUpdateSmcCode';
 import LoadHistoryDeailsMap from '../../screens/driver/LoadHistoryDeailsMap';
-import { useSocketLoadListener } from '../../screens/ui/Socket/Socket';
 import SocketService from '../../screens/ui/Socket/index';
 
 
@@ -30,9 +29,14 @@ interface componentNameProps {
 const DriverNavigator: React.FC<componentNameProps> = ({ page }) => {
     const [activeTab, setActiveTab] = useState('active_loads');
     const [keyboardVisible, setKeyboardVisible] = useState(false);
-    const { newLoad, isConnected, acceptLoad, rejectLoad } = useSocketLoadListener();
     const socketService = SocketService.getInstance();
-    socketService.showNotification()
+    useEffect(() => {
+        socketService.initialize();
+
+    }, []);
+
+    // socketService.showNotification()
+
 
     useEffect(() => {
         if (page) {

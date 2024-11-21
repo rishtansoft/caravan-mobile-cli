@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Linking, Alert, Platform, Modal, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Linking, RefreshControl, Alert, Platform, Modal, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchCamera, launchImageLibrary, ImageLibraryOptions, CameraOptions, Asset } from 'react-native-image-picker';
@@ -88,6 +88,7 @@ const DriverProfile: React.FC<ProfileProps> = (
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [unique_id, setUnique_id] = useState<string>('');
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -235,6 +236,14 @@ const DriverProfile: React.FC<ProfileProps> = (
         navigation.navigate('profile_update')
     };
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true); // Yangilanishni boshlash
+        setTimeout(() => {
+            setRefreshing(false); // Yangilanishni tugatish
+            setDataUpdate(true);
+        }, 2000); // 2 soniyadan keyin tugatadi
+    }, []);
+
     return (
         <View style={styles.container_all}>
             <View style={styles.header_con}>
@@ -252,7 +261,14 @@ const DriverProfile: React.FC<ProfileProps> = (
                 </View>
                 <Text style={styles.title}>Shaxsiy ma'lumotlar</Text>
             </View>
-            <ScrollView style={{ flexGrow: 1, marginBottom: 60 }}>
+            <ScrollView
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+                        colors={['#5336E2', '#5336E2', '#5336E2']}
+
+                    />
+                }
+                style={{ flexGrow: 1, marginBottom: 60 }}>
                 <View style={styles.container}>
                     <View style={styles.profileContainer}>
                         <TouchableOpacity onPress={() => setImageChangeModal(true)}>

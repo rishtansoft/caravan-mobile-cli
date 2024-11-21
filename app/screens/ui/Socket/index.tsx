@@ -144,7 +144,7 @@ class SocketService {
 
         this.socket.on('created_load', async (message: LoadMessage) => {
             console.log('New load received:', message);
-            await this.showNotification(message);
+            await this.showNotification();
         });
     }
 
@@ -181,7 +181,7 @@ class SocketService {
         }
     }
 
-    public async showNotification(message: LoadMessage) {
+    public async showNotification() {
         try {
             const channelId = 'new-loads';
 
@@ -196,8 +196,8 @@ class SocketService {
             }
 
             await notifee.displayNotification({
-                title: 'New Load',
-                body: `Load Details: ${message.id || 'New load received'}`,
+                title: 'Yangi yuk',
+                body: `Yangi yuk qo'shiladi`,
                 android: {
                     channelId,
                     sound: 'default',

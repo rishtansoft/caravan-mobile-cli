@@ -9,6 +9,7 @@ import {
     ActivityIndicator,
     Modal
 } from 'react-native';
+import { AppState, AppStateStatus } from 'react-native';
 
 import MapboxGl from '@rnmapbox/maps';
 import Geolocation from 'react-native-geolocation-service';
@@ -20,9 +21,10 @@ import { ActiveLoadsMapAppointedProps } from './RouterType';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
-import SocketBackgroundService from './useSocketLocations';
 import SocketService from '../ui/Socket/index';
-import BackgroundService from 'react-native-background-actions';
+import BackgroundTimer from 'react-native-background-timer';
+import store, { RootState } from '../../store/store';
+import { Provider, useSelector } from 'react-redux';
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -79,6 +81,11 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
     const [token, setToken] = useState<string>('');
     const [unique_id, setUnique_id] = useState<string>('');
     const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const appState = useRef(AppState.currentState);
+    const backgroundTimerId = useRef<number | null>(null);
+    const [isBackgroundTracking, setIsBackgroundTracking] = useState(false);
+    const auth = useSelector((state: RootState) => state.auth);
+    const isLoggedIn = auth.isLoggedIn;
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -105,25 +112,6 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         });
     }, []);
 
-
-
-    useEffect(() => {
-        if (currentLocation && navigationStarted) {
-            locationIntervalRef.current = setInterval(() => {
-                const socketService = SocketService.getInstance();
-                socketService.emitLocationUpdate(currentLocation, route.params.driver_id); // Send current location to the server
-                console.log('Location emitted:', currentLocation);
-            }, 60000);
-        }
-
-        return () => {
-            if (locationIntervalRef.current) {
-                clearInterval(locationIntervalRef.current);
-                locationIntervalRef.current = null;
-            }
-        };
-    }, [currentLocation, navigationStarted]);
-
     useEffect(() => {
         console.log("Route params data:", route.params?.data);
         if (route.params?.data && route.params.data.length > 0 && route.params.data[0].longitude) {
@@ -132,6 +120,83 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                 longitude: Number(route.params.data[0].longitude)
             });
         }
+    }, []);
+
+    const startLocationUpdates = () => {
+        if (!isBackgroundTracking && navigationStarted) {
+            setIsBackgroundTracking(true);
+            // Start background timer for location updates
+            BackgroundTimer.runBackgroundTimer(() => {
+                if (currentLocation && navigationStarted) {
+                    const socketService = SocketService.getInstance();
+                    socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+                    console.log("Location update in background:", currentLocation);
+                }
+            }, 60000); // 60000ms = 1 minute
+        }
+    };
+
+    const stopLocationUpdates = () => {
+        if (isBackgroundTracking) {
+            setIsBackgroundTracking(false);
+            BackgroundTimer.stopBackgroundTimer();
+        }
+        console.log(292, "chiqish");
+
+    };
+
+    useEffect(() => {
+        if (!isLoggedIn) {
+            stopLocationUpdates();
+        }
+    }, [isLoggedIn]);
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+            if (
+                appState.current.match(/inactive|background/) &&
+                nextAppState === 'active' &&
+                navigationStarted
+            ) {
+                // App has come to foreground
+                console.log('App has come to foreground!');
+                startLocationUpdates();
+            } else if (
+                appState.current === 'active' &&
+                nextAppState.match(/inactive|background/) &&
+                navigationStarted
+            ) {
+                // App has gone to background
+                console.log('App has gone to background!');
+                startLocationUpdates(); // Continue tracking in background
+            }
+
+            appState.current = nextAppState;
+        });
+
+        return () => {
+            subscription.remove();
+            stopLocationUpdates();
+        };
+    }, [navigationStarted]);
+
+    useEffect(() => {
+        if (navigationStarted) {
+            startLocationUpdates();
+        } else {
+            stopLocationUpdates();
+        }
+    }, [navigationStarted]);
+    useEffect(() => {
+        return () => {
+            stopLocationUpdates();
+            if (watchId.current !== null) {
+                Geolocation.clearWatch(watchId.current);
+            }
+            if (locationIntervalRef.current) {
+                clearInterval(locationIntervalRef.current);
+            }
+        };
     }, []);
 
 
@@ -156,7 +221,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
     };
 
-    const calculateRoute = async (start: Position) => {
+    const calculateRoute = async (start: PositionInterface) => {
         try {
 
             // `start` va `loadStartAddress` mavjudligini tekshirish
@@ -165,6 +230,9 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                 Alert.alert("Xato", "Boshlanish manzili mavjud emas.");
                 return;
             }
+
+            console.log(start);
+
 
             console.log(203, start)
             if (!loadStartAddress || !loadStartAddress.longitude || !loadStartAddress.latitude) {
@@ -215,6 +283,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
 
         setNavigationStarted(true);
+        startLocationUpdates()
 
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -225,16 +294,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
             });
         }
 
-        // Start periodic location updates
-        locationIntervalRef.current = setInterval(() => {
-            if (currentLocation) {
-                const socketService = SocketBackgroundService.getInstance();
 
-                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
-                console.log(262, currentLocation);
-
-            }
-        }, 60000); // Every minute
 
         watchId.current = Geolocation.watchPosition(
             position => {
@@ -276,6 +336,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
 
         setNavigationStarted(true);
+        startLocationUpdates()
 
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -323,8 +384,12 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         if (watchId.current !== null) {
             Geolocation.clearWatch(watchId.current);
         }
-        clearInterval(locationIntervalRef.current)
+        if (locationIntervalRef.current) {
+            clearInterval(locationIntervalRef.current);
+        }
         setNavigationStarted(false);
+        stopLocationUpdates()
+
     };
 
     useEffect(() => {
@@ -527,7 +592,11 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                     if (watchId.current !== null) {
                         Geolocation.clearWatch(watchId.current);
                     }
-                    clearInterval(locationIntervalRef.current)
+                    stopLocationUpdates()
+
+                    if (locationIntervalRef.current) {
+                        clearInterval(locationIntervalRef.current);
+                    }
                     Alert.alert('Tabriklaymiz', 'Siz mazilga yetib keldiz');
                     navigation.navigate('active_loads')
 
@@ -600,7 +669,8 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                     >
                         <View style={[
                             styles.navigationArrow,
-                            { transform: [{ rotate: `${currentLocation?.bearing || 0}deg` }] }
+                            // { transform: [{ rotate: `${currentLocation?.bearing || 0}deg` }] }
+                            { transform: [{ rotate: `${currentLocation?.latitude || 0}deg` }] }
                         ]}>
                             <Icon name="location-arrow" size={35} color="#7257FF" />
 
@@ -638,15 +708,17 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                         />
                     </MapboxGl.ShapeSource>
                 )}
+                {
+                    loadStartAddress && <MapboxGl.PointAnnotation
+                        id="destination"
+                        coordinate={[loadStartAddress.longitude, loadStartAddress.latitude]}
+                    >
+                        <View style={styles.destinationMarker}>
+                            <MaterialIcons name="location-on" size={30} color="#F44336" />
+                        </View>
+                    </MapboxGl.PointAnnotation>
+                }
 
-                <MapboxGl.PointAnnotation
-                    id="destination"
-                    coordinate={[loadStartAddress.longitude, loadStartAddress.latitude]}
-                >
-                    <View style={styles.destinationMarker}>
-                        <MaterialIcons name="location-on" size={30} color="#F44336" />
-                    </View>
-                </MapboxGl.PointAnnotation>
             </MapboxGl.MapView>
 
             {

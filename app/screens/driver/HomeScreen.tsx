@@ -156,8 +156,6 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
         }
     }, [isFocused, fetchLoadData]);
 
-
-
     useEffect(() => {
         if (token && user_id) {
             setResData(null)
@@ -274,6 +272,7 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
         setRefreshing(true); // Yangilanishni boshlash
         setTimeout(() => {
             setRefreshing(false); // Yangilanishni tugatish
+            setDataUpdate(true);
         }, 2000); // 2 soniyadan keyin tugatadi
     }, []);
 

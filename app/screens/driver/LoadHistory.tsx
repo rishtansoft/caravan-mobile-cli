@@ -6,6 +6,7 @@ import {
     ScrollView,
     StyleSheet,
     TouchableOpacity,
+    RefreshControl
 } from "react-native";
 import axios from "axios";
 import { GetData } from "../AsyncStorage/AsyncStorage";
@@ -95,6 +96,8 @@ const LoadHistory: React.FC<HistoryProps> = ({
     const [resData, setResData] = useState<ResData[] | null>(null);
     const [isModalVisible, setModalVisible] = useState(false);
     const isFocused = useIsFocused();
+    const [refreshing, setRefreshing] = useState(false);
+    const [dataUpdate, setDataUpdate] = useState<boolean>(false);
 
     // Royhatdan toliq o'tgan yoki yoqligini tekshirish asnc storage bilan tekshirish
     const userRegister = true;
@@ -169,6 +172,51 @@ const LoadHistory: React.FC<HistoryProps> = ({
         }
     }, [isFocused, fetchLoadData]);
 
+    useEffect(() => {
+        if (token && user_id && dataUpdate) {
+            if (!token || !user_id) return;
+            axios
+                .get(API_URL + `/api/loads/get-driver-loads?user_id=${user_id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+                .then((res) => {
+                    setDataUpdate(false)
+                    if (res.data?.data && res.data.data.length > 0) {
+                        const resdataFileter = filterByDriverStops(res.data?.data);
+
+                        if (resdataFileter.length > 0) {
+
+                            const newData = resdataFileter.map((el) => {
+                                console.log(111, el.load_id);
+
+                                return {
+                                    id: el.load_id,
+                                    cargo_type: getStatusText(el.load_status),
+                                    weight: el?.weight ? el?.weight : "",
+                                    sub_id: splitText(el.load_id).text_1,
+                                    start_location: filertDriverStopOrder(el.driverStops, 0),
+                                    end_location: filertDriverStopOrder(el.driverStops, 1),
+                                };
+                            });
+                            if (newData && newData.length > 0) {
+                                console.log(122, newData);
+
+                                setResData(newData);
+                            }
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.log(132, error);
+                });
+        }
+    }, [dataUpdate]);
+
+
+
+
     const toggleModal = (id: string) => {
         if (userRegister) {
             navigation.navigate("history_detail", { itemId: id }); //Aynan shu buyurtma malumotlarini uzatish uchun ishlatildi
@@ -177,13 +225,27 @@ const LoadHistory: React.FC<HistoryProps> = ({
         }
     };
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true); // Yangilanishni boshlash
+        setTimeout(() => {
+            setRefreshing(false); // Yangilanishni tugatish
+            setDataUpdate(true);
+        }, 2000); // 2 soniyadan keyin tugatadi
+    }, []);
+
     return (
         <ScrollView
             style={styles.container}
             contentContainerStyle={{ flexGrow: 1 }}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+                    colors={['#5336E2', '#5336E2', '#5336E2']}
+
+                />
+            }
         >
             <View style={styles.orders}>
-                <View style={styles.header_con}>
+                <View style={[styles.header_con, { marginBottom: 15 }]}>
                     <View
                         style={{
                             width: "6%",

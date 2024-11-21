@@ -167,7 +167,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     const [isBackgroundTracking, setIsBackgroundTracking] = useState(false);
     const auth = useSelector((state: RootState) => state.auth);
     const isLoggedIn = auth.isLoggedIn;
-    console.log(170, isLoggedIn);
 
     useEffect(() => {
         if (route.params.status == 'assigned') {
@@ -193,55 +192,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             setNavigationStarted_3(false)
         }
     }, [route.params]);
-    useEffect(() => {
-        GetData('user_id').then((res) => {
-            if (res) {
-                setUser_id(res);
-                // Initialize socket service when user_id is available
-                if (unique_id) {
-                    const socketService = SocketService.getInstance();
-                    socketService.initialize();
-                }
-            }
-        });
-
-        GetData('unique_id').then((res) => {
-            if (res) {
-                setUnique_id(res);
-                // Initialize socket service when unique_id is available
-                if (user_id) {
-                    const socketService = SocketService.getInstance();
-                    socketService.initialize();
-                }
-            }
-        });
-
-        return () => {
-            // Cleanup when component unmounts
-            if (locationIntervalRef.current) {
-                clearInterval(locationIntervalRef.current);
-            }
-        };
-    }, [user_id, unique_id]);
-
-
-    // useEffect(() => {
-    //     if (currentLocation && navigationStarted) {
-    //         locationIntervalRef.current = setInterval(() => {
-    //             const socketService = SocketService.getInstance();
-    //             socketService.emitLocationUpdate(currentLocation, route.params.driver_id); // Send current location to the server
-    //             console.log("new addres", currentLocation);
-    //         }, 60000);
-    //     }
-
-    //     return () => {
-    //         if (locationIntervalRef.current) {
-    //             clearInterval(locationIntervalRef.current);
-    //             locationIntervalRef.current = null;
-    //         }
-    //     };
-    // }, [currentLocation, navigationStarted]);
-
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -298,8 +248,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         if (!isLoggedIn) {
             stopLocationUpdates();
         }
-        console.log(300, isLoggedIn);
-
     }, [isLoggedIn]);
 
 
@@ -384,7 +332,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             return false;
         }
     };
-    const calculateRoute = async (start: Position) => {
+    const calculateRoute = async (start: PositionInterface) => {
         try {
 
             // `start` va `loadStartAddress` mavjudligini tekshirish
@@ -537,7 +485,9 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         if (watchId.current !== null) {
             Geolocation.clearWatch(watchId.current);
         }
-        clearInterval(locationIntervalRef.current)
+        if (locationIntervalRef.current) {
+            clearInterval(locationIntervalRef.current);
+        }
         setNavigationStarted(false);
         stopLocationUpdates()
     };
@@ -726,7 +676,11 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                     if (watchId.current !== null) {
                         Geolocation.clearWatch(watchId.current);
                     }
-                    clearInterval(locationIntervalRef.current)
+                    if (locationIntervalRef.current) {
+                        clearInterval(locationIntervalRef.current);
+                    }
+                    stopLocationUpdates()
+
                     Alert.alert('Tabriklaymiz', 'Siz mazilga yetib keldiz');
                     navigation.navigate('active_loads')
 
@@ -839,14 +793,18 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                     </MapboxGl.ShapeSource>
                 )}
 
-                <MapboxGl.PointAnnotation
-                    id="destination"
-                    coordinate={[loadStartAddress.longitude, loadStartAddress.latitude]}
-                >
-                    <View style={styles.destinationMarker}>
-                        <MaterialIcons name="location-on" size={30} color="#F44336" />
-                    </View>
-                </MapboxGl.PointAnnotation>
+                {
+                    loadStartAddress && <MapboxGl.PointAnnotation
+                        id="destination"
+                        coordinate={[loadStartAddress.longitude, loadStartAddress.latitude]}
+                    >
+                        <View style={styles.destinationMarker}>
+                            <MaterialIcons name="location-on" size={30} color="#F44336" />
+                        </View>
+                    </MapboxGl.PointAnnotation>
+                }
+
+
             </MapboxGl.MapView>
 
             {
