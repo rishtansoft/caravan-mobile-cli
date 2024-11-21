@@ -1,8 +1,14 @@
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Platform } from 'react-native';
 import io, { Socket } from 'socket.io-client';
-import { API_URL } from '@env';
-import BackgroundService from 'react-native-background-actions';
 import notifee, { AndroidImportance } from '@notifee/react-native';
+import BackgroundService from 'react-native-background-actions';
+import { GetData } from '../../AsyncStorage/AsyncStorage';
+import { API_URL } from '@env';
+
+interface LoadMessage {
+    id?: string;
+    // Add other load fields as necessary
+}
 
 interface SocketConfig {
     user_id: string;
@@ -10,40 +16,39 @@ interface SocketConfig {
     role: string;
 }
 
-class SocketBackgroundService {
-    private static instance: SocketBackgroundService;
+class SocketService {
+    private static instance: SocketService;
     private socket: Socket | null = null;
     private isRunning: boolean = false;
     private userId: string | null = null;
     private uniqueId: string | null = null;
     private reconnectTimer: NodeJS.Timeout | null = null;
     private listeners: Set<(data: any) => void> = new Set();
+    private locationIntervalRef: NodeJS.Timeout | null = null;
 
     private constructor() {
-        // AppState o'zgarishlarini kuzatish
         AppState.addEventListener('change', this.handleAppStateChange);
     }
 
-    public static getInstance(): SocketBackgroundService {
-        if (!SocketBackgroundService.instance) {
-            SocketBackgroundService.instance = new SocketBackgroundService();
+    public static getInstance(): SocketService {
+        if (!SocketService.instance) {
+            SocketService.instance = new SocketService();
         }
-        return SocketBackgroundService.instance;
+        return SocketService.instance;
     }
 
     private handleAppStateChange = (nextAppState: AppStateStatus) => {
         if (nextAppState === 'active') {
             this.reconnectSocket();
         } else if (nextAppState === 'background') {
-            // Background serviceni ishga tushirish
             this.startBackgroundService();
         }
     };
 
     private backgroundOptions = {
         taskName: 'SocketService',
-        taskTitle: 'Socket Connection',
-        taskDesc: 'Maintaining socket connection in background',
+        taskTitle: 'Socket Cinitializeonnection',
+        taskDesc: 'Maintaining socket connection in the background',
         taskIcon: {
             name: 'ic_launcher',
             type: 'mipmap',
@@ -55,14 +60,12 @@ class SocketBackgroundService {
     };
 
     private backgroundTask = async (parameters: any) => {
-        await new Promise(async () => {
-            while (BackgroundService.isRunning()) {
-                if (!this.socket?.connected) {
-                    await this.reconnectSocket();
-                }
-                await new Promise(resolve => setTimeout(resolve, parameters.delay));
+        while (BackgroundService.isRunning()) {
+            if (!this.socket?.connected) {
+                await this.reconnectSocket();
             }
-        });
+            await new Promise(resolve => setTimeout(resolve, parameters.delay));
+        }
     };
 
     private async startBackgroundService() {
@@ -77,10 +80,18 @@ class SocketBackgroundService {
         }
     }
 
-    public initialize(userId: string, uniqueId: string) {
-        this.userId = userId;
-        this.uniqueId = uniqueId;
-        this.connectSocket();
+    public async initialize() {
+        try {
+            const userId = await GetData('user_id');
+            const uniqueId = await GetData('unique_id');
+            if (userId && uniqueId) {
+                this.userId = userId;
+                this.uniqueId = uniqueId;
+                this.connectSocket();
+            }
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+        }
     }
 
     private connectSocket() {
@@ -89,7 +100,7 @@ class SocketBackgroundService {
         const socketConfig: SocketConfig = {
             user_id: this.userId,
             unique_id: this.uniqueId,
-            role: 'driver'
+            role: 'driver',
         };
 
         try {
@@ -99,9 +110,8 @@ class SocketBackgroundService {
                 reconnection: true,
                 reconnectionAttempts: Infinity,
                 reconnectionDelay: 1000,
-                forceNew: false,
                 pingTimeout: 60000,
-                pingInterval: 25000
+                pingInterval: 25000,
             });
 
             this.setupSocketListeners();
@@ -115,7 +125,7 @@ class SocketBackgroundService {
         if (!this.socket) return;
 
         this.socket.on('connect', () => {
-            console.log('Socket connected in background service');
+            console.log('Socket connected');
             if (this.reconnectTimer) {
                 clearTimeout(this.reconnectTimer);
                 this.reconnectTimer = null;
@@ -123,13 +133,18 @@ class SocketBackgroundService {
         });
 
         this.socket.on('disconnect', (reason) => {
-            console.log('Socket disconnected in background:', reason);
+            console.log('Socket disconnected:', reason);
             this.scheduleReconnect();
         });
 
         this.socket.on('connect_error', (error) => {
-            console.error('Socket connection error in background:', error);
+            console.error('Socket connection error:', error);
             this.scheduleReconnect();
+        });
+
+        this.socket.on('created_load', async (message: LoadMessage) => {
+            console.log('New load received:', message);
+            await this.showNotification(message);
         });
     }
 
@@ -153,26 +168,51 @@ class SocketBackgroundService {
         }
     }
 
-    public emitLocationUpdate(location: { latitude: number; longitude: number }, driverId: string) {
+    public async emitLocationUpdate(location: { latitude: number; longitude: number }, driverId: string) {
         if (this.socket?.connected) {
             this.socket.emit('locationUpdate', {
                 latitude: location.latitude,
                 longitude: location.longitude,
-                driverId: driverId
+                driverId: driverId,
             });
-            console.log('mazil add', new Date());
+            console.log('Manzil add', location);
         } else {
-            console.warn('Socket not connected, queuing location update');
-            // Location update ni queue ga qo'shish mumkin
+            console.log('Socket not connected, location update failed');
         }
     }
 
-    public addListener(callback: (data: any) => void) {
-        this.listeners.add(callback);
-    }
+    public async showNotification(message: LoadMessage) {
+        try {
+            const channelId = 'new-loads';
 
-    public removeListener(callback: (data: any) => void) {
-        this.listeners.delete(callback);
+            if (Platform.OS === 'android') {
+                await notifee.createChannel({
+                    id: channelId,
+                    name: 'New Loads',
+                    sound: 'default',
+                    importance: AndroidImportance.HIGH,
+                    vibration: true,
+                });
+            }
+
+            await notifee.displayNotification({
+                title: 'New Load',
+                body: `Load Details: ${message.id || 'New load received'}`,
+                android: {
+                    channelId,
+                    sound: 'default',
+                    importance: AndroidImportance.HIGH,
+                    pressAction: {
+                        id: 'default',
+                    },
+                },
+                ios: {
+                    sound: 'default',
+                },
+            });
+        } catch (error) {
+            console.log('Notification error:', error);
+        }
     }
 
     public disconnect() {
@@ -191,4 +231,4 @@ class SocketBackgroundService {
     }
 }
 
-export default SocketBackgroundService;
+export default SocketService;

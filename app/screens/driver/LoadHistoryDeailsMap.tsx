@@ -9,7 +9,8 @@ import {
     ActivityIndicator,
     Modal
 } from 'react-native';
-
+import { AppState, AppStateStatus } from 'react-native';
+import { Provider, useSelector } from 'react-redux';
 import MapboxGl from '@rnmapbox/maps';
 import Geolocation from 'react-native-geolocation-service';
 import { Position } from 'geojson';
@@ -20,7 +21,11 @@ import { HistoryDetailMapProps } from './RouterType';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
-import SocketBackgroundService from './useSocketLocations';
+import SocketService from '../ui/Socket/index';
+import BackgroundTimer from 'react-native-background-timer';
+import store, { RootState } from '../../store/store';
+
+
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -155,8 +160,14 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
     const [unique_id, setUnique_id] = useState<string>('');
-    const socketRef = useRef<any>(null);
     const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const appState = useRef(AppState.currentState);
+    const backgroundTimerId = useRef<number | null>(null);
+    const [isBackgroundTracking, setIsBackgroundTracking] = useState(false);
+    const auth = useSelector((state: RootState) => state.auth);
+    const isLoggedIn = auth.isLoggedIn;
+    console.log(170, isLoggedIn);
 
     useEffect(() => {
         if (route.params.status == 'assigned') {
@@ -180,7 +191,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             setICame(false);
             setDeparture(true);
             setNavigationStarted_3(false)
-            newAddressFun()
         }
     }, [route.params]);
     useEffect(() => {
@@ -189,8 +199,8 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 setUser_id(res);
                 // Initialize socket service when user_id is available
                 if (unique_id) {
-                    const socketService = SocketBackgroundService.getInstance();
-                    socketService.initialize(res, unique_id);
+                    const socketService = SocketService.getInstance();
+                    socketService.initialize();
                 }
             }
         });
@@ -200,33 +210,39 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 setUnique_id(res);
                 // Initialize socket service when unique_id is available
                 if (user_id) {
-                    const socketService = SocketBackgroundService.getInstance();
-                    socketService.initialize(user_id, res);
+                    const socketService = SocketService.getInstance();
+                    socketService.initialize();
                 }
             }
         });
 
         return () => {
-            // Don't disconnect socket when leaving the page
-            // SocketBackgroundService will handle connection lifecycle
-        };
-    }, [user_id, unique_id]);
-    useEffect(() => {
-        if (currentLocation && navigationStarted) {
-            locationIntervalRef.current = setInterval(() => {
-                const socketService = SocketBackgroundService.getInstance();
-                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
-                console.log(1, currentLocation);
-
-            }, 60000);
-        }
-
-        return () => {
+            // Cleanup when component unmounts
             if (locationIntervalRef.current) {
                 clearInterval(locationIntervalRef.current);
             }
         };
-    }, [currentLocation, navigationStarted]);
+    }, [user_id, unique_id]);
+
+
+    // useEffect(() => {
+    //     if (currentLocation && navigationStarted) {
+    //         locationIntervalRef.current = setInterval(() => {
+    //             const socketService = SocketService.getInstance();
+    //             socketService.emitLocationUpdate(currentLocation, route.params.driver_id); // Send current location to the server
+    //             console.log("new addres", currentLocation);
+    //         }, 60000);
+    //     }
+
+    //     return () => {
+    //         if (locationIntervalRef.current) {
+    //             clearInterval(locationIntervalRef.current);
+    //             locationIntervalRef.current = null;
+    //         }
+    //     };
+    // }, [currentLocation, navigationStarted]);
+
+
     useEffect(() => {
         GetData('user_id').then((res) => {
             if (res) {
@@ -252,6 +268,102 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         });
 
     }, []);
+
+    // =============================================================================
+
+    const startLocationUpdates = () => {
+        if (!isBackgroundTracking && navigationStarted) {
+            setIsBackgroundTracking(true);
+            // Start background timer for location updates
+            BackgroundTimer.runBackgroundTimer(() => {
+                if (currentLocation && navigationStarted) {
+                    const socketService = SocketService.getInstance();
+                    socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+                    console.log("Location update in background:", currentLocation);
+                }
+            }, 60000); // 60000ms = 1 minute
+        }
+    };
+
+    const stopLocationUpdates = () => {
+        if (isBackgroundTracking) {
+            setIsBackgroundTracking(false);
+            BackgroundTimer.stopBackgroundTimer();
+        }
+        console.log(292, "chiqish");
+
+    };
+
+    useEffect(() => {
+        if (!isLoggedIn) {
+            stopLocationUpdates();
+        }
+        console.log(300, isLoggedIn);
+
+    }, [isLoggedIn]);
+
+
+
+
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+            if (
+                appState.current.match(/inactive|background/) &&
+                nextAppState === 'active' &&
+                navigationStarted
+            ) {
+                // App has come to foreground
+                console.log('App has come to foreground!');
+                startLocationUpdates();
+            } else if (
+                appState.current === 'active' &&
+                nextAppState.match(/inactive|background/) &&
+                navigationStarted
+            ) {
+                // App has gone to background
+                console.log('App has gone to background!');
+                startLocationUpdates(); // Continue tracking in background
+            }
+
+            appState.current = nextAppState;
+        });
+
+        return () => {
+            subscription.remove();
+            stopLocationUpdates();
+        };
+    }, [navigationStarted]);
+
+    useEffect(() => {
+        if (navigationStarted) {
+            startLocationUpdates();
+        } else {
+            stopLocationUpdates();
+        }
+    }, [navigationStarted]);
+
+    // Clean up when component unmounts
+    useEffect(() => {
+        return () => {
+            stopLocationUpdates();
+            if (watchId.current !== null) {
+                Geolocation.clearWatch(watchId.current);
+            }
+            if (locationIntervalRef.current) {
+                clearInterval(locationIntervalRef.current);
+            }
+        };
+    }, []);
+
+
+
+    // ========================================================================
+
+
+
+
+
     const requestLocationPermission = async () => {
         try {
             const permission = Platform.OS === 'ios'
@@ -288,7 +400,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 return;
             }
 
-            console.log(210)
             const response = await fetch(
                 `https://api.mapbox.com/directions/v5/mapbox/driving/${start.longitude},${start.latitude};${loadStartAddress.longitude},${loadStartAddress.latitude}?geometries=geojson&overview=full&steps=true&access_token=pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q`
             );
@@ -314,7 +425,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                     setNextManeuver(data.routes[0].steps[0].maneuver.instruction);
                 }
 
-                console.log(208)
             }
         } catch (error) {
             console.log(221, 'Route calculation error:', error);
@@ -331,6 +441,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         }
 
         setNavigationStarted(true);
+        startLocationUpdates()
 
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -340,17 +451,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 heading: 0
             });
         }
-
-        // Start periodic location updates
-        locationIntervalRef.current = setInterval(() => {
-            if (currentLocation) {
-                const socketService = SocketBackgroundService.getInstance();
-
-                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
-                console.log(2, currentLocation);
-
-            }
-        }, 60000); // Every minute
 
         watchId.current = Geolocation.watchPosition(
             position => {
@@ -390,6 +490,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             return;
         }
         setNavigationStarted(true);
+        startLocationUpdates()
 
 
         if (currentLocation && cameraRef.current) {
@@ -400,16 +501,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 heading: 0
             });
         }
-
-        // Start periodic location updates
-        locationIntervalRef.current = setInterval(() => {
-            if (currentLocation) {
-                const socketService = SocketBackgroundService.getInstance();
-                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
-                console.log(3, currentLocation);
-
-            }
-        }, 60000); // Every minute
 
         watchId.current = Geolocation.watchPosition(
             position => {
@@ -448,6 +539,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         }
         clearInterval(locationIntervalRef.current)
         setNavigationStarted(false);
+        stopLocationUpdates()
     };
     useEffect(() => {
         const initializeLocation = async () => {
@@ -539,12 +631,10 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
             ).then((res) => {
                 if (res.data.success) {
-                    console.log(res.data);
+                    setNavigationStarted(false)
                     setIsVisible(false)
                     setICame(true);
                     stopNavigation()
-
-
                 } else {
                     setIsVisible(false);
                     showErrorAlert(res.data?.message)
@@ -561,8 +651,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 user_id: user_id,
                 load_id: route.params.data[0].load_id,
             }
-            console.log(resData);
-
 
             axios.post(`${API_URL}/api/driver/start-loading`, resData, {
                 headers: {
@@ -592,7 +680,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 Authorization: `Bearer ${token}`
             },
         }).then((res) => {
-            console.log(543, res.data);
             setDeparture(true);
             setICame(false);
 
@@ -627,7 +714,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 start_longitude: Number(filterOrderFun(route.params.data, 1)?.longitude),
                 start_latitude: Number(filterOrderFun(route.params.data, 1)?.latitude)
             }
-            console.log(resData);
 
 
             axios.post(`${API_URL}/api/driver/finish-trip`, resData, {
@@ -637,7 +723,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
             ).then((res) => {
                 if (res.data.success) {
-                    console.log(590, res.data);
                     if (watchId.current !== null) {
                         Geolocation.clearWatch(watchId.current);
                     }

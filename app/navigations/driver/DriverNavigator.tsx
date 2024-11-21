@@ -19,8 +19,8 @@ import MainPhoneUpdate from '../../screens/driver/MainPhoneUpdate';
 import MainPhoneUpdateSmcCode from '../../screens/driver/MainPhoneUpdateSmcCode';
 import LoadHistoryDeailsMap from '../../screens/driver/LoadHistoryDeailsMap';
 import { useSocketLoadListener } from '../../screens/ui/Socket/Socket';
-import SystemNotificationPlayer from '../../screens/ui/Audio/Audio';
-const notificationPlayer = new SystemNotificationPlayer();
+import SocketService from '../../screens/ui/Socket/index';
+
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 interface componentNameProps {
@@ -31,13 +31,8 @@ const DriverNavigator: React.FC<componentNameProps> = ({ page }) => {
     const [activeTab, setActiveTab] = useState('active_loads');
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const { newLoad, isConnected, acceptLoad, rejectLoad } = useSocketLoadListener();
-
-    useEffect(() => {
-        if (newLoad) {
-            console.log('Yangi yuk keldi:', newLoad);
-        }
-    }, [newLoad]);
-
+    const socketService = SocketService.getInstance();
+    socketService.showNotification()
 
     useEffect(() => {
         if (page) {

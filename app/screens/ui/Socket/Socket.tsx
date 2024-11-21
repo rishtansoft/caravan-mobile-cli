@@ -55,6 +55,9 @@ export const useSocketLoadListener = () => {
             setNewLoad(message);
             await showLoadNotification(message);
         });
+
+
+
     };
 
     // Notification ko'rsatish

@@ -21,6 +21,9 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
 import SocketBackgroundService from './useSocketLocations';
+import SocketService from '../ui/Socket/index';
+import BackgroundService from 'react-native-background-actions';
+
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
 interface PositionInterface {
@@ -102,17 +105,21 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         });
     }, []);
 
+
+
     useEffect(() => {
         if (currentLocation && navigationStarted) {
             locationIntervalRef.current = setInterval(() => {
-                const socketService = SocketBackgroundService.getInstance();
-                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+                const socketService = SocketService.getInstance();
+                socketService.emitLocationUpdate(currentLocation, route.params.driver_id); // Send current location to the server
+                console.log('Location emitted:', currentLocation);
             }, 60000);
         }
 
         return () => {
             if (locationIntervalRef.current) {
                 clearInterval(locationIntervalRef.current);
+                locationIntervalRef.current = null;
             }
         };
     }, [currentLocation, navigationStarted]);
@@ -200,18 +207,6 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
     };
 
-    // ----------------------------Socket-------------------------------------------
-
-    // const emitLocationUpdate = (location: PositionInterface) => {
-    //     if (socketRef.current && user_id) {
-    //         socketRef.current.emit('locationUpdate', {
-    //             latitude: location.latitude,
-    //             longitude: location.longitude,
-    //             driverId: route.params.driver_id
-    //         });
-    //     }
-    // };
-
     const startNavigation = async () => {
         const hasPermission = await requestLocationPermission();
         if (!hasPermission) {
@@ -290,17 +285,6 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                 heading: 0
             });
         }
-
-        // Start periodic location updates
-        locationIntervalRef.current = setInterval(() => {
-            if (currentLocation) {
-                const socketService = SocketBackgroundService.getInstance();
-
-                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
-                console.log(262, currentLocation);
-
-            }
-        }, 60000); // Every minute
 
         watchId.current = Geolocation.watchPosition(
             position => {

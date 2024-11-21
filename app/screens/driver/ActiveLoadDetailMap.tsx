@@ -285,7 +285,7 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
                     width: '6%'
                 }}>
                     <Icon
-                        onPress={() => navigation.navigate('active_loads_detail', { itemId: itemId })}
+                        onPress={() => navigation.navigate(status != "posted" ? 'history_detail' : 'active_loads_detail', { itemId: itemId })}
                         name="angle-left" size={30} color="#7257FF" />
                 </View>
                 <Text style={styles.title}>

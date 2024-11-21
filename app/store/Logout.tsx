@@ -1,12 +1,17 @@
 import { RemoveData } from '../screens/AsyncStorage/AsyncStorage';
 import { logout } from './UserData';
 import store from '../store/store';
-
+import SocketService from '../screens/ui/Socket/index';
+import { stopBackgroundService } from '../screens/driver/backgroundService';
 export const handleLogout = async () => {
+    const socketService = SocketService.getInstance();
+
     try {
+
+        socketService.disconnect()
         // Redux state'ni tozalash
         store.dispatch(logout());
-
+        stopBackgroundService()
         // AsyncStorage'dan barcha auth ma'lumotlarini o'chirish
         await RemoveData('user_id')
         await RemoveData('token')

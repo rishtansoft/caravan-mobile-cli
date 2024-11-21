@@ -1,80 +1,105 @@
 import BackgroundService from 'react-native-background-actions';
+import Geolocation from 'react-native-geolocation-service';
+import SocketService from '../ui/Socket/index';
 
-interface BackgroundTaskOptions {
-    taskName: string;
-    taskTitle: string;
-    taskDesc: string;
+interface LocationData {
+    latitude: number;
+    longitude: number;
+}
+
+interface BackgroundServiceParams {
+    driverId: string;
+    initialLocation: LocationData;
+}
+
+interface TaskDataArguments {
+    delay: number;
+    driverId: string;
+    initialLocation: LocationData;
+}
+
+const options = {
+    taskName: 'LocationUpdate',
+    taskTitle: 'Location Tracking',
+    taskDesc: 'Tracking location in background',
     taskIcon: {
-        name: string;
-        type: string;
-    };
-    color: string;
-    linkingURI?: string;
-    parameters?: {
-        delay: number;
-    };
-}
+        name: 'ic_launcher',
+        type: 'mipmap',
+    },
+    color: '#7257FF',
+    linkingURI: 'yourapp://chat/jane',
+    parameters: {
+        delay: 60000, // 1 minute delay
+    },
+};
 
-export class BackgroundLocationService {
-    private static instance: BackgroundLocationService;
-    private isRunning: boolean = false;
+// Background task with type definition
+const locationTask = async (taskDataArguments: TaskDataArguments) => {
+    const { delay, driverId, initialLocation } = taskDataArguments;
+    let currentLocation = initialLocation;
 
-    private constructor() { }
+    await new Promise<void>(async (resolve) => {
+        const backgroundTask = () => {
+            Geolocation.getCurrentPosition(
+                (position) => {
+                    currentLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                    };
 
-    public static getInstance(): BackgroundLocationService {
-        if (!BackgroundLocationService.instance) {
-            BackgroundLocationService.instance = new BackgroundLocationService();
+                    // Socket service instance
+                    const socketService = SocketService.getInstance();
+                    socketService.emitLocationUpdate(currentLocation, driverId);
+                },
+                (error) => {
+                    console.error('Background location error:', error);
+                    // If error occurs, use last known location
+                    const socketService = SocketService.getInstance();
+                    socketService.emitLocationUpdate(currentLocation, driverId);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 10000,
+                    distanceFilter: 50
+                }
+            );
+        };
+
+        // Execute immediately once
+        backgroundTask();
+
+        // Then set up the interval
+        setInterval(backgroundTask, delay);
+    });
+};
+
+export const startBackgroundService = async (params: BackgroundServiceParams) => {
+    try {
+        // Check if the service is already running
+        if (!BackgroundService.isRunning()) {
+            const taskOptions = {
+                ...options,
+                parameters: {
+                    ...options.parameters,
+                    driverId: params.driverId,
+                    initialLocation: params.initialLocation
+                }
+            };
+
+            await BackgroundService.start(locationTask, taskOptions);
+            console.log('Background service started successfully');
         }
-        return BackgroundLocationService.instance;
+    } catch (error) {
+        console.error('Error starting background service:', error);
     }
+};
 
-    private options: BackgroundTaskOptions = {
-        taskName: 'LocationTracker',
-        taskTitle: 'Location Tracking',
-        taskDesc: 'Tracking your location in background',
-        taskIcon: {
-            name: 'location',
-            type: 'material',
-        },
-        color: '#ff0000',
-        parameters: {
-            delay: 60000, // 1 minute delay
-        },
-    };
-
-    private backgroundTask = async (parameters: any) => {
-        const { delay } = parameters;
-
-        await new Promise(async () => {
-            while (BackgroundService.isRunning()) {
-                // Your background task logic here
-                console.log('Background location service running');
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        });
-    };
-
-    public async startService(): Promise<void> {
-        if (!this.isRunning) {
-            try {
-                await BackgroundService.start(this.backgroundTask, this.options);
-                this.isRunning = true;
-                console.log('Background service started');
-            } catch (error) {
-                console.error('Error starting background service:', error);
-            }
-        }
+export const stopBackgroundService = async () => {
+    try {
+        await BackgroundService.stop();
+        console.log('Background service stopped successfully');
+    } catch (error) {
+        console.error('Error stopping background service:', error);
     }
-
-    public async stopService(): Promise<void> {
-        if (this.isRunning) {
-            try {
-                await BackgroundService.stop();
-                this.isRunning = false;
-                console.log('Background service stopped');
-            } catch (error) {
-                console.error('Error stopping background service:', error);
-            }
-        }
-    }
-}
+};
