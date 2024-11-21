@@ -20,7 +20,9 @@ import { ActiveLoadsMapAppointedProps } from './RouterType';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
-import io from 'socket.io-client';
+import SocketBackgroundService from './useSocketLocations';
+import SocketService from '../ui/Socket/index';
+import BackgroundService from 'react-native-background-actions';
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -76,38 +78,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
     const [unique_id, setUnique_id] = useState<string>('');
-    const socketRef = useRef<any>(null);
     const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-    const initializeSocket = (userId: string, uniqueId: string) => {
-        socketRef.current = io(API_URL, {
-            query: {
-                user_id: userId,
-                unique_id: uniqueId,
-                role: 'driver' // Assuming the role is always 'driver' for this component
-            },
-            transports: ['websocket'],
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000
-        });
-
-        socketRef.current.on('connect', () => {
-            console.log('Connected to Socket.IO server');
-        });
-
-        socketRef.current.on('connect_error', (error: any) => {
-            console.error('Socket connection error:', error);
-        });
-
-        socketRef.current.on('error', (error: any) => {
-            console.error('Socket.IO error:', error);
-        });
-
-        socketRef.current.on('disconnect', (reason: string) => {
-            console.log('Disconnected from Socket.IO server:', reason);
-        });
-    };
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -132,42 +103,26 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }).catch((error) => {
             console.error('Xatolik yuz berdi:', error);
         });
-
-        const fetchUserData = async () => {
-            try {
-                const userId = await GetData('user_id');
-                const uniqueId = await GetData('unique_id');
-
-                if (userId) setUser_id(userId);
-                if (uniqueId) setUnique_id(uniqueId);
-
-                if (userId && uniqueId) {
-                    initializeSocket(userId, uniqueId);
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            }
-        };
-
-        fetchUserData();
-
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.disconnect();
-            }
-            if (locationIntervalRef.current) {
-                clearInterval(locationIntervalRef.current);
-            }
-        };
-
     }, []);
 
 
-    //     useEffect(() => {
-    //         if (route.params?.data[0]?.longitude) {
-    //             setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
-    //         }
-    //     }, [])
+
+    useEffect(() => {
+        if (currentLocation && navigationStarted) {
+            locationIntervalRef.current = setInterval(() => {
+                const socketService = SocketService.getInstance();
+                socketService.emitLocationUpdate(currentLocation, route.params.driver_id); // Send current location to the server
+                console.log('Location emitted:', currentLocation);
+            }, 60000);
+        }
+
+        return () => {
+            if (locationIntervalRef.current) {
+                clearInterval(locationIntervalRef.current);
+                locationIntervalRef.current = null;
+            }
+        };
+    }, [currentLocation, navigationStarted]);
 
     useEffect(() => {
         console.log("Route params data:", route.params?.data);
@@ -252,18 +207,6 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
     };
 
-    // ----------------------------Socket-------------------------------------------
-
-    const emitLocationUpdate = (location: PositionInterface) => {
-        if (socketRef.current && user_id) {
-            socketRef.current.emit('locationUpdate', {
-                latitude: location.latitude,
-                longitude: location.longitude,
-                driverId: route.params.driver_id
-            });
-        }
-    };
-
     const startNavigation = async () => {
         const hasPermission = await requestLocationPermission();
         if (!hasPermission) {
@@ -285,7 +228,9 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         // Start periodic location updates
         locationIntervalRef.current = setInterval(() => {
             if (currentLocation) {
-                emitLocationUpdate(currentLocation);
+                const socketService = SocketBackgroundService.getInstance();
+
+                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
                 console.log(262, currentLocation);
 
             }
@@ -340,15 +285,6 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                 heading: 0
             });
         }
-
-        // Start periodic location updates
-        locationIntervalRef.current = setInterval(() => {
-            if (currentLocation) {
-                emitLocationUpdate(currentLocation);
-                console.log(262, currentLocation);
-
-            }
-        }, 60000); // Every minute
 
         watchId.current = Geolocation.watchPosition(
             position => {
@@ -476,9 +412,6 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                 start_longitude: Number(filterOrderFun(route.params.data, 0)?.longitude),
                 start_latitude: Number(filterOrderFun(route.params.data, 0)?.latitude)
             }
-            console.log(resData);
-
-
             axios.post(`${API_URL}/api/driver/arrived-luggage`, resData, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -489,6 +422,11 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                     console.log(res.data);
                     setIsVisible(false)
                     setICame(true);
+                    const endAdres = filterOrderFun(route.params.data, 1)
+                    if (endAdres) {
+                        setLoadStartAddress({ latitude: Number(endAdres?.latitude), longitude: Number(endAdres?.longitude) })
+
+                    }
                     stopNavigation()
                 } else {
                     setIsVisible(false);
@@ -558,11 +496,8 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
     };
     const newAddressFun = () => {
         setIsVisible(false)
-        const endAdres = filterOrderFun(route.params.data, 1)
-        if (endAdres) {
-            setLoadStartAddress({ latitude: Number(endAdres?.latitude), longitude: Number(endAdres?.longitude) })
-            startNavigationDeparture()
-        }
+
+        startNavigationDeparture()
         setNavigationStarted_3(true);
 
 

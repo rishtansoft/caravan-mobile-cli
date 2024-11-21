@@ -9,7 +9,8 @@ import {
     ActivityIndicator,
     Modal
 } from 'react-native';
-
+import { AppState, AppStateStatus } from 'react-native';
+import { Provider, useSelector } from 'react-redux';
 import MapboxGl from '@rnmapbox/maps';
 import Geolocation from 'react-native-geolocation-service';
 import { Position } from 'geojson';
@@ -20,7 +21,11 @@ import { HistoryDetailMapProps } from './RouterType';
 import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
-import io from 'socket.io-client';
+import SocketService from '../ui/Socket/index';
+import BackgroundTimer from 'react-native-background-timer';
+import store, { RootState } from '../../store/store';
+
+
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -113,6 +118,26 @@ const getTextColorKey = (key: string): string => {
     }
 };
 
+const filterStatusData = (arr: Location[], status: string,) => {
+    if (status == 'in_transit') {
+        const data = filterOrderFun(arr, 1);
+        if (data) {
+            return {
+                latitude: Number(data.latitude),
+                longitude: Number(data.longitude)
+            }
+        }
+    } else {
+        const data = filterOrderFun(arr, 0);
+        if (data) {
+            return {
+                latitude: Number(data.latitude),
+                longitude: Number(data.longitude)
+            }
+        }
+    }
+}
+
 const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, route }) => {
     const [currentLocation, setCurrentLocation] = useState<PositionInterface | null>(null);
     const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
@@ -125,7 +150,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     const [isLoading, setIsLoading] = useState(true);
     const [locationPermissionError, setLocationPermissionError] = useState<string | null>(null);
     const [nextManeuver, setNextManeuver] = useState<string>('');
-    const [loadStartAddress, setLoadStartAddress] = useState<PositionInterface | null>({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
+    const [loadStartAddress, setLoadStartAddress] = useState<PositionInterface | null | undefined>(filterStatusData(route.params.data, route.params.status))
     const watchId = useRef<number | null>(null);
     const mapRef = useRef<MapboxGl.MapView | null>(null);
     const cameraRef = useRef<MapboxGl.Camera | null>(null);
@@ -135,11 +160,16 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
     const [unique_id, setUnique_id] = useState<string>('');
-    const socketRef = useRef<any>(null);
     const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+    const appState = useRef(AppState.currentState);
+    const backgroundTimerId = useRef<number | null>(null);
+    const [isBackgroundTracking, setIsBackgroundTracking] = useState(false);
+    const auth = useSelector((state: RootState) => state.auth);
+    const isLoggedIn = auth.isLoggedIn;
+    console.log(170, isLoggedIn);
+
     useEffect(() => {
-        console.log(142, route.params.status);
         if (route.params.status == 'assigned') {
             setICame(false);
             setDeparture(false);
@@ -161,39 +191,57 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             setICame(false);
             setDeparture(true);
             setNavigationStarted_3(false)
-            // newAddressFun()
         }
     }, [route.params]);
-
-    const initializeSocket = (userId: string, uniqueId: string) => {
-        socketRef.current = io(API_URL, {
-            query: {
-                user_id: userId,
-                unique_id: uniqueId,
-                role: 'driver' // Assuming the role is always 'driver' for this component
-            },
-            transports: ['websocket'],
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000
+    useEffect(() => {
+        GetData('user_id').then((res) => {
+            if (res) {
+                setUser_id(res);
+                // Initialize socket service when user_id is available
+                if (unique_id) {
+                    const socketService = SocketService.getInstance();
+                    socketService.initialize();
+                }
+            }
         });
 
-        socketRef.current.on('connect', () => {
-            console.log('Connected to Socket.IO server');
+        GetData('unique_id').then((res) => {
+            if (res) {
+                setUnique_id(res);
+                // Initialize socket service when unique_id is available
+                if (user_id) {
+                    const socketService = SocketService.getInstance();
+                    socketService.initialize();
+                }
+            }
         });
 
-        socketRef.current.on('connect_error', (error: any) => {
-            console.error('Socket connection error:', error);
-        });
+        return () => {
+            // Cleanup when component unmounts
+            if (locationIntervalRef.current) {
+                clearInterval(locationIntervalRef.current);
+            }
+        };
+    }, [user_id, unique_id]);
 
-        socketRef.current.on('error', (error: any) => {
-            console.error('Socket.IO error:', error);
-        });
 
-        socketRef.current.on('disconnect', (reason: string) => {
-            console.log('Disconnected from Socket.IO server:', reason);
-        });
-    };
+    // useEffect(() => {
+    //     if (currentLocation && navigationStarted) {
+    //         locationIntervalRef.current = setInterval(() => {
+    //             const socketService = SocketService.getInstance();
+    //             socketService.emitLocationUpdate(currentLocation, route.params.driver_id); // Send current location to the server
+    //             console.log("new addres", currentLocation);
+    //         }, 60000);
+    //     }
+
+    //     return () => {
+    //         if (locationIntervalRef.current) {
+    //             clearInterval(locationIntervalRef.current);
+    //             locationIntervalRef.current = null;
+    //         }
+    //     };
+    // }, [currentLocation, navigationStarted]);
+
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -219,54 +267,101 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             console.error('Xatolik yuz berdi:', error);
         });
 
-        const fetchUserData = async () => {
-            try {
-                const userId = await GetData('user_id');
-                const uniqueId = await GetData('unique_id');
+    }, []);
 
-                if (userId) setUser_id(userId);
-                if (uniqueId) setUnique_id(uniqueId);
+    // =============================================================================
 
-                if (userId && uniqueId) {
-                    initializeSocket(userId, uniqueId);
+    const startLocationUpdates = () => {
+        if (!isBackgroundTracking && navigationStarted) {
+            setIsBackgroundTracking(true);
+            // Start background timer for location updates
+            BackgroundTimer.runBackgroundTimer(() => {
+                if (currentLocation && navigationStarted) {
+                    const socketService = SocketService.getInstance();
+                    socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+                    console.log("Location update in background:", currentLocation);
                 }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            }
-        };
+            }, 60000); // 60000ms = 1 minute
+        }
+    };
 
-        fetchUserData();
+    const stopLocationUpdates = () => {
+        if (isBackgroundTracking) {
+            setIsBackgroundTracking(false);
+            BackgroundTimer.stopBackgroundTimer();
+        }
+        console.log(292, "chiqish");
+
+    };
+
+    useEffect(() => {
+        if (!isLoggedIn) {
+            stopLocationUpdates();
+        }
+        console.log(300, isLoggedIn);
+
+    }, [isLoggedIn]);
+
+
+
+
+
+    useEffect(() => {
+        const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+            if (
+                appState.current.match(/inactive|background/) &&
+                nextAppState === 'active' &&
+                navigationStarted
+            ) {
+                // App has come to foreground
+                console.log('App has come to foreground!');
+                startLocationUpdates();
+            } else if (
+                appState.current === 'active' &&
+                nextAppState.match(/inactive|background/) &&
+                navigationStarted
+            ) {
+                // App has gone to background
+                console.log('App has gone to background!');
+                startLocationUpdates(); // Continue tracking in background
+            }
+
+            appState.current = nextAppState;
+        });
 
         return () => {
-            if (socketRef.current) {
-                socketRef.current.disconnect();
+            subscription.remove();
+            stopLocationUpdates();
+        };
+    }, [navigationStarted]);
+
+    useEffect(() => {
+        if (navigationStarted) {
+            startLocationUpdates();
+        } else {
+            stopLocationUpdates();
+        }
+    }, [navigationStarted]);
+
+    // Clean up when component unmounts
+    useEffect(() => {
+        return () => {
+            stopLocationUpdates();
+            if (watchId.current !== null) {
+                Geolocation.clearWatch(watchId.current);
             }
             if (locationIntervalRef.current) {
                 clearInterval(locationIntervalRef.current);
             }
         };
-
     }, []);
 
 
-    // useEffect(() => {
-    //     if (route.params?.data[0]?.longitude) {
-    //         setLoadStartAddress({ latitude: Number(route.params.data[0].latitude), longitude: Number(route.params.data[0].longitude) })
-    //     }
-    // }, [])
 
-    // useEffect(() => {
-    //     console.log("Route params data:", route.params?.data);
-    //     if (route.params?.data && route.params.data.length > 0 && route.params.data[0].longitude) {
-    //         const endAdres = filterOrderFun(route.params.data, 0)
-    //         if (endAdres) {
-    //             setLoadStartAddress({
-    //                 latitude: Number(endAdres.latitude),
-    //                 longitude: Number(endAdres.longitude)
-    //             });
-    //         }
-    //     }
-    // }, []);
+    // ========================================================================
+
+
+
 
 
     const requestLocationPermission = async () => {
@@ -289,7 +384,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             return false;
         }
     };
-
     const calculateRoute = async (start: Position) => {
         try {
 
@@ -300,14 +394,12 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 return;
             }
 
-            console.log(203, start)
             if (!loadStartAddress || !loadStartAddress.longitude || !loadStartAddress.latitude) {
                 console.log("Yuk manzili yetarli emas:", loadStartAddress);
                 Alert.alert("Xato", "Yuk manzili mavjud emas.");
                 return;
             }
 
-            console.log(210)
             const response = await fetch(
                 `https://api.mapbox.com/directions/v5/mapbox/driving/${start.longitude},${start.latitude};${loadStartAddress.longitude},${loadStartAddress.latitude}?geometries=geojson&overview=full&steps=true&access_token=pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q`
             );
@@ -333,7 +425,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                     setNextManeuver(data.routes[0].steps[0].maneuver.instruction);
                 }
 
-                console.log(208)
             }
         } catch (error) {
             console.log(221, 'Route calculation error:', error);
@@ -342,17 +433,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     };
 
     // ----------------------------Socket-------------------------------------------
-
-    const emitLocationUpdate = (location: PositionInterface) => {
-        if (socketRef.current && user_id) {
-            socketRef.current.emit('locationUpdate', {
-                latitude: location.latitude,
-                longitude: location.longitude,
-                driverId: route.params.driver_id
-            });
-        }
-    };
-
     const startNavigation = async () => {
         const hasPermission = await requestLocationPermission();
         if (!hasPermission) {
@@ -361,6 +441,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         }
 
         setNavigationStarted(true);
+        startLocationUpdates()
 
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -370,15 +451,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 heading: 0
             });
         }
-
-        // Start periodic location updates
-        locationIntervalRef.current = setInterval(() => {
-            if (currentLocation) {
-                emitLocationUpdate(currentLocation);
-                console.log(262, currentLocation);
-
-            }
-        }, 60000); // Every minute
 
         watchId.current = Geolocation.watchPosition(
             position => {
@@ -411,7 +483,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
         );
     };
-
     const startNavigationDeparture = async () => {
         const hasPermission = await requestLocationPermission();
         if (!hasPermission) {
@@ -419,6 +490,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             return;
         }
         setNavigationStarted(true);
+        startLocationUpdates()
 
 
         if (currentLocation && cameraRef.current) {
@@ -429,15 +501,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 heading: 0
             });
         }
-
-        // Start periodic location updates
-        locationIntervalRef.current = setInterval(() => {
-            if (currentLocation) {
-                emitLocationUpdate(currentLocation);
-                console.log(262, currentLocation);
-
-            }
-        }, 60000); // Every minute
 
         watchId.current = Geolocation.watchPosition(
             position => {
@@ -470,16 +533,14 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
         );
     };
-
-
     const stopNavigation = () => {
         if (watchId.current !== null) {
             Geolocation.clearWatch(watchId.current);
         }
         clearInterval(locationIntervalRef.current)
         setNavigationStarted(false);
+        stopLocationUpdates()
     };
-
     useEffect(() => {
         const initializeLocation = async () => {
             try {
@@ -525,7 +586,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
         };
     }, []);
-
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
@@ -533,8 +593,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 <Text style={styles.loadingText}>Joylashuv aniqlanmoqda...</Text>
             </View>
         ); // r56yguk
-    }
-
+    };
     function startNewLoad() {
         if (token && user_id) {
             startNavigation();
@@ -553,8 +612,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
             })
         }
-    }
-
+    };
     const iCameFun = () => {
         if (token && user_id) {
             const resData = {
@@ -573,11 +631,10 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
             ).then((res) => {
                 if (res.data.success) {
-                    console.log(res.data);
+                    setNavigationStarted(false)
                     setIsVisible(false)
                     setICame(true);
                     stopNavigation()
-
                 } else {
                     setIsVisible(false);
                     showErrorAlert(res.data?.message)
@@ -587,15 +644,13 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
             })
         }
-    }
+    };
     const iCameUploadFun = () => {
         if (token && user_id) {
             const resData = {
                 user_id: user_id,
                 load_id: route.params.data[0].load_id,
             }
-            console.log(resData);
-
 
             axios.post(`${API_URL}/api/driver/start-loading`, resData, {
                 headers: {
@@ -613,7 +668,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
             })
         }
-    }
+    };
     const loadUploadFun = () => {
         setICame(false);
         setDeparture(true);
@@ -625,7 +680,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 Authorization: `Bearer ${token}`
             },
         }).then((res) => {
-            console.log(543, res.data);
             setDeparture(true);
             setICame(false);
 
@@ -633,7 +687,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             console.log(546, error);
 
         })
-    }
+    };
     const recenterCamera = () => {
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -644,23 +698,12 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             });
         }
     };
-    const newAddressFun = () => {
+    function newAddressFun() {
         setIsVisible(false)
-
-        const endAdres = filterOrderFun(route.params.data, 1)
-        if (endAdres) {
-            console.log(657, endAdres);
-
-            setLoadStartAddress({ latitude: Number(endAdres.latitude), longitude: Number(endAdres.longitude) })
-        }
         setNavigationStarted(true);
-
         setNavigationStarted_3(true);
         startNavigationDeparture()
-
-
-    };
-
+    }
     const stopLoadFinish = () => {
         if (token && user_id) {
             const resData = {
@@ -671,7 +714,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 start_longitude: Number(filterOrderFun(route.params.data, 1)?.longitude),
                 start_latitude: Number(filterOrderFun(route.params.data, 1)?.latitude)
             }
-            console.log(resData);
 
 
             axios.post(`${API_URL}/api/driver/finish-trip`, resData, {
@@ -681,7 +723,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
             ).then((res) => {
                 if (res.data.success) {
-                    console.log(590, res.data);
                     if (watchId.current !== null) {
                         Geolocation.clearWatch(watchId.current);
                     }
@@ -698,9 +739,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
             })
         }
-    }
-
-
+    };
 
 
     return (
@@ -761,7 +800,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                     >
                         <View style={[
                             styles.navigationArrow,
-                            { transform: [{ rotate: `${currentLocation?.bearing || 0}deg` }] }
+                            { transform: [{ rotate: `${currentLocation?.latitude || 0}deg` }] }
                         ]}>
                             <Icon name="location-arrow" size={35} color="#7257FF" />
 

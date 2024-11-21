@@ -31,7 +31,7 @@ export type RootStackParamList = {
     active_loads_map_appointed: { itemId: string, data: Location[], status: string | undefined, driver_id: string },
     active_loads_map: { itemId: string, data: Location[], status: string | undefined },
     history_detail: { itemId: string },
-    history_detail_map: { itemId: string, data: Location[], status: string | undefined, driver_id: string },
+    history_detail_map: { itemId: string, data: Location[], status: string, driver_id: string },
 
 
 };

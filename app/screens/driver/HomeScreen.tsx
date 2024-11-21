@@ -8,7 +8,7 @@ import {
     StyleSheet,
     TouchableOpacity,
     Modal,
-
+    RefreshControl
 } from "react-native";
 import axios from 'axios';
 import { GetData } from '../AsyncStorage/AsyncStorage';
@@ -22,6 +22,8 @@ const splitText = (text: string,): { text_1: string } => {
     return { text_1 };
 };
 import { ActiveLoadsProps } from './RouterType';
+import SystemNotificationPlayer from "../ui/Audio/Audio";
+const notificationPlayer = new SystemNotificationPlayer();
 
 interface DriverStop {
     load_id: string;
@@ -73,8 +75,11 @@ const filterByDriverStops = (cargos: Cargo[]): Cargo[] => {
 const HomeScreen: React.FC<ActiveLoadsProps> = ({
     navigation
 }) => {
+
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
+    const [refreshing, setRefreshing] = useState(false);
+
     const [resData, setResData] = useState<ResData[] | null>(null);
     const [isSwitchOn, setIsSwitchOn] = useState(false);
     const [isModalVisible, setModalVisible] = useState(false);
@@ -254,10 +259,34 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
         navigation.navigate('profile');
     };
 
+    const soudFun = async () => {
+        try {
+            notificationPlayer.playNotification(
+                "Yangi xabar",
+                "Sizga yangi xabar keldi!"
+            );
+        } catch (error) {
+            console.error("Xatolik:", error);
+        }
+    }
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true); // Yangilanishni boshlash
+        setTimeout(() => {
+            setRefreshing(false); // Yangilanishni tugatish
+        }, 2000); // 2 soniyadan keyin tugatadi
+    }, []);
+
     return (
         <ScrollView
             style={styles.container}
             contentContainerStyle={{ flexGrow: 1 }}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+                    colors={['#5336E2', '#5336E2', '#5336E2']}
+
+                />
+            }
         >
             {
                 !inRegister && <View style={styles.notificationBox}>
@@ -284,6 +313,10 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
 
             </View>
 
+
+            <TouchableOpacity onPress={soudFun}>
+                <Text style={{ color: 'red' }}>Okk</Text>
+            </TouchableOpacity>
 
             <View style={styles.orders}>
                 <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 10, marginVertical: 10 }}>
