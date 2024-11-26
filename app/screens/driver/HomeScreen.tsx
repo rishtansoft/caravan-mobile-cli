@@ -8,7 +8,8 @@ import {
     StyleSheet,
     TouchableOpacity,
     Modal,
-    RefreshControl
+    RefreshControl,
+    Alert
 } from "react-native";
 import axios from 'axios';
 import { GetData } from '../AsyncStorage/AsyncStorage';
@@ -16,6 +17,7 @@ import { API_URL } from '@env'
 import CustomSwitch from "../ui/switch/Switch";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import { useIsFocused } from '@react-navigation/native';
+import Placeholder from "../ui/SkeletonContent/SkeletonContent";
 
 const splitText = (text: string,): { text_1: string } => {
     const text_1 = text.slice(0, 8);
@@ -70,7 +72,9 @@ const filterByDriverStops = (cargos: Cargo[]): Cargo[] => {
     return cargos.filter(cargo => cargo.driverStops && cargo.driverStops.length > 0);
 };
 
-
+const showErrorAlert = (message: string) => {
+    Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
+};
 
 const HomeScreen: React.FC<ActiveLoadsProps> = ({
     navigation
@@ -111,7 +115,7 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
     const fetchLoadData = useCallback(() => {
         if (!token || !user_id) return;
 
-        axios.post(`${API_URL}/api/auth//check-driver?user_id=${user_id}`, {}, {
+        axios.post(`${API_URL}/api/auth/check-driver?user_id=${user_id}`, {}, {
             headers: {
                 Authorization: `Bearer ${token}`
             },
@@ -160,7 +164,7 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
         if (token && user_id) {
             setResData(null)
 
-            axios.post(`${API_URL}/api/auth//check-driver?user_id=${user_id}`, {}, {
+            axios.post(`${API_URL}/api/auth/check-driver?user_id=${user_id}`, {}, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 },
@@ -237,7 +241,30 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
         }
     }, [token, user_id, dataUpdate]);
 
-    const toggleSwitch = () => setIsSwitchOn((previousState) => !previousState);
+    const toggleSwitch = () => {
+        if (token && user_id) {
+
+            axios.post(`${API_URL}/api/loads/update-driver-status`, {
+                user_id: user_id,
+                driver_status: !isSwitchOn ? 'empty' : 'offline'
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            }).then((res) => {
+                console.log(249, res.data);
+                setIsSwitchOn((previousState) => !previousState)
+
+
+            }).catch((error) => {
+                console.log(252, error);
+                showErrorAlert(error?.response?.data?.message)
+
+            })
+
+
+        }
+    };
 
     const toggleModal = (id: string) => {
         if (userRegister) {
@@ -277,6 +304,7 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
     }, []);
 
     return (
+
         <ScrollView
             style={styles.container}
             contentContainerStyle={{ flexGrow: 1 }}
@@ -313,9 +341,7 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
             </View>
 
 
-            <TouchableOpacity onPress={soudFun}>
-                <Text style={{ color: 'red' }}>Okk</Text>
-            </TouchableOpacity>
+
 
             <View style={styles.orders}>
                 <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 10, marginVertical: 10 }}>

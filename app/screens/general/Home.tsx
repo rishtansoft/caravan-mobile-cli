@@ -236,13 +236,6 @@ const styles = StyleSheet.create({
         right: 0,
         alignItems: 'center',
     },
-    // button: {
-    //     backgroundColor: '#7257FF',
-    //     paddingVertical: 12,
-    //     paddingHorizontal: 40,
-    //     borderRadius: 8,
-    //     marginBottom: 16,
-    // },
     buttonText: {
         color: 'white',
         fontSize: 16,

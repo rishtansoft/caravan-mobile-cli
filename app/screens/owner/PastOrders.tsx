@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, RefreshControl, FlatList } from 'react-native';
 import { HistoryProps } from './RouterType'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
@@ -125,6 +125,8 @@ const PastOrders: React.FC<HistoryProps> = ({ navigation }) => {
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
     const [resData, setResData] = useState<ResData[] | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+    const [dataUpdate, setDataUpdate] = useState<boolean>(false);
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -177,6 +179,14 @@ const PastOrders: React.FC<HistoryProps> = ({ navigation }) => {
         }
     }, [token, user_id]);
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true); // Yangilanishni boshlash
+        setTimeout(() => {
+            setRefreshing(false); // Yangilanishni tugatish
+            setDataUpdate(true);
+        }, 2000); // 2 soniyadan keyin tugatadi
+    }, []);
+
     return (
         <View style={styles.container_all}>
             <View style={styles.header_con}>
@@ -195,6 +205,12 @@ const PastOrders: React.FC<HistoryProps> = ({ navigation }) => {
                 {
                     resData && resData.length > 0 ? (<FlatList
                         data={resData}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+                                colors={['#5336E2', '#5336E2', '#5336E2']}
+
+                            />
+                        }
                         renderItem={({ item }) => (
                             <TouchableOpacity
                                 onPress={() => navigation.navigate('history_detail', { itemId: item.id })}

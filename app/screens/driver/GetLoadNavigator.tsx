@@ -22,9 +22,9 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
 import SocketService from '../ui/Socket/index';
-import BackgroundTimer from 'react-native-background-timer';
 import store, { RootState } from '../../store/store';
 import { Provider, useSelector } from 'react-redux';
+import { useBackgroundTimer } from '../ui/BackgroundTimerService/BackgroundTimerService';
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -122,34 +122,23 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
     }, []);
 
-    const startLocationUpdates = () => {
-        if (!isBackgroundTracking && navigationStarted) {
-            setIsBackgroundTracking(true);
-            // Start background timer for location updates
-            BackgroundTimer.runBackgroundTimer(() => {
-                if (currentLocation && navigationStarted) {
-                    const socketService = SocketService.getInstance();
-                    socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
-                    console.log("Location update in background:", currentLocation);
-                }
-            }, 60000); // 60000ms = 1 minute
-        }
-    };
 
-    const stopLocationUpdates = () => {
-        if (isBackgroundTracking) {
-            setIsBackgroundTracking(false);
-            BackgroundTimer.stopBackgroundTimer();
+    const { startTimer, stopTimer } = useBackgroundTimer(() => {
+        if (currentLocation && navigationStarted) {
+            const socketService = SocketService.getInstance();
+            socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+            console.log("Location update in background:", currentLocation);
         }
-        console.log(292, "chiqish");
-
-    };
+    }, 60000);
 
     useEffect(() => {
-        if (!isLoggedIn) {
-            stopLocationUpdates();
+        if (navigationStarted) {
+            startTimer();
+        } else {
+            stopTimer();
         }
-    }, [isLoggedIn]);
+        return () => stopTimer();
+    }, [navigationStarted]);
 
     useEffect(() => {
         const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
@@ -160,7 +149,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
             ) {
                 // App has come to foreground
                 console.log('App has come to foreground!');
-                startLocationUpdates();
+                startTimer();
             } else if (
                 appState.current === 'active' &&
                 nextAppState.match(/inactive|background/) &&
@@ -168,7 +157,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
             ) {
                 // App has gone to background
                 console.log('App has gone to background!');
-                startLocationUpdates(); // Continue tracking in background
+                startTimer(); // Continue tracking in background
             }
 
             appState.current = nextAppState;
@@ -176,20 +165,22 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
 
         return () => {
             subscription.remove();
-            stopLocationUpdates();
+            stopTimer();
         };
     }, [navigationStarted]);
 
+
+
     useEffect(() => {
-        if (navigationStarted) {
-            startLocationUpdates();
-        } else {
-            stopLocationUpdates();
+        if (!isLoggedIn || auth.conut == 2) {
+            stopTimer();
         }
-    }, [navigationStarted]);
+    }, [isLoggedIn, auth.conut]);
+
+
     useEffect(() => {
         return () => {
-            stopLocationUpdates();
+            stopTimer();
             if (watchId.current !== null) {
                 Geolocation.clearWatch(watchId.current);
             }
@@ -283,7 +274,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
 
         setNavigationStarted(true);
-        startLocationUpdates()
+        startTimer()
 
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -336,7 +327,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
 
         setNavigationStarted(true);
-        startLocationUpdates()
+        startTimer()
 
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -388,7 +379,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
             clearInterval(locationIntervalRef.current);
         }
         setNavigationStarted(false);
-        stopLocationUpdates()
+        stopTimer()
 
     };
 
@@ -592,7 +583,7 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                     if (watchId.current !== null) {
                         Geolocation.clearWatch(watchId.current);
                     }
-                    stopLocationUpdates()
+                    stopTimer()
 
                     if (locationIntervalRef.current) {
                         clearInterval(locationIntervalRef.current);

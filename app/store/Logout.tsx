@@ -8,16 +8,15 @@ export const handleLogout = async () => {
     try {
 
         socketService.disconnect()
-        // Redux state'ni tozalash
+        // Redux state'ni tozalas
+        RemoveData('user_id')
+        RemoveData('token')
+        RemoveData('role')
+        RemoveData('inlogin')
+        RemoveData('user_id_passwor')
+        RemoveData('user_data')
+        RemoveData('user_data_2')
         store.dispatch(logout());
-
-        await RemoveData('user_id')
-        await RemoveData('token')
-        await RemoveData('role')
-        await RemoveData('inlogin')
-        await RemoveData('user_id_passwor')
-        await RemoveData('user_data')
-        await RemoveData('user_data_2')
         // Qo'shimcha storage keylarni ham o'chirish kerak bo'lsa shu yerga qo'shing
 
         return true;

@@ -5,9 +5,13 @@ import Geolocation from 'react-native-geolocation-service';
 import { Position, Feature, Geometry } from 'geojson';
 import { MAPBOX_ACCESS_TOKEN } from '@env';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { ActiveLoadsDetailMapProps } from './RouterType';
+import { ActiveLoadsCarProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
+import axios from 'axios';
+import { GetData } from '../AsyncStorage/AsyncStorage';
+import { API_URL } from '@env';
+import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -117,7 +121,7 @@ interface PositionInterface {
     latitude: number,
     address?: string
 }
-const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation }) => {
+const ActiveLoadCarLoaction: React.FC<ActiveLoadsCarProps> = ({ route, navigation }) => {
     const { itemId, data, status } = route.params;
 
     const [currentLocation, setCurrentLocation] = useState<PositionInterface | null>(null);
@@ -125,6 +129,46 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
     const [locationPermissionError, setLocationPermissionError] = useState<string | null>(null);
     const [estimatedTime, setEstimatedTime] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
+    const [dataUpdate, setDataUpdate] = useState<boolean>(false);
+    const [user_id, setUser_id] = useState<string>('');
+    const [token, setToken] = useState<string>('');
+
+    useEffect(() => {
+        GetData('user_id').then((res) => {
+            if (res) {
+                setUser_id(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+        GetData('token').then((res) => {
+            if (res) {
+                setToken(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+    }, []);
+
+    useEffect(() => {
+        console.log(1, `${API_URL}/api/driver/get-drvier-location?user_id=${user_id}&load_id=${itemId}`);
+        console.log(2, token);
+
+
+        if (token && user_id) {
+            axios.get(`${API_URL}/api/driver/get-drvier-location?user_id=${user_id}&load_id=${itemId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            }).then((res) => {
+                console.log(res.data);
+
+            }).catch((error) => {
+                console.log(163, error);
+
+            })
+        }
+    }, [token, user_id]);
 
     const [locations, setLocations] = useState<Location[]>([
         {
@@ -294,6 +338,11 @@ const ActiveOrderMap: React.FC<ActiveLoadsDetailMapProps> = ({ route, navigation
                 <Text style={styles.title}>
                     Buyurtma #{itemId.slice(0, 8)}
                 </Text>
+                <TouchableOpacity onPress={() => setDataUpdate(true)}>
+                    <FontAwesomeIcon
+                        name="refresh" size={25} color={"#7257FF"} />
+                </TouchableOpacity>
+
             </View>
 
             <MapboxGl.MapView style={styles.map}>
@@ -422,9 +471,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#fff',
         borderBottomLeftRadius: 20,
+        justifyContent: 'space-between',
         borderBottomRightRadius: 20,
         width: "100%",
-        paddingLeft: 15
+        paddingHorizontal: 20
     },
     title: {
         color: '#131214',
@@ -502,4 +552,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default ActiveOrderMap;
+export default ActiveLoadCarLoaction;

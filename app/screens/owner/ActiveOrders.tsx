@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, Alert, RefreshControl } from 'react-native';
 import { ActiveLoadsProps } from './RouterType'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
@@ -122,6 +122,8 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
     const [resData, setResData] = useState<ResData[] | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+    const [dataUpdate, setDataUpdate] = useState<boolean>(false);
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -178,6 +180,53 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
         }
     }, [token, user_id]);
 
+    useEffect(() => {
+        if (token && user_id && dataUpdate) {
+            console.log(145)
+            axios.get(API_URL + `/api/loads/get-user-all-loads?user_id=${user_id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+                .then((res) => {
+                    setDataUpdate(false)
+                    if (res.data?.data && res.data.data.length > 0) {
+
+                        const resdataFileter = filterByDriverStops(res.data?.data)
+
+                        if (resdataFileter.length > 0) {
+
+                            const newData = resdataFileter.map((el) => {
+                                return {
+                                    id: el.id,
+                                    status: el.load_status,
+                                    weight: el.loadDetails?.weight,
+                                    sub_id: splitText(el.id).text_1,
+                                    start_location: filertDriverStopOrder(el.driverStops, 0),
+                                    end_location: filertDriverStopOrder(el.driverStops, 1),
+                                }
+                            });
+                            console.log(169)
+                            if (newData && newData.length > 0) {
+
+                                setResData(newData)
+                            }
+                        }
+                    }
+                }).catch((error) => {
+                    console.log(132, error);
+                })
+        }
+    }, [token, user_id, dataUpdate]);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true); // Yangilanishni boshlash
+        setTimeout(() => {
+            setRefreshing(false); // Yangilanishni tugatish
+            setDataUpdate(true);
+        }, 2000); // 2 soniyadan keyin tugatadi
+    }, []);
+
     return (
         <View style={styles.container_all}>
             <View style={styles.header_con}>
@@ -216,6 +265,12 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
                 {
                     resData && resData.length > 0 && <FlatList
                         data={resData}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+                                colors={['#5336E2', '#5336E2', '#5336E2']}
+
+                            />
+                        }
                         renderItem={({ item }) => (
                             <TouchableOpacity
                                 onPress={() => navigation.navigate('active_loads_detail', { itemId: item.id })}

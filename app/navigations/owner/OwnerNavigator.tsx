@@ -22,7 +22,7 @@ import AddLoadThird from '../../screens/owner/AddLoadThird';
 import MainPhoneUpdate from '../../screens/owner/MainPhoneUpdate';
 import MainPhoneUpdateSmcCode from '../../screens/owner/MainPhoneUpdateSmcCode';
 import PastOrderDetailMap from '../../screens/owner/PastOrderDetailMap';
-
+import ActiveLoadCarLoaction from '../../screens/owner/ActiveLoadCarLoaction';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 interface componentNameProps {
     page: string | undefined,
@@ -96,6 +96,11 @@ const OwnerNavigation: React.FC<componentNameProps> = ({ page }) => {
                     options={{ headerShown: false }}
                 />
                 <Stack.Screen
+                    name="active_loads_car_map"
+                    component={ActiveLoadCarLoaction}
+                    options={{ headerShown: false }}
+                />
+                <Stack.Screen
                     name="active_loads_detail"
                     component={ActiveOrderDetail}
                     options={{ headerShown: false }}
@@ -156,7 +161,7 @@ const OwnerNavigation: React.FC<componentNameProps> = ({ page }) => {
             {(!keyboardVisible && page !== 'add_loads' && page !== 'add_load_second' &&
                 page !== 'add_load_third' &&
                 page != 'active_loads_map' && page != 'history_detail_map'
-                && page != 'main_phone_update_sms_code') && <Navbar activeTab={activeTab} setActiveTab={handleTabChange} />}
+                && page != 'main_phone_update_sms_code' && page != 'active_loads_car_map') && <Navbar activeTab={activeTab} setActiveTab={handleTabChange} />}
 
         </>
     );

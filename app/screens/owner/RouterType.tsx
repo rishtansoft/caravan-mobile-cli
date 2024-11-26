@@ -33,6 +33,7 @@ export type RootStackParamList = {
     terms_condition: undefined,
     active_loads_detail: { itemId: string },
     active_loads_map: { itemId: string, data: Location[], status: string | undefined },
+    active_loads_car_map: { itemId: string, data: Location[], status: string | undefined },
     history_detail: { itemId: string },
     history_detail_map: { itemId: string, data: Location[], status: string | undefined },
 
@@ -55,6 +56,7 @@ export type AddLoadThirdScreenNavigationProp = StackNavigationProp<RootStackPara
 export type MainPhoneUpdateScreenNavigationProp = StackNavigationProp<RootStackParamList, 'main_phone_update'>;
 export type MainPhoneUpdateSmcCodeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'main_phone_update_sms_code'>;
 export type HistoryDetailMapCodeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'history_detail_map'>;
+export type ActiveLoadsCarAapScreenNavigationProp = StackNavigationProp<RootStackParamList, 'active_loads_car_map'>;
 
 export type HomeType = NativeStackScreenProps<RootStackParamList, 'home'>;
 export type ActiveLoadsType = NativeStackScreenProps<RootStackParamList, 'active_loads'>;
@@ -72,6 +74,7 @@ export type AddLoadThirdType = NativeStackScreenProps<RootStackParamList, 'add_l
 export type MainPhoneUpdateType = NativeStackScreenProps<RootStackParamList, 'main_phone_update'>;
 export type MainPhoneUpdateSmcCodeType = NativeStackScreenProps<RootStackParamList, 'main_phone_update_sms_code'>;
 export type HistoryDetailMapCodeType = NativeStackScreenProps<RootStackParamList, 'history_detail_map'>;
+export type ActiveLoadsCarAapType = NativeStackScreenProps<RootStackParamList, 'active_loads_car_map'>;
 
 export type HomeRouteProp = RouteProp<RootStackParamList, 'home'>;
 export type ActiveLoadsRouteProp = RouteProp<RootStackParamList, 'active_loads'>;
@@ -89,7 +92,13 @@ export type AddLoadThirdRouteProp = RouteProp<RootStackParamList, 'add_load_thir
 export type MainPhoneUpdateRouteProp = RouteProp<RootStackParamList, 'main_phone_update'>;
 export type MainPhoneUpdateSmcCodeRouteProp = RouteProp<RootStackParamList, 'main_phone_update_sms_code'>;
 export type HistoryDetailMapCodeRouteProp = RouteProp<RootStackParamList, 'history_detail_map'>;
+export type ActiveLoadsCarAapRouteProp = RouteProp<RootStackParamList, 'active_loads_car_map'>;
 
+
+export interface ActiveLoadsCarProps {
+    navigation: ActiveLoadsCarAapScreenNavigationProp;
+    route: ActiveLoadsCarAapRouteProp;
+}
 
 export interface AddLoadsProps {
     navigation: AddLoadsScreenNavigationProp;

@@ -210,6 +210,7 @@ class SocketService {
                     sound: 'default',
                 },
             });
+
         } catch (error) {
             console.log('Notification error:', error);
         }

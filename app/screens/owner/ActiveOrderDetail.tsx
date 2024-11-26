@@ -471,13 +471,21 @@ const ActiveOrderDetail: React.FC<ActiveLoadsDetailProps> = ({ navigation, route
                         </TouchableOpacity>
                     }
 
+
+
                     {
-                        result.status == 'posted' && <TouchableOpacity
+                        result.status == 'posted' ? <TouchableOpacity
                             onPress={() => setIsVisible(true)}
                             style={[styles.btn, { backgroundColor: '#E8EBEB', marginBottom: 20 }]}>
                             <Text style={[styles.btn_text, { color: '#131214' }]}>Buyurtmani bekor qilish </Text>
                             <FeatherIcons
                                 name="x" size={25} color="#131214" />
+                        </TouchableOpacity> : <TouchableOpacity
+                            onPress={() => locations && navigation.navigate("active_loads_car_map", { itemId: itemId, data: locations, status: result?.status })}
+                            style={[styles.btn, { backgroundColor: '#7257FF', marginBottom: 20 }]}>
+                            <Text style={[styles.btn_text, { color: '#fff' }]}>Haydovchni joylashuvini kuzatish</Text>
+                            <IconFoundation
+                                name="map" size={25} color="#fff" />
                         </TouchableOpacity>
                     }
 

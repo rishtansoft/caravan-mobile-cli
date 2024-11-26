@@ -127,6 +127,9 @@ const DriverProfile: React.FC<ProfileProps> = (
                 setFirstname(res.data.firstname)
                 setLastname(res.data.lastname)
                 setPhone(res.data.phone)
+                if (res.data?.user_img) {
+                    setImg_url(res.data.user_img)
+                }
 
             }).catch((error) => {
                 console.log(76, error);

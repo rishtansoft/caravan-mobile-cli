@@ -22,8 +22,8 @@ import axios from 'axios';
 import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
 import SocketService from '../ui/Socket/index';
-import BackgroundTimer from 'react-native-background-timer';
 import store, { RootState } from '../../store/store';
+import { useBackgroundTimer } from '../ui/BackgroundTimerService/BackgroundTimerService';
 
 
 
@@ -57,66 +57,6 @@ const filterOrderFun = (arr: Location[], order: number) => {
     return oneData
 }
 
-const getBgColorKey = (key: string): string => {
-    switch (key) {
-        case "posted":
-            return "#F0EDFF";
-        case "assigned":
-            return "#E5F0FF";
-        case "picked_up":
-            return "#FFEFB3";
-        case "in_transit":
-            return "#FFE9D1";
-        case "delivered":
-            return "#D7F5E5";
-        case "Tushirilmoqda":
-            return "#FFEFB3";
-        case "Yakunlangan":
-            return "#D7F5E5";
-        default:
-            return "#F0EDFF"; // Default rang
-    }
-};
-const getStatusText = (key: string): string => {
-    switch (key) {
-        case "posted":
-            return "Qidirilmoqda";
-        case "assigned":
-            return "Yukni olishga kelmoqda";
-        case "picked_up":
-            return "Yuk ortilmoqda";
-        case "in_transit":
-            return "Yo'lda";
-        case "delivered":
-            return "Manzilga yetib bordi";
-        case "Tushirilmoqda":
-            return "#FFEFB3";
-        case "Yakunlangan":
-            return "#D7F5E5";
-        default:
-            return "#F0EDFF"; // Default rang
-    }
-};
-const getTextColorKey = (key: string): string => {
-    switch (key) {
-        case "posted":
-            return "#5336E2";
-        case "assigned":
-            return "#0050C7";
-        case "picked_up":
-            return "#B26205";
-        case "in_transit":
-            return "#E28F36";
-        case "delivered":
-            return "#006341";
-        case "Tushirilmoqda":
-            return "#B26205";
-        case "Yakunlangan":
-            return "#006341";
-        default:
-            return "#5336E2"; // Default rang
-    }
-};
 
 const filterStatusData = (arr: Location[], status: string,) => {
     if (status == 'in_transit') {
@@ -221,38 +161,28 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
     // =============================================================================
 
-    const startLocationUpdates = () => {
-        if (!isBackgroundTracking && navigationStarted) {
-            setIsBackgroundTracking(true);
-            // Start background timer for location updates
-            BackgroundTimer.runBackgroundTimer(() => {
-                if (currentLocation && navigationStarted) {
-                    const socketService = SocketService.getInstance();
-                    socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
-                    console.log("Location update in background:", currentLocation);
-                }
-            }, 60000); // 60000ms = 1 minute
+    const { startTimer, stopTimer } = useBackgroundTimer(() => {
+        if (currentLocation && navigationStarted) {
+            const socketService = SocketService.getInstance();
+            socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+            console.log("Location update in background:", currentLocation);
         }
-    };
-
-    const stopLocationUpdates = () => {
-        if (isBackgroundTracking) {
-            setIsBackgroundTracking(false);
-            BackgroundTimer.stopBackgroundTimer();
-        }
-        console.log(292, "chiqish");
-
-    };
+    }, 60000);
 
     useEffect(() => {
-        if (!isLoggedIn) {
-            stopLocationUpdates();
+        if (navigationStarted) {
+            startTimer();
+        } else {
+            stopTimer();
         }
-    }, [isLoggedIn]);
+        return () => stopTimer();
+    }, [navigationStarted]);
 
-
-
-
+    useEffect(() => {
+        if (!isLoggedIn || auth.conut == 2) {
+            stopTimer();
+        }
+    }, [isLoggedIn, auth.conut]);
 
     useEffect(() => {
         const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
@@ -263,7 +193,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             ) {
                 // App has come to foreground
                 console.log('App has come to foreground!');
-                startLocationUpdates();
+                startTimer();
             } else if (
                 appState.current === 'active' &&
                 nextAppState.match(/inactive|background/) &&
@@ -271,7 +201,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             ) {
                 // App has gone to background
                 console.log('App has gone to background!');
-                startLocationUpdates(); // Continue tracking in background
+                startTimer(); // Continue tracking in background
             }
 
             appState.current = nextAppState;
@@ -279,22 +209,16 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
         return () => {
             subscription.remove();
-            stopLocationUpdates();
+            stopTimer();
         };
     }, [navigationStarted]);
 
-    useEffect(() => {
-        if (navigationStarted) {
-            startLocationUpdates();
-        } else {
-            stopLocationUpdates();
-        }
-    }, [navigationStarted]);
+
 
     // Clean up when component unmounts
     useEffect(() => {
         return () => {
-            stopLocationUpdates();
+            stopTimer();
             if (watchId.current !== null) {
                 Geolocation.clearWatch(watchId.current);
             }
@@ -389,7 +313,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
         }
 
         setNavigationStarted(true);
-        startLocationUpdates()
+        startTimer()
 
         if (currentLocation && cameraRef.current) {
             cameraRef.current.setCamera({
@@ -438,7 +362,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             return;
         }
         setNavigationStarted(true);
-        startLocationUpdates()
+        startTimer()
 
 
         if (currentLocation && cameraRef.current) {
@@ -489,7 +413,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             clearInterval(locationIntervalRef.current);
         }
         setNavigationStarted(false);
-        stopLocationUpdates()
+        stopTimer()
     };
     useEffect(() => {
         const initializeLocation = async () => {
@@ -679,7 +603,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                     if (locationIntervalRef.current) {
                         clearInterval(locationIntervalRef.current);
                     }
-                    stopLocationUpdates()
+                    stopTimer()
 
                     Alert.alert('Tabriklaymiz', 'Siz mazilga yetib keldiz');
                     navigation.navigate('active_loads')

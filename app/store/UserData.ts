@@ -5,13 +5,15 @@ interface AuthState {
     role: string | null;
     token: string | null;
     user_id: any | null; // tipni o'zingizning user modelingizga moslashtiring
+    conut:Number
 }
 
 const initialState: AuthState = {
     isLoggedIn: false,
     role: null,
     token: null,
-    user_id: null
+    user_id: null,
+    conut:0
 };
 
 const authSlice = createSlice({
@@ -24,12 +26,14 @@ const authSlice = createSlice({
             state.role = role;
             state.isLoggedIn = true;
             state.user_id = user_id;
+            state.conut=1
         },
         logout: (state) => {
             state.token = null;
             state.role = null;
             state.user_id = null;
             state.isLoggedIn = false;
+            state.conut=2
         },
     },
 });

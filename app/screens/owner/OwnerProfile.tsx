@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Linking, Alert, Platform, Modal } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, RefreshControl, Alert, Platform, Modal, ScrollView } from 'react-native';
 import { ProfileProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -87,6 +87,7 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     const [img_url, setImg_url] = useState<string | null>(null);
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
     const [unique_id, setUnique_id] = useState<string>('');
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -124,7 +125,6 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                     Authorization: `Bearer ${token}`
                 }
             }).then((res) => {
-                console.log(73, res.data);
                 setName(res.data.firstname)
                 setNameLastname(res.data.lastname)
                 setPhone(res.data.phone)
@@ -166,6 +166,13 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
     }, [user_id, token, dataUpdate]);
 
 
+    const onRefresh = useCallback(() => {
+        setRefreshing(true); // Yangilanishni boshlash
+        setTimeout(() => {
+            setRefreshing(false); // Yangilanishni tugatish
+            setDataUpdate(true);
+        }, 2000); // 2 soniyadan keyin tugatadi
+    }, []);
 
 
     const ImagePickerModal = () => (
@@ -303,86 +310,97 @@ const OwnerProfile: React.FC<ProfileProps> = ({ navigation }) => {
                 </Text>
             </View>
 
-            <View style={styles.container}>
-                <View style={styles.profileContainer}>
-                    <TouchableOpacity onPress={() => setImageChangeModal(true)}>
-                        <Image
-                            source={img_url ? { uri: img_url } : require('../../assets/img/owner/user.png')}
-                            style={styles.profileImage}
-                        />
-                        <View style={styles.editImageButton}>
-                            <Icon name="camera" size={16} color="#fff" />
+            <ScrollView
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+                        colors={['#5336E2', '#5336E2', '#5336E2']}
+
+                    />
+                }
+            >
+
+                <View style={styles.container}>
+                    <View style={styles.profileContainer}>
+                        <TouchableOpacity onPress={() => setImageChangeModal(true)}>
+                            <Image
+                                source={img_url ? { uri: img_url } : require('../../assets/img/owner/user.png')}
+                                style={styles.profileImage}
+                            />
+                            <View style={styles.editImageButton}>
+                                <Icon name="camera" size={16} color="#fff" />
+                            </View>
+                        </TouchableOpacity>
+                        <View>
+                            <Text style={styles.profileName}>{name} {nameLastname}</Text>
+                            <Text style={styles.profilePhone}>{phone}</Text>
+                            <Text style={styles.profilePhone}>ID: {unique_id}</Text>
+
                         </View>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => setModalVisible(true)}
+
+                        style={styles.editButton}>
+                        <Text style={styles.editButtonText}>Ma'lumotlarni tahrirlash</Text>
                     </TouchableOpacity>
-                    <View>
-                        <Text style={styles.profileName}>{name} {nameLastname}</Text>
-                        <Text style={styles.profilePhone}>{phone}</Text>
-                        <Text style={styles.profilePhone}>ID: {unique_id}</Text>
-
-                    </View>
                 </View>
-                <TouchableOpacity
-                    onPress={() => setModalVisible(true)}
-
-                    style={styles.editButton}>
-                    <Text style={styles.editButtonText}>Ma'lumotlarni tahrirlash</Text>
-                </TouchableOpacity>
-            </View>
-            <View style={[styles.container, { marginTop: 10 }]}>
-                <Text style={styles.setting_title}>Sozlamalar</Text>
-                <LanguageSelector
-                    selectedLanguage={currentLanguage}
-                    onSelectLanguage={handleLanguageChange}
-                />
-                <View style={styles.setting}>
-                    <View style={styles.setting_left}>
-                        <Icon name="moon-o" size={24} color="#131214" />
-                        <Text style={styles.setting_text}>Tungi rejim</Text>
-                    </View>
-                    <CustomSwitch
-                        value={nightMode}
-                        onValueChange={setNightMode}
+                <View style={[styles.container, { marginTop: 10 }]}>
+                    <Text style={styles.setting_title}>Sozlamalar</Text>
+                    <LanguageSelector
+                        selectedLanguage={currentLanguage}
+                        onSelectLanguage={handleLanguageChange}
                     />
+                    <View style={styles.setting}>
+                        <View style={styles.setting_left}>
+                            <Icon name="moon-o" size={24} color="#131214" />
+                            <Text style={styles.setting_text}>Tungi rejim</Text>
+                        </View>
+                        <CustomSwitch
+                            value={nightMode}
+                            onValueChange={setNightMode}
+                        />
 
-                </View>
-
-                <View style={styles.setting}>
-                    <View style={styles.setting_left}>
-                        <Ionicons name="copy-outline" size={20} color="#131214" />
-                        <Text style={styles.setting_text}>Orqa fonda ishlash</Text>
                     </View>
-                    <CustomSwitch
-                        value={bacFonFun}
-                        onValueChange={setBacFonFun}
-                    />
-                </View>
 
-            </View>
-            <View style={[styles.container, { marginTop: 10 }]}>
-                <TouchableOpacity onPress={logoutFun} style={styles.exit_btn}>
-                    <View style={styles.exit_btn_left}>
-                        <Ionicons
+                    <View style={styles.setting}>
+                        <View style={styles.setting_left}>
+                            <Ionicons name="copy-outline" size={20} color="#131214" />
+                            <Text style={styles.setting_text}>Orqa fonda ishlash</Text>
+                        </View>
+                        <CustomSwitch
+                            value={bacFonFun}
+                            onValueChange={setBacFonFun}
+                        />
+                    </View>
+
+                </View>
+                <View style={[styles.container, { marginTop: 10 }]}>
+                    <TouchableOpacity onPress={logoutFun} style={styles.exit_btn}>
+                        <View style={styles.exit_btn_left}>
+                            <Ionicons
+                                // onPress={() => navigation.navigate('home')}
+                                name="exit-outline" size={24} color="#DB340B" />
+                            <Text style={styles.exit_btn_text}>Chiqish</Text>
+                        </View>
+
+                        <Icon
+                            onPress={() => navigation.navigate('home')}
+                            name="angle-right" size={24} color="#DB340B" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={logoutFun} style={styles.exit_btn}>
+                        <View style={styles.exit_btn_left}>
+                            <Ionicons
+                                name="exit-outline" size={24} color="#DB340B" />
+                            <Text style={styles.exit_btn_text}>Akkountni o'chirish</Text>
+                        </View>
+                        <Icon
                             // onPress={() => navigation.navigate('home')}
-                            name="exit-outline" size={24} color="#DB340B" />
-                        <Text style={styles.exit_btn_text}>Chiqish</Text>
-                    </View>
+                            name="angle-right" size={24} color="#DB340B" />
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
 
-                    <Icon
-                        onPress={() => navigation.navigate('home')}
-                        name="angle-right" size={24} color="#DB340B" />
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={logoutFun} style={styles.exit_btn}>
-                    <View style={styles.exit_btn_left}>
-                        <Ionicons
-                            name="exit-outline" size={24} color="#DB340B" />
-                        <Text style={styles.exit_btn_text}>Akkountni o'chirish</Text>
-                    </View>
-                    <Icon
-                        // onPress={() => navigation.navigate('home')}
-                        name="angle-right" size={24} color="#DB340B" />
-                </TouchableOpacity>
-            </View>
             <EditProfileModal
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}

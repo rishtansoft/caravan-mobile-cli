@@ -48,47 +48,51 @@ interface RouterPage {
     params?: object;
 }
 const RootNavigator: React.FC<RouterPage> = ({ name }) => {
-    const [token, setToken] = useState<string>('');
-    const [rolesData, setRolesData] = useState<string>('');
+    const [token, setToken] = useState<string | null>(null);
+    const [rolesData, setRolesData] = useState<string | null>(null);
     const auth = useSelector((state: RootState) => state.auth);
-    const isLoggedIn = auth.isLoggedIn;
-    const role = auth.role;
+    const [isLogin, setIsLogin] = useState<boolean>(false);
 
+    // Token va role'ni bir vaqtda olish
     useEffect(() => {
-        GetData('token').then((res) => {
-            if (res) {
-                setToken(res)
+        const fetchAuthData = async () => {
+            try {
+                const [tokenData, roleData] = await Promise.all([
+                    GetData('token'),
+                    GetData('role')
+                ]);
+                if (tokenData) {
+                    setToken(tokenData);
+                } else {
+                    setToken(null)
+                }
+                if (roleData) {
+                    setRolesData(roleData);
+                } else {
+                    setRolesData(null);
+                }
+            } catch (error) {
+                console.error('Auth data olishda xatolik:', error);
+                setToken(null);
+                setRolesData(null);
             }
-        }).catch((error) => {
-            console.error('Xatolik yuz berdi:', error);
-        });
-        GetData('role').then((res) => {
-            if (res) {
-                setRolesData(res)
-            }
-        }).catch((error) => {
-            console.error('Xatolik yuz berdi:', error);
-        });
-    }, []);
+        };
 
+        fetchAuthData();
+    }, [auth.isLoggedIn, auth.conut]);
 
+    // Login holatini tekshirish
+    useEffect(() => {
+        const shouldLogin = Boolean(token && (rolesData || auth.role));
+        setIsLogin(shouldLogin);
+    }, [token, rolesData, auth.role, auth.isLoggedIn, auth.conut]);
 
-    // if (isLoggedIn) {
-
-    //     if (role === 'driver') {
-    //         return <DriverNavigation />;
-    //     } else if (role === 'cargo_owner') {
-    // return <OwnerNavigation />;
-    //     }
-    //     return <GeneralNavigation />;
-    // }
-
-    if (isLoggedIn) {
-        return <UserRole name={name} roles={role} />
-
+    if (isLogin) {
+        return <UserRole name={name} roles={rolesData || auth.role} />;
     }
 
     return <AuthNavigator />;
+
 };
 
 const AuthNavigator = () => {
@@ -107,3 +111,5 @@ const AuthNavigator = () => {
 };
 
 export default AppNavigator;
+
+new Date().getDate().toFixed()
