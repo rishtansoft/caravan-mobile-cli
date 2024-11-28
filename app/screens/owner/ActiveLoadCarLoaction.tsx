@@ -7,11 +7,13 @@ import { MAPBOX_ACCESS_TOKEN } from '@env';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { ActiveLoadsCarProps } from './RouterType';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
 import axios from 'axios';
 import { GetData } from '../AsyncStorage/AsyncStorage';
 import { API_URL } from '@env';
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
+import EvilIcons from 'react-native-vector-icons/MaterialIcons'; // EvilIcons qo'shildi
 
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
@@ -121,55 +123,47 @@ interface PositionInterface {
     latitude: number,
     address?: string
 }
+
+const SingleLocationMap: React.FC<{ latitude: number; longitude: number }> = ({ latitude, longitude }) => {
+    return (
+        <MapboxGl.MapView style={styles.map}>
+            <MapboxGl.Camera
+                zoomLevel={17}
+                centerCoordinate={[longitude, latitude]}
+                animationDuration={0}
+            />
+
+            <MapboxGl.PointAnnotation
+                id="single-location"
+                coordinate={[longitude, latitude]}
+            >
+                <View style={styles.singleMarkerContainer}>
+                    {/* EvilIcons location ikoni */}
+                    <EvilIcons
+                        name="location-on"
+                        size={40}
+                        color="#7257FF"  // Qizil rang 
+                        style={styles.locationIcon}
+                    />
+                </View>
+                <MapboxGl.Callout title="Joriy joylashuv">
+                    <View style={styles.callout}>
+                        <Text style={{ color: '#291F61' }}>Latitude: {latitude}</Text>
+                        <Text style={{ color: '#291F61' }}>Longitude: {longitude}</Text>
+                    </View>
+                </MapboxGl.Callout>
+            </MapboxGl.PointAnnotation>
+        </MapboxGl.MapView>
+    );
+};
+
+
 const ActiveLoadCarLoaction: React.FC<ActiveLoadsCarProps> = ({ route, navigation }) => {
     const { itemId, data, status } = route.params;
-
-    const [currentLocation, setCurrentLocation] = useState<PositionInterface | null>(null);
-    const [routeCoordinates, setRouteCoordinates] = useState<Position[]>([]);
-    const [locationPermissionError, setLocationPermissionError] = useState<string | null>(null);
-    const [estimatedTime, setEstimatedTime] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
     const [user_id, setUser_id] = useState<string>('');
     const [token, setToken] = useState<string>('');
-
-    useEffect(() => {
-        GetData('user_id').then((res) => {
-            if (res) {
-                setUser_id(res)
-            }
-        }).catch((error) => {
-            console.error('Xatolik yuz berdi:', error);
-        });
-        GetData('token').then((res) => {
-            if (res) {
-                setToken(res)
-            }
-        }).catch((error) => {
-            console.error('Xatolik yuz berdi:', error);
-        });
-    }, []);
-
-    useEffect(() => {
-        console.log(1, `${API_URL}/api/driver/get-drvier-location?user_id=${user_id}&load_id=${itemId}`);
-        console.log(2, token);
-
-
-        if (token && user_id) {
-            axios.get(`${API_URL}/api/driver/get-drvier-location?user_id=${user_id}&load_id=${itemId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                },
-            }).then((res) => {
-                console.log(res.data);
-
-            }).catch((error) => {
-                console.log(163, error);
-
-            })
-        }
-    }, [token, user_id]);
-
     const [locations, setLocations] = useState<Location[]>([
         {
             id: data[0].id,
@@ -200,111 +194,58 @@ const ActiveLoadCarLoaction: React.FC<ActiveLoadsCarProps> = ({ route, navigatio
             AssignmentId: data[1].AssignmentId
         }
     ]);
-
-    const requestLocationPermission = async () => {
-        try {
-            const granted = await check(
-                Platform.OS === 'ios'
-                    ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
-                    : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION
-            );
-
-            if (granted === RESULTS.GRANTED) {
-                return true;
-            } else if (granted === RESULTS.DENIED) {
-                const requestResult = await request(
-                    Platform.OS === 'ios'
-                        ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
-                        : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION
-                );
-
-                if (requestResult === RESULTS.GRANTED) {
-                    return true;
-                } else {
-                    setLocationPermissionError('Joylashuv ruxsati berilmadi');
-                    return false;
-                }
-            } else {
-                setLocationPermissionError('Joylashuv ruxsati berilmadi');
-                return false;
-            }
-        } catch (error) {
-            console.error('Joylashuv ruxsatlarini tekshirishda xatolik:', error);
-            setLocationPermissionError('Joylashuv ruxsatlarini tekshirishda xatolik');
-            return false;
-        }
-    };
-
-    const getCurrentLocation = async () => {
-        try {
-            const hasPermission = await requestLocationPermission();
-
-            if (!hasPermission) {
-                setIsLoading(false);
-                return;
-            }
-
-            Geolocation.getCurrentPosition(
-                position => {
-                    setCurrentLocation({
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
-                    });
-                    setIsLoading(false);
-                    calculateFullRoute(locations);
-                },
-                error => {
-                    console.error('Joylashuvni olishda xatolik:', error);
-                    setLocationPermissionError('Joriy joylashuvni olishda xatolik');
-                    setIsLoading(false);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 15000,
-                    maximumAge: 10000
-                }
-            );
-        } catch (error) {
-            console.error('getCurrentLocation da xatolik:', error);
-            setLocationPermissionError('Joriy joylashuvni olib bo\'lmadi');
-            setIsLoading(false);
-        }
-    };
-
-    const calculateFullRoute = async (currentLocations: Location[]) => {
-        try {
-            // Uchta nuqta koordinatalari uchun qatorni tuzish
-            const coordinatesString = `${currentLocations[0].longitude},${currentLocations[0].latitude};${currentLocations[1].longitude},${currentLocations[1].latitude}`;
-
-            const routeUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinatesString}?geometries=geojson&access_token=${MAPBOX_ACCESS_TOKEN}`;
-
-            const response = await fetch(routeUrl);
-            const data = await response.json();
-
-            if (data.routes && data.routes[0]) {
-                setRouteCoordinates(data.routes[0].geometry.coordinates);
-            } else {
-                console.error('No route found:', data);
-                Alert.alert('Xato', 'Yo\'nalish topilmadi');
-            }
-        } catch (error) {
-            console.error('Yo\'nalishni hisoblashda xatolik:', error);
-            Alert.alert('Xato', 'Yo\'nalishni hisoblashda xatolik yuz berdi');
-        }
-    };
-
     useEffect(() => {
-        getCurrentLocation();
+        GetData('user_id').then((res) => {
+            if (res) {
+                setUser_id(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
+        GetData('token').then((res) => {
+            if (res) {
+                setToken(res)
+            }
+        }).catch((error) => {
+            console.error('Xatolik yuz berdi:', error);
+        });
     }, []);
 
-    const createRouteFeature = (coordinates: Position[]): Feature<Geometry> => ({
-        type: 'Feature',
-        properties: {},
-        geometry: {
-            type: 'LineString',
-            coordinates: coordinates,
-        },
-    });
+    useEffect(() => {
+        if (token && user_id) {
+            axios.get(`${API_URL}/api/driver/get-drvier-location?user_id=${user_id}&load_id=${itemId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            }).then((res) => {
+                setLocations(res.data.locations)
+                setIsLoading(false)
+
+            }).catch((error) => {
+                console.log(163, error);
+
+            })
+        }
+    }, [token, user_id]);
+
+    useEffect(() => {
+        if (token && user_id && dataUpdate) {
+
+            axios.get(`${API_URL}/api/driver/get-drvier-location?user_id=${user_id}&load_id=${itemId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            }).then((res) => {
+                setLocations(res.data.locations)
+                setDataUpdate(false);
+                setIsLoading(false)
+
+            }).catch((error) => {
+                console.log(163, error);
+
+            })
+        }
+    }, [token, user_id, dataUpdate]);
 
     if (isLoading) {
         return (
@@ -314,18 +255,10 @@ const ActiveLoadCarLoaction: React.FC<ActiveLoadsCarProps> = ({ route, navigatio
         );
     }
 
+
     return (
         <View style={styles.container_all}>
-            {locationPermissionError ? (
-                <TouchableOpacity
-                    style={styles.errorContainer}
-                    onPress={getCurrentLocation}
-                >
-                    <Text style={styles.errorText}>
-                        {locationPermissionError}. Qayta urinish uchun bosing.
-                    </Text>
-                </TouchableOpacity>
-            ) : null}
+
 
             <View style={styles.header_con}>
                 <View style={{
@@ -338,55 +271,21 @@ const ActiveLoadCarLoaction: React.FC<ActiveLoadsCarProps> = ({ route, navigatio
                 <Text style={styles.title}>
                     Buyurtma #{itemId.slice(0, 8)}
                 </Text>
-                <TouchableOpacity onPress={() => setDataUpdate(true)}>
+                <TouchableOpacity onPress={() => {
+                    setDataUpdate(true)
+                    setIsLoading(true)
+                }}>
                     <FontAwesomeIcon
                         name="refresh" size={25} color={"#7257FF"} />
                 </TouchableOpacity>
 
             </View>
 
-            <MapboxGl.MapView style={styles.map}>
-                <MapboxGl.Camera
-                    zoomLevel={12}
-                    centerCoordinate={[parseFloat(locations[0].longitude), parseFloat(locations[0].latitude)]}
-                    animationDuration={0}
-                />
+            <SingleLocationMap
+                latitude={Number(locations[0].latitude)}
+                longitude={Number(locations[0].longitude)}
+            ></SingleLocationMap>
 
-                {locations.map((location, index) => (
-                    <MapboxGl.PointAnnotation
-                        key={index + ''}
-                        id={`point-${index}`}
-                        coordinate={[parseFloat(location.longitude), parseFloat(location.latitude)]}
-                    >
-                        <View style={[
-                            styles.markerContainer,
-                            { backgroundColor: index === 0 ? '#4CAF50' : '#F44336' }
-                        ]}>
-                            <Text style={styles.markerText}>{index + 1}</Text>
-                        </View>
-                        <MapboxGl.Callout title={index === 0 ? "Boshlang'ich nuqta" : "Tugash nuqta"}>
-                            <View style={styles.callout}>
-                                <Text style={styles.calloutText}>{location.location_name}</Text>
-                            </View>
-                        </MapboxGl.Callout>
-                    </MapboxGl.PointAnnotation>
-                ))}
-
-                {routeCoordinates.length > 0 && (
-                    <MapboxGl.ShapeSource
-                        id="routeSource"
-                        shape={createRouteFeature(routeCoordinates)}
-                    >
-                        <MapboxGl.LineLayer
-                            id="routeLayer"
-                            style={{
-                                lineWidth: 4,
-                                lineColor: '#2196F3',
-                            }}
-                        />
-                    </MapboxGl.ShapeSource>
-                )}
-            </MapboxGl.MapView>
             <View style={{
                 position: 'absolute',
                 left: 0,
@@ -421,6 +320,32 @@ const ActiveLoadCarLoaction: React.FC<ActiveLoadsCarProps> = ({ route, navigatio
 };
 
 const styles = StyleSheet.create({
+    singleMarkerContainer: {
+        width: 50,
+        height: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'transparent',
+    },
+    locationIcon: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5
+    },
+
+    singleMarker: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: 'red',
+    },
+    // callout: {
+    //     padding: 10,
+    //     backgroundColor: 'white',
+    //     borderRadius: 5,
+    // },
     container_all: {
         flex: 1,
         backgroundColor: '#e6e8ea',

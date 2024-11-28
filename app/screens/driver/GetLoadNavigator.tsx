@@ -31,7 +31,8 @@ MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcy
 interface PositionInterface {
     longitude: number,
     latitude: number,
-    address?: string
+    address?: string,
+    heading?: number | null;
 }
 interface Location {
     id: string;
@@ -292,6 +293,8 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                 const newLocation: PositionInterface = {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
+                    heading: position.coords.heading,
+
                 };
                 setCurrentLocation(newLocation);
                 setCurrentSpeed(position.coords.speed || 0);
@@ -343,6 +346,8 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                 const newLocation: PositionInterface = {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
+                    heading: position.coords.heading,
+
                 };
                 setCurrentLocation(newLocation);
                 setCurrentSpeed(position.coords.speed || 0);
@@ -660,8 +665,12 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
                     >
                         <View style={[
                             styles.navigationArrow,
-                            // { transform: [{ rotate: `${currentLocation?.bearing || 0}deg` }] }
-                            { transform: [{ rotate: `${currentLocation?.latitude || 0}deg` }] }
+                            {
+                                transform: [{
+                                    // Use heading or fallback to 0
+                                    rotate: `${currentLocation?.heading || 0}deg`
+                                }]
+                            }
                         ]}>
                             <Icon name="location-arrow" size={35} color="#7257FF" />
 
