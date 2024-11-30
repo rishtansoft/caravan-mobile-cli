@@ -7,10 +7,11 @@ import {
     Platform,
     Alert,
     ActivityIndicator,
-    Modal
+    Modal,
+
 } from 'react-native';
 import { AppState, AppStateStatus } from 'react-native';
-import { Provider, useSelector } from 'react-redux';
+import NetInfo from '@react-native-community/netinfo';
 import MapboxGl from '@rnmapbox/maps';
 import Geolocation from 'react-native-geolocation-service';
 import { Position } from 'geojson';
@@ -23,10 +24,13 @@ import { API_URL } from '@env';
 import { GetData } from '../AsyncStorage/AsyncStorage';
 import SocketService from '../ui/Socket/index';
 import store, { RootState } from '../../store/store';
+import { Provider, useSelector } from 'react-redux';
 import { useBackgroundTimer } from '../ui/BackgroundTimerService/BackgroundTimerService';
+import RNFS from 'react-native-fs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
-
+// Offline route caching
+const OFFLINE_ROUTE_CACHE_KEY = 'OFFLINE_ROUTE_CACHE';
 MapboxGl.setAccessToken("pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q");
 
 interface PositionInterface {
@@ -34,6 +38,14 @@ interface PositionInterface {
     latitude: number,
     address?: string,
     heading?: number | null;
+}
+
+interface CachedRoute {
+    start: PositionInterface;
+    end: PositionInterface;
+    coordinates: Position[];
+    distance: string;
+    estimatedTime: string;
 }
 interface Location {
     id: string;
@@ -49,7 +61,6 @@ interface Location {
     updatedAt: string;
     AssignmentId: string | null;
 }
-
 const showErrorAlert = (message: string) => {
     Alert.alert('Xatolik', message, [{ text: 'OK', onPress: () => console.log('OK bosildi') }]);
 }
@@ -102,7 +113,8 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     const [token, setToken] = useState<string>('');
     const [unique_id, setUnique_id] = useState<string>('');
     const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
+    const [isOffline, setIsOffline] = useState(false);
+    const [cachedRoutes, setCachedRoutes] = useState<CachedRoute[]>([]);
     const appState = useRef(AppState.currentState);
     const backgroundTimerId = useRef<number | null>(null);
     const [isBackgroundTracking, setIsBackgroundTracking] = useState(false);
@@ -213,9 +225,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             stopTimer();
         };
     }, [navigationStarted]);
-
-
-
     // Clean up when component unmounts
     useEffect(() => {
         return () => {
@@ -232,7 +241,50 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
 
 
     // ========================================================================
+    const cacheRoute = async (route: CachedRoute) => {
+        try {
+            // Check if the route already exists in cache
+            const existingRoutes = await loadCachedRoutes();
+            const updatedRoutes = [...existingRoutes, route];
 
+            // Limit cache size (e.g., last 10 routes)
+            const limitedRoutes = updatedRoutes.slice(-10);
+
+            await AsyncStorage.setItem(
+                OFFLINE_ROUTE_CACHE_KEY,
+                JSON.stringify(limitedRoutes)
+            );
+
+            setCachedRoutes(limitedRoutes);
+        } catch (error) {
+            console.error('Error caching route:', error);
+        }
+    };
+
+    const loadCachedRoutes = async (): Promise<CachedRoute[]> => {
+        try {
+            const cachedRoutesJson = await AsyncStorage.getItem(OFFLINE_ROUTE_CACHE_KEY);
+            return cachedRoutesJson ? JSON.parse(cachedRoutesJson) : [];
+        } catch (error) {
+            console.error('Error loading cached routes:', error);
+            return [];
+        }
+    };
+
+    const findOfflineRoute = (start: PositionInterface, end: PositionInterface) => {
+        // Find a cached route that closely matches the current start and end points
+        const matchedRoute = cachedRoutes.find(route =>
+            isCloseLocation(route.start, start) &&
+            isCloseLocation(route.end, end)
+        );
+
+        return matchedRoute;
+    };
+
+    const isCloseLocation = (loc1: PositionInterface, loc2: PositionInterface, tolerance = 0.01) => {
+        return Math.abs(loc1.latitude - loc2.latitude) < tolerance &&
+            Math.abs(loc1.longitude - loc2.longitude) < tolerance;
+    };
 
 
 
@@ -259,8 +311,11 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
     };
     const calculateRoute = async (start: PositionInterface) => {
         try {
+            // Check network connectivity
+            const netInfo = await NetInfo.fetch();
+            const isConnected = netInfo.isConnected;
 
-            // `start` va `loadStartAddress` mavjudligini tekshirish
+            // Validate start and end locations
             if (!start || !start.longitude || !start.latitude) {
                 console.log("Start manzili yetarli emas:", start);
                 Alert.alert("Xato", "Boshlanish manzili mavjud emas.");
@@ -273,37 +328,142 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 return;
             }
 
-            const response = await fetch(
-                `https://api.mapbox.com/directions/v5/mapbox/driving/${start.longitude},${start.latitude};${loadStartAddress.longitude},${loadStartAddress.latitude}?geometries=geojson&overview=full&steps=true&access_token=pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q`
-            );
-            const data = await response.json();
-
-            if (data.routes && data.routes[0]) {
-                setRouteCoordinates(data.routes[0].geometry.coordinates);
-
-                const distanceKm = (data.routes[0].distance / 1000).toFixed(1);
-                const durationMinutes = Math.round(data.routes[0].duration / 60);
-                const hours = Math.floor(durationMinutes / 60);
-                const minutes = durationMinutes % 60;
-
-                setRemainingDistance(`${distanceKm} km`);
-                setEstimatedTime(
-                    hours > 0
-                        ? `${hours} soat ${minutes} daqiqa`
-                        : `${minutes} daqiqa`
+            // Try online routing first
+            if (isConnected) {
+                const response = await fetch(
+                    `https://api.mapbox.com/directions/v5/mapbox/driving/${start.longitude},${start.latitude};${loadStartAddress.longitude},${loadStartAddress.latitude}?geometries=geojson&overview=full&steps=true&access_token=pk.eyJ1IjoiaWJyb2hpbWpvbjI1IiwiYSI6ImNtMG8zYm83NzA0bDcybHIxOHlreXRyZnYifQ.7QYLNFuaTX9uaDfvV0054Q`
                 );
+                const data = await response.json();
 
-                // Extract next maneuver
-                if (data.routes[0].steps && data.routes[0].steps[0]) {
-                    setNextManeuver(data.routes[0].steps[0].maneuver.instruction);
+                if (data.routes && data.routes[0]) {
+                    const routeData = {
+                        coordinates: data.routes[0].geometry.coordinates,
+                        distance: `${(data.routes[0].distance / 1000).toFixed(1)} km`,
+                        estimatedTime: calculateEstimatedTime(data.routes[0].duration),
+                        start,
+                        end: loadStartAddress
+                    };
+
+                    // Cache the route
+                    await cacheRoute(routeData);
+
+                    setRouteCoordinates(routeData.coordinates);
+                    setRemainingDistance(routeData.distance);
+                    setEstimatedTime(routeData.estimatedTime);
+
+                    // Extract next maneuver
+                    if (data.routes[0].steps && data.routes[0].steps[0]) {
+                        setNextManeuver(data.routes[0].steps[0].maneuver.instruction);
+                    }
+
+                    return;
                 }
-
             }
+
+            // Fallback to offline route if available
+            const offlineRoute = findOfflineRoute(start, loadStartAddress);
+            if (offlineRoute) {
+                setIsOffline(true);
+                setRouteCoordinates(offlineRoute.coordinates);
+                setRemainingDistance(offlineRoute.distance);
+                setEstimatedTime(offlineRoute.estimatedTime);
+
+                Alert.alert('Offline Rejim', 'Internetga ulanish yo\'q. Offline yo\'nalish ishlatilmoqda.');
+                return;
+            }
+
+            // No route available
+            Alert.alert('Xato', 'Yo\'nalishni hisoblashda muammo. Internet aloqasi yo\'q va kerakli yo\'nalish topilmadi.');
+
         } catch (error) {
-            console.log(221, 'Route calculation error:', error);
+            console.log('Route calculation error:', error);
+
+            // Attempt offline route
+            const offlineRoute = findOfflineRoute(start, loadStartAddress);
+            if (offlineRoute) {
+                setIsOffline(true);
+                setRouteCoordinates(offlineRoute.coordinates);
+                setRemainingDistance(offlineRoute.distance);
+                setEstimatedTime(offlineRoute.estimatedTime);
+
+                // Alert.alert('Offline Rejim', 'Internetga ulanish yo\'q. Offline yo\'nalish ishlatilmoqda.');
+                return;
+            }
+
             Alert.alert('Xato', 'Yo\'nalishni hisoblashda xatolik yuz berdi');
         }
     };
+
+    const calculateEstimatedTime = (durationSeconds: number) => {
+        const durationMinutes = Math.round(durationSeconds / 60);
+        const hours = Math.floor(durationMinutes / 60);
+        const minutes = durationMinutes % 60;
+
+        return hours > 0
+            ? `${hours} soat ${minutes} daqiqa`
+            : `${minutes} daqiqa`;
+    };
+
+    // Offline map tile caching
+    const downloadOfflineRegion = async () => {
+        try {
+            if (currentLocation && loadStartAddress) {
+                // Define the bounding box between current location and destination
+                const bounds = [
+                    [
+                        Math.min(currentLocation.longitude, loadStartAddress.longitude),
+                        Math.min(currentLocation.latitude, loadStartAddress.latitude)
+                    ],
+                    [
+                        Math.max(currentLocation.longitude, loadStartAddress.longitude),
+                        Math.max(currentLocation.latitude, loadStartAddress.latitude)
+                    ]
+                ];
+
+                // Download offline region
+                const regionName = `route_${Date.now()}`;
+                await MapboxGl.offlineManager.createPack({
+                    name: regionName,
+                    styleURL: MapboxGl.StyleURL.Light,
+                    bounds: bounds,
+                    minZoom: 10,
+                    maxZoom: 20,
+                    metadata: { route: true }
+                });
+
+            }
+        } catch (error) {
+            console.error('Offline region download error:', error);
+            Alert.alert('Xato', 'Offline xaritani yuklab olishda muammo.');
+        }
+    };
+
+    useEffect(() => {
+        const handleConnectivityChange = (state) => {
+            setIsOffline(!state.isConnected);
+        };
+
+        const unsubscribe = NetInfo.addEventListener(handleConnectivityChange);
+
+        // Initial check
+        NetInfo.fetch().then(state => {
+            setIsOffline(!state.isConnected);
+        });
+
+        return () => {
+            unsubscribe();
+        };
+    }, []);
+
+    // Load cached routes on component mount
+    useEffect(() => {
+        const loadCachedRoutesOnMount = async () => {
+            const routes = await loadCachedRoutes();
+            setCachedRoutes(routes);
+        };
+
+        loadCachedRoutesOnMount();
+    }, []);
 
     // ----------------------------Socket-------------------------------------------
     const startNavigation = async () => {
@@ -356,6 +516,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 fastestInterval: 500
             }
         );
+        await downloadOfflineRegion();
     };
     const startNavigationDeparture = async () => {
         const hasPermission = await requestLocationPermission();
@@ -407,6 +568,7 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 fastestInterval: 500
             }
         );
+        await downloadOfflineRegion();
     };
     const stopNavigation = () => {
         if (watchId.current !== null) {

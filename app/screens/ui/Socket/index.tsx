@@ -2,6 +2,7 @@ import { AppState, AppStateStatus, Platform } from 'react-native';
 import io, { Socket } from 'socket.io-client';
 import notifee, { AndroidImportance } from '@notifee/react-native';
 import BackgroundService from 'react-native-background-actions';
+import NetInfo from '@react-native-community/netinfo';
 import { GetData } from '../../AsyncStorage/AsyncStorage';
 import { API_URL } from '@env';
 
@@ -28,6 +29,7 @@ class SocketService {
 
     private constructor() {
         AppState.addEventListener('change', this.handleAppStateChange);
+        NetInfo.addEventListener(this.handleConnectivityChange);
     }
 
     public static getInstance(): SocketService {
@@ -45,9 +47,19 @@ class SocketService {
         }
     };
 
+    private handleConnectivityChange = (state: any) => {
+        if (state.isConnected) {
+            console.log('Internet reconnected');
+            this.reconnectSocket();
+        } else {
+            console.log('Internet disconnected');
+            this.disconnectSocket();
+        }
+    };
+
     private backgroundOptions = {
         taskName: 'SocketService',
-        taskTitle: 'Socket Cinitializeonnection',
+        taskTitle: 'Socket Connection',
         taskDesc: 'Maintaining socket connection in the background',
         taskIcon: {
             name: 'ic_launcher',
@@ -75,7 +87,7 @@ class SocketService {
                 this.isRunning = true;
                 console.log('Socket background service started');
             } catch (error) {
-                console.error('Error starting background service:', error);
+                console.log('Error starting background service:', error);
             }
         }
     }
@@ -90,7 +102,7 @@ class SocketService {
                 this.connectSocket();
             }
         } catch (error) {
-            console.error('Error fetching user data:', error);
+            console.log('Error fetching user data:', error);
         }
     }
 
@@ -116,7 +128,7 @@ class SocketService {
 
             this.setupSocketListeners();
         } catch (error) {
-            console.error('Socket initialization error:', error);
+            console.log('Socket initialization error:', error);
             this.scheduleReconnect();
         }
     }
@@ -138,7 +150,7 @@ class SocketService {
         });
 
         this.socket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
+            console.log('Socket connection error:', error);
             this.scheduleReconnect();
         });
 
@@ -162,9 +174,15 @@ class SocketService {
                 await this.socket.connect();
                 console.log('Socket reconnected successfully');
             } catch (error) {
-                console.error('Socket reconnection failed:', error);
+                console.log('Socket reconnection failed:', error);
                 this.scheduleReconnect();
             }
+        }
+    }
+
+    private disconnectSocket() {
+        if (this.socket) {
+            this.socket.disconnect();
         }
     }
 
@@ -175,7 +193,7 @@ class SocketService {
                 longitude: location.longitude,
                 driverId: driverId,
             });
-            console.log('Manzil add', location);
+            console.log('Location update:', location);
         } else {
             console.log('Socket not connected, location update failed');
         }
@@ -197,7 +215,7 @@ class SocketService {
 
             await notifee.displayNotification({
                 title: 'Yangi yuk',
-                body: `Yangi yuk qo'shiladi`,
+                body: `Yangi yuk qo'shildi`,
                 android: {
                     channelId,
                     sound: 'default',
@@ -210,7 +228,6 @@ class SocketService {
                     sound: 'default',
                 },
             });
-
         } catch (error) {
             console.log('Notification error:', error);
         }
