@@ -19,6 +19,7 @@ import MainPhoneUpdate from '../../screens/driver/MainPhoneUpdate';
 import MainPhoneUpdateSmcCode from '../../screens/driver/MainPhoneUpdateSmcCode';
 import LoadHistoryDeailsMap from '../../screens/driver/LoadHistoryDeailsMap';
 import SocketService from '../../screens/ui/Socket/index';
+import NetInfo from '@react-native-community/netinfo'; // NetInfo import qilish
 
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -29,12 +30,22 @@ interface componentNameProps {
 const DriverNavigator: React.FC<componentNameProps> = ({ page }) => {
     const [activeTab, setActiveTab] = useState('active_loads');
     const [keyboardVisible, setKeyboardVisible] = useState(false);
-    const socketService = SocketService.getInstance();
+
     useEffect(() => {
-        socketService.initialize();
+        const unsubscribe = NetInfo.addEventListener(state => {
+            if (state.isConnected) {
+                const socketService = SocketService.getInstance();
+                console.log('Internet mavjud. Socketni ishga tushiramiz.');
+                socketService.initialize(); // Internet ulansa socketni ishga tushirish
+            } else {
+                const socketService = SocketService.getInstance();
+                console.log('Internet yo\'q. Socketni o\'chiramiz.');
+                socketService.disconnect(); // Internet o'chsa socketni o'chirish
+            }
+        });
 
+        return () => unsubscribe(); // Listenerni tozalash
     }, []);
-
     // socketService.showNotification()
 
 

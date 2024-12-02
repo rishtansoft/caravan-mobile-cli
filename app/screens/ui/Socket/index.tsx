@@ -26,6 +26,7 @@ class SocketService {
     private reconnectTimer: NodeJS.Timeout | null = null;
     private listeners: Set<(data: any) => void> = new Set();
     private locationIntervalRef: NodeJS.Timeout | null = null;
+    private isLocationUpdateEnabled = true;
 
     private constructor() {
         AppState.addEventListener('change', this.handleAppStateChange);
@@ -104,6 +105,16 @@ class SocketService {
         } catch (error) {
             console.log('Error fetching user data:', error);
         }
+    }
+
+    stopLocationUpdates() {
+        // Location updatelarni vaqtincha to'xtatish
+        this.isLocationUpdateEnabled = false;
+    }
+
+    resumeLocationUpdates() {
+        // Location updatelarni qayta yoqish
+        this.isLocationUpdateEnabled = true;
     }
 
     private connectSocket() {
@@ -187,7 +198,7 @@ class SocketService {
     }
 
     public async emitLocationUpdate(location: { latitude: number; longitude: number }, driverId: string) {
-        if (this.socket?.connected) {
+        if (this.isLocationUpdateEnabled && this.socket?.connected) {
             this.socket.emit('locationUpdate', {
                 latitude: location.latitude,
                 longitude: location.longitude,

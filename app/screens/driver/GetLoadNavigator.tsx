@@ -101,6 +101,8 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
     const isLoggedIn = auth.isLoggedIn;
     const [isOffline, setIsOffline] = useState(false);
     const [cachedRoutes, setCachedRoutes] = useState<CachedRoute[]>([]);
+    const [networkStatus, setNetworkStatus] = useState<'online' | 'offline'>('online');
+    const [locationUpdateMethod, setLocationUpdateMethod] = useState<'socket' | 'offline'>('socket');
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -126,6 +128,81 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
             console.error('Xatolik yuz berdi:', error);
         });
     }, []);
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            const newStatus = state.isConnected ? 'online' : 'offline';
+
+            // Network status o'zgarganda
+            if (networkStatus !== newStatus) {
+                setNetworkStatus(newStatus);
+
+                if (newStatus === 'offline') {
+                    // Internet o'chganda location update ni to'xtatish
+                    stopLocationUpdates();
+                } else {
+                    // Internet qayta tiklanganda offline locationlarni yuborish
+                    sendOfflineLocations();
+                }
+            }
+        });
+
+        return () => unsubscribe();
+    }, [networkStatus]);
+
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            const newStatus = state.isConnected ? 'online' : 'offline';
+            if (networkStatus !== newStatus) {
+                setNetworkStatus(newStatus);
+
+                if (newStatus === 'offline') {
+                    // Internet o'chganda location update usulini o'zgartirish
+                    setLocationUpdateMethod('offline');
+                    stopLocationUpdates();
+                } else {
+                    // Internet qayta tiklanganda location update usulini o'zgartirish
+                    setLocationUpdateMethod('socket');
+                }
+            }
+        });
+
+        return () => unsubscribe();
+    }, [networkStatus]);
+
+    const stopLocationUpdates = () => {
+        const socketService = SocketService.getInstance();
+        socketService.stopLocationUpdates(); // Socketning yangi metodi
+    };
+    const sendOfflineLocations = async () => {
+        const existingLocDataString = await GetData('loc_data') || '[]';
+        console.log(173);
+
+        if (existingLocDataString) {
+            console.log(174);
+
+            const existingLocData = JSON.parse(existingLocDataString);
+            if (existingLocData && existingLocData.length > 0) {
+                console.log(176);
+
+                try {
+                    const response = await axios.post(API_URL + '/api/loads/load-location-all-save', {
+                        user_id: user_id,
+                        locations: existingLocData
+                    }, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    });
+
+                    console.log('Offline locations sent:', response.data);
+                    await RemoveData("loc_data");
+                } catch (error) {
+                    console.error('Error sending offline locations:', error);
+                }
+            }
+        }
+    };
+
 
     useEffect(() => {
         console.log("Route params data:", route.params?.data);
@@ -164,49 +241,23 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
     };
 
-
     const { startTimer, stopTimer } = useBackgroundTimer(() => {
         if (currentLocation && navigationStarted) {
-            if (!isOffline) {
-                const socketService = SocketService.getInstance();
-                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
-                console.log("Location update in background:", currentLocation);
-            } else {
-                updateOfflineLocationData();
-
+            switch (locationUpdateMethod) {
+                case 'socket':
+                    const socketService = SocketService.getInstance();
+                    socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+                    console.log("Location update via socket:", currentLocation);
+                    break;
+                case 'offline':
+                    updateOfflineLocationData();
+                    console.log("Location update via offline storage:", currentLocation);
+                    break;
             }
-
-
         }
     }, 60000);
 
-    const sendLocation = async () => {
-        const existingLocDataString = await GetData('loc_data') || '[]';
-        if (existingLocDataString) {
-            const existingLocData = JSON.parse(existingLocDataString);
-            if (existingLocData && existingLocData.length > 0) {
-                axios.post(API_URL + '/api/loads/load-location-all-save', {
-                    user_id: user_id,
-                    locations: existingLocData
-                }, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    },
-                }
-                ).then((res) => {
-                    console.log(res.data);
-                    RemoveData("loc_data")
-                }).catch((error) => {
-                    console.log(error);
-                })
-            }
-        }
-    }
-    useEffect(() => {
-        if (!isOffline && token && user_id) {
-            sendLocation()
-        }
-    }, [isOffline]);
+
 
     useEffect(() => {
         if (navigationStarted) {
