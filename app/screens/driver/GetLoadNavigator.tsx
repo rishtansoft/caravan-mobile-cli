@@ -21,7 +21,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { ActiveLoadsMapAppointedProps } from './RouterType';
 import axios from 'axios';
 import { API_URL } from '@env';
-import { GetData } from '../AsyncStorage/AsyncStorage';
+import { GetData, RemoveData, StoreData } from '../AsyncStorage/AsyncStorage';
 import SocketService from '../ui/Socket/index';
 import store, { RootState } from '../../store/store';
 import { Provider, useSelector } from 'react-redux';
@@ -137,14 +137,76 @@ const GetLoadNavigator: React.FC<ActiveLoadsMapAppointedProps> = ({ navigation, 
         }
     }, []);
 
+    const updateOfflineLocationData = async () => {
+        try {
+            // Mavjud offline location ma'lumotlarini olish va parse qilish
+            const existingLocDataString = await GetData('loc_data') || '[]';
+            const existingLocData = JSON.parse(existingLocDataString);
+
+            // Yangi location ma'lumotini yaratish
+            const newLocationData = {
+                longitude: currentLocation?.longitude,
+                latitude: currentLocation?.latitude,
+                driver_id: route.params.driver_id,
+                order: existingLocData.length + 1 || 1, // Oxirgi orderga 1 qo'shib
+                recordedAt: new Date().toISOString()
+            };
+
+            // Yangi ma'lumotni qo'shish
+            const updatedLocData = [...existingLocData, newLocationData];
+
+            // Ma'lumotni JSON string sifatida saqlash
+            await StoreData('loc_data', JSON.stringify(updatedLocData));
+
+            console.log('Offline location data updated:', updatedLocData);
+        } catch (error) {
+            console.error('Offline location data update error:', error);
+        }
+    };
+
 
     const { startTimer, stopTimer } = useBackgroundTimer(() => {
         if (currentLocation && navigationStarted) {
-            const socketService = SocketService.getInstance();
-            socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
-            console.log("Location update in background:", currentLocation);
+            if (!isOffline) {
+                const socketService = SocketService.getInstance();
+                socketService.emitLocationUpdate(currentLocation, route.params.driver_id);
+                console.log("Location update in background:", currentLocation);
+            } else {
+                updateOfflineLocationData();
+
+            }
+
+
         }
     }, 60000);
+
+    const sendLocation = async () => {
+        const existingLocDataString = await GetData('loc_data') || '[]';
+        if (existingLocDataString) {
+            const existingLocData = JSON.parse(existingLocDataString);
+            if (existingLocData && existingLocData.length > 0) {
+                axios.post(API_URL + '/api/loads/load-location-all-save', {
+                    user_id: user_id,
+                    locations: existingLocData
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    },
+                }
+                ).then((res) => {
+                    console.log(res.data);
+                    RemoveData("loc_data")
+                }).catch((error) => {
+                    console.log(error);
+                })
+            }
+        }
+    }
+    useEffect(() => {
+        if (!isOffline && token && user_id) {
+            sendLocation()
+        }
+    }, [isOffline]);
 
     useEffect(() => {
         if (navigationStarted) {
