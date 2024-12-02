@@ -382,13 +382,11 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             // Validate start and end locations
             if (!start || !start.longitude || !start.latitude) {
                 console.log("Start manzili yetarli emas:", start);
-                Alert.alert("Xato", "Boshlanish manzili mavjud emas.");
                 return;
             }
 
             if (!loadStartAddress || !loadStartAddress.longitude || !loadStartAddress.latitude) {
                 console.log("Yuk manzili yetarli emas:", loadStartAddress);
-                Alert.alert("Xato", "Yuk manzili mavjud emas.");
                 return;
             }
 
@@ -432,7 +430,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
                 setRemainingDistance(offlineRoute.distance);
                 setEstimatedTime(offlineRoute.estimatedTime);
 
-                Alert.alert('Offline Rejim', 'Internetga ulanish yo\'q. Offline yo\'nalish ishlatilmoqda.');
                 return;
             }
 
@@ -498,7 +495,6 @@ const LoadHistoryDeailsMap: React.FC<HistoryDetailMapProps> = ({ navigation, rou
             }
         } catch (error) {
             console.error('Offline region download error:', error);
-            Alert.alert('Xato', 'Offline xaritani yuklab olishda muammo.');
         }
     };
 
