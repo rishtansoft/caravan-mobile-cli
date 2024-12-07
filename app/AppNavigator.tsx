@@ -16,9 +16,11 @@ import HomeScreen from './screens/general/Home';
 import VerifySmsScreen from './screens/general/VerifySmsScreen';
 import { GetData, RemoveData } from './screens/AsyncStorage/AsyncStorage';
 import UserRole from './UserRole';
+import axios from 'axios';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 import { useNavigationContainerRef } from '@react-navigation/native';
+import { API_URL } from '@env';
 
 const AppNavigator = () => {
 
@@ -62,7 +64,20 @@ const RootNavigator: React.FC<RouterPage> = ({ name }) => {
                     GetData('role')
                 ]);
                 if (tokenData) {
-                    setToken(tokenData);
+                    axios.post(API_URL + '/api/auth/check-token', {
+                        token: tokenData
+                    }).then(async (res) => {
+                        console.log(70, res.data);
+                        if (res.data.success) {
+                            setToken(tokenData);
+                        } else {
+                            await RemoveData('token')
+                            await RemoveData('role')
+                            setToken(null)
+                        }
+                    }).catch((error) => {
+                        console.log(73, error);
+                    })
                 } else {
                     setToken(null)
                 }

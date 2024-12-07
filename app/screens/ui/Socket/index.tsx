@@ -55,6 +55,11 @@ class SocketService {
         } else {
             console.log('Internet disconnected');
             this.disconnectSocket();
+            // Internetni qayta tiklanguncha ulanishga urinmaslik
+            if (this.reconnectTimer) {
+                clearTimeout(this.reconnectTimer);
+                this.reconnectTimer = null;
+            }
         }
     };
 
@@ -108,7 +113,7 @@ class SocketService {
     }
 
     stopLocationUpdates() {
-        // Location updatelarni vaqtincha to'xtatish
+        // Location updatelarni vaqtincha to'xtratish
         this.isLocationUpdateEnabled = false;
     }
 
@@ -173,13 +178,27 @@ class SocketService {
 
     private scheduleReconnect() {
         if (!this.reconnectTimer) {
-            this.reconnectTimer = setTimeout(() => {
-                this.reconnectSocket();
-            }, 5000);
+            this.reconnectTimer = setTimeout(async () => {
+                const netState = await NetInfo.fetch();
+                if (netState.isConnected) {
+                    this.reconnectSocket();
+                } else {
+                    // Agar internet hali ham yo'q bo'lsa, qayta urinishni kechroq qiling
+                    this.scheduleReconnect();
+                }
+            }, 10000); // 10 soniya kutish
         }
     }
 
     private async reconnectSocket() {
+        // Avval internetni tekshirish
+        const netState = await NetInfo.fetch();
+
+        if (!netState.isConnected) {
+            console.log('Internet is not available, skipping socket reconnection');
+            return;
+        }
+
         if (this.socket && !this.socket.connected) {
             try {
                 await this.socket.connect();
@@ -198,7 +217,7 @@ class SocketService {
     }
 
     public async emitLocationUpdate(location: { latitude: number; longitude: number }, driverId: string) {
-        if (this.isLocationUpdateEnabled && this.socket?.connected) {
+        if (this.socket?.connected) {
             this.socket.emit('locationUpdate', {
                 latitude: location.latitude,
                 longitude: location.longitude,
@@ -206,7 +225,7 @@ class SocketService {
             });
             console.log('Location update:', location);
         } else {
-            console.log('Socket not connected, location update failed');
+            console.log('Socket not connected, location update failed', this.socket?.connected);
         }
     }
 
