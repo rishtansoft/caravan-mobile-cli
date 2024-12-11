@@ -6,6 +6,7 @@ import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
 import axios from 'axios';
 import { GetData } from '../AsyncStorage/AsyncStorage';
 import { API_URL } from '@env';
+import Placeholder from "../ui/SkeletonContent/SkeletonContent";
 
 const splitText = (text: string,): { text_1: string } => {
     const text_1 = text.slice(0, 8);
@@ -124,6 +125,7 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
     const [resData, setResData] = useState<ResData[] | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
+    const [inLoder, setinLoder] = useState<boolean>(true);
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -174,6 +176,7 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
                             }
                         }
                     }
+                    setinLoder(false);
                 }).catch((error) => {
                     console.log(132, error);
                 })
@@ -213,6 +216,8 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
                             }
                         }
                     }
+                    setinLoder(false);
+
                 }).catch((error) => {
                     console.log(132, error);
                 })
@@ -220,10 +225,12 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
     }, [token, user_id, dataUpdate]);
 
     const onRefresh = useCallback(() => {
+        setinLoder(true);
         setRefreshing(true); // Yangilanishni boshlash
+        setDataUpdate(true);
         setTimeout(() => {
             setRefreshing(false); // Yangilanishni tugatish
-            setDataUpdate(true);
+
         }, 2000); // 2 soniyadan keyin tugatadi
     }, []);
 
@@ -263,7 +270,7 @@ const ActiveOrders: React.FC<ActiveLoadsProps> = ({ navigation }) => {
             </ScrollView > */}
             <View style={styles.container}>
                 {
-                    resData && resData.length > 0 && <FlatList
+                    inLoder ? <Placeholder /> : resData && resData.length > 0 && <FlatList
                         data={resData}
                         refreshControl={
                             <RefreshControl refreshing={refreshing} onRefresh={onRefresh}

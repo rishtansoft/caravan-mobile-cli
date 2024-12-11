@@ -90,7 +90,7 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
     const [inRegister, setInRegister] = useState<boolean>(false);
     const isFocused = useIsFocused();
-
+    const [inLoder, setinLoder] = useState<boolean>(true);
     // Royhatdan toliq o'tgan yoki yoqligini tekshirish asnc storage bilan tekshirish
     const userRegister = true;
 
@@ -114,7 +114,7 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
 
     const fetchLoadData = useCallback(() => {
         if (!token || !user_id) return;
-
+        setinLoder(true)
         axios.post(`${API_URL}/api/auth/check-driver?user_id=${user_id}`, {}, {
             headers: {
                 Authorization: `Bearer ${token}`
@@ -143,7 +143,11 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
                                     setResData(newData)
                                 }
                             }
+                        } else {
+                            setResData(null)
                         }
+                        setinLoder(false)
+
                     }).catch((error) => {
                         console.log('Load data error:', error);
                     })
@@ -195,7 +199,10 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
                                         setResData(newData)
                                     }
                                 }
+                            } else {
+                                setResData(null)
                             }
+                            setinLoder(false)
                         }).catch((error) => {
                             console.log(132, error);
                         })
@@ -234,7 +241,11 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
                                 setResData(newData)
                             }
                         }
+                    } else {
+                        setResData(null)
                     }
+                    setinLoder(false)
+
                 }).catch((error) => {
                     console.log(132, error);
                 })
@@ -283,23 +294,13 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
 
         navigation.navigate('profile');
     };
-
-    const soudFun = async () => {
-        try {
-            notificationPlayer.playNotification(
-                "Yangi xabar",
-                "Sizga yangi xabar keldi!"
-            );
-        } catch (error) {
-            console.error("Xatolik:", error);
-        }
-    }
-
     const onRefresh = useCallback(() => {
+        setinLoder(true)
         setRefreshing(true); // Yangilanishni boshlash
+        setDataUpdate(true);
+
         setTimeout(() => {
             setRefreshing(false); // Yangilanishni tugatish
-            setDataUpdate(true);
         }, 2000); // 2 soniyadan keyin tugatadi
     }, []);
 
@@ -340,40 +341,44 @@ const HomeScreen: React.FC<ActiveLoadsProps> = ({
 
             </View>
 
-
-
-
             <View style={styles.orders}>
                 <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 10, marginVertical: 10 }}>
                     <Text style={styles.sectionTitle}>Aktiv buyurtmalar </Text>
-                    <TouchableOpacity disabled={!inRegister} onPress={() => setDataUpdate(true)}>
+                    <TouchableOpacity disabled={!inRegister} onPress={() => {
+                        setDataUpdate(true)
+                        setinLoder(true)
+                    }}>
                         <FontAwesomeIcon
                             name="refresh" size={25} color={!inRegister ? "#898D8F" : "#7257FF"} />
                     </TouchableOpacity>
                 </View>
 
-                {resData && resData.length > 0 && resData.map((order, index) => (
-                    <TouchableOpacity
-                        key={index}
-                        style={styles.order}
-                        onPress={() => toggleModal(order.id)}
-                    >
-                        <View style={styles.orderCard}>
-                            <View style={styles.orderDetails}>
-                                <Text style={styles.location}>{order.start_location}</Text>
-                                <Image source={require("../../assets/driver/referrer.png")} />
-                                <Text style={styles.location}>{order.end_location}</Text>
+                {
+                    inLoder ? <Placeholder /> : resData && resData.length > 0 && resData.map((order, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={styles.order}
+                            onPress={() => toggleModal(order.id)}
+                        >
+                            <View style={styles.orderCard}>
+                                <View style={styles.orderDetails}>
+                                    <Text style={styles.location}>{order.start_location}</Text>
+                                    <Image source={require("../../assets/driver/referrer.png")} />
+                                    <Text style={styles.location}>{order.end_location}</Text>
+                                </View>
+                                <View>
+                                    <Text style={styles.orderNo}>#{order.sub_id}</Text>
+                                </View>
                             </View>
-                            <View>
-                                <Text style={styles.orderNo}>#{order.sub_id}</Text>
+                            <View style={styles.info}>
+                                <Text style={styles.infoCategory}>{order.cargo_type}</Text>
+                                <Text style={styles.infoCategory}>{order.weight}kg</Text>
                             </View>
-                        </View>
-                        <View style={styles.info}>
-                            <Text style={styles.infoCategory}>{order.cargo_type}</Text>
-                            <Text style={styles.infoCategory}>{order.weight}kg</Text>
-                        </View>
-                    </TouchableOpacity>
-                ))}
+                        </TouchableOpacity>
+                    ))
+                }
+
+
 
             </View>
 

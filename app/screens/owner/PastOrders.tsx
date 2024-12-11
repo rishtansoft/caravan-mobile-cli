@@ -6,6 +6,7 @@ import Fontisto from 'react-native-vector-icons/Octicons'; //arrow-switch
 import axios from 'axios';
 import { GetData } from '../AsyncStorage/AsyncStorage';
 import { API_URL } from '@env';
+import Placeholder from "../ui/SkeletonContent/SkeletonContent";
 
 const defaultData = [
     {
@@ -127,6 +128,7 @@ const PastOrders: React.FC<HistoryProps> = ({ navigation }) => {
     const [resData, setResData] = useState<ResData[] | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
+    const [inLoder, setinLoder] = useState<boolean>(true);
 
     useEffect(() => {
         GetData('user_id').then((res) => {
@@ -154,6 +156,7 @@ const PastOrders: React.FC<HistoryProps> = ({ navigation }) => {
                 }
             })
                 .then((res) => {
+
                     if (res.data?.data && res.data.data.length > 0) {
                         const resdataFileter = filterByDriverStops(res.data?.data)
                         if (resdataFileter.length > 0) {
@@ -173,17 +176,57 @@ const PastOrders: React.FC<HistoryProps> = ({ navigation }) => {
                             }
                         }
                     }
+                    setinLoder(false)
                 }).catch((error) => {
                     console.log(132, error);
                 })
         }
     }, [token, user_id]);
 
+    useEffect(() => {
+        if (token && user_id && dataUpdate) {
+            axios.get(API_URL + `/api/loads/get-user-all-loads?user_id=${user_id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+                .then((res) => {
+                    setDataUpdate(false)
+
+                    if (res.data?.data && res.data.data.length > 0) {
+                        const resdataFileter = filterByDriverStops(res.data?.data)
+                        if (resdataFileter.length > 0) {
+                            const newData = resdataFileter.map((el) => {
+                                return {
+                                    id: el.id,
+                                    cargo_type: el.cargo_type,
+                                    status: el.load_status,
+                                    weight: el.loadDetails.weight,
+                                    sub_id: splitText(el.id).text_1,
+                                    start_location: filertDriverStopOrder(el.driverStops, 0),
+                                    end_location: filertDriverStopOrder(el.driverStops, 1),
+                                }
+                            });
+                            if (newData && newData.length > 0) {
+                                setResData(newData)
+                            }
+                        }
+                    }
+                    setinLoder(false)
+
+                }).catch((error) => {
+                    console.log(132, error);
+                })
+        }
+    }, [token, user_id, dataUpdate]);
+
     const onRefresh = useCallback(() => {
         setRefreshing(true); // Yangilanishni boshlash
+        setDataUpdate(true);
+        setinLoder(true)
+
         setTimeout(() => {
             setRefreshing(false); // Yangilanishni tugatish
-            setDataUpdate(true);
         }, 2000); // 2 soniyadan keyin tugatadi
     }, []);
 
@@ -203,7 +246,7 @@ const PastOrders: React.FC<HistoryProps> = ({ navigation }) => {
             </View>
             <View style={styles.container}>
                 {
-                    resData && resData.length > 0 ? (<FlatList
+                    inLoder ? <Placeholder /> : resData && resData.length > 0 ? (<FlatList
                         data={resData}
                         refreshControl={
                             <RefreshControl refreshing={refreshing} onRefresh={onRefresh}

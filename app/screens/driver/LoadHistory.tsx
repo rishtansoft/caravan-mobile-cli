@@ -14,6 +14,7 @@ import { API_URL } from "@env";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { HistoryProps } from './RouterType';
 import { useIsFocused } from '@react-navigation/native';
+import Placeholder from "../ui/SkeletonContent/SkeletonContent";
 
 const splitText = (text: string): { text_1: string } => {
     const text_1 = text.slice(0, 8);
@@ -98,6 +99,7 @@ const LoadHistory: React.FC<HistoryProps> = ({
     const isFocused = useIsFocused();
     const [refreshing, setRefreshing] = useState(false);
     const [dataUpdate, setDataUpdate] = useState<boolean>(false);
+    const [inLoder, setinLoder] = useState<boolean>(true);
 
     // Royhatdan toliq o'tgan yoki yoqligini tekshirish asnc storage bilan tekshirish
     const userRegister = true;
@@ -126,6 +128,7 @@ const LoadHistory: React.FC<HistoryProps> = ({
 
     const fetchLoadData = useCallback(() => {
         if (!token || !user_id) return;
+        setinLoder(true)
         axios
             .get(API_URL + `/api/loads/get-driver-loads?user_id=${user_id}`, {
                 headers: {
@@ -136,12 +139,8 @@ const LoadHistory: React.FC<HistoryProps> = ({
 
                 if (res.data?.data && res.data.data.length > 0) {
                     const resdataFileter = filterByDriverStops(res.data?.data);
-
                     if (resdataFileter.length > 0) {
-
                         const newData = resdataFileter.map((el) => {
-                            console.log(111, el.load_id);
-
                             return {
                                 id: el.load_id,
                                 cargo_type: getStatusText(el.load_status),
@@ -152,12 +151,16 @@ const LoadHistory: React.FC<HistoryProps> = ({
                             };
                         });
                         if (newData && newData.length > 0) {
-                            console.log(122, newData);
-
                             setResData(newData);
                         }
+                    } else {
+                        setResData(null)
                     }
+                } else {
+                    setResData(null)
                 }
+                setinLoder(false)
+
             })
             .catch((error) => {
                 console.log(132, error);
@@ -205,8 +208,15 @@ const LoadHistory: React.FC<HistoryProps> = ({
 
                                 setResData(newData);
                             }
+                        } else {
+                            setResData(null)
+
                         }
+                    } else {
+                        setResData(null)
+
                     }
+                    setinLoder(false)
                 })
                 .catch((error) => {
                     console.log(132, error);
@@ -227,9 +237,11 @@ const LoadHistory: React.FC<HistoryProps> = ({
 
     const onRefresh = useCallback(() => {
         setRefreshing(true); // Yangilanishni boshlash
+        setDataUpdate(true);
+        setinLoder(true)
+
         setTimeout(() => {
             setRefreshing(false); // Yangilanishni tugatish
-            setDataUpdate(true);
         }, 2000); // 2 soniyadan keyin tugatadi
     }, []);
 
@@ -264,7 +276,8 @@ const LoadHistory: React.FC<HistoryProps> = ({
                         </Text>
                     </View>
                 </View>
-                {resData &&
+
+                {inLoder ? <Placeholder /> : resData &&
                     resData.length > 0 &&
                     resData.map((order, index) => (
                         <TouchableOpacity

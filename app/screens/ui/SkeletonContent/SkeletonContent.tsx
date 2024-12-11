@@ -1,16 +1,37 @@
-import SkeletonContent from 'react-native-skeleton-content';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, Alert, RefreshControl } from 'react-native';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Skeleton } from '@rneui/themed';
 
-export default function Placeholder() {
+export default function ColorfulPlaceholder() {
+    const skeletonColors = [
+        '#DADDDE',
+        '#DADDDE',   // Yashil-ko'k
+        '#DADDDE',   // Moviy
+        '#DADDDE',   // Sariq
+        '#DADDDE',   // Siyrak-binafsha
+    ];
+
     return (
-        <SkeletonContent
-            containerStyle={{ flex: 1, width: 300 }}
-            isLoading={false}
-            layout={[
-                { key: 'someId', width: 220, height: 20, marginBottom: 6 },
-                { key: 'someOtherId', width: 180, height: 20, marginBottom: 6 }
-            ]}
-        >
-        </SkeletonContent>
+        <View style={styles.container}>
+            {skeletonColors.map((color, index) => (
+                <Skeleton
+                    key={index}
+                    width={340 - index * 35}
+                    height={45}
+                    animation="wave"
+                    animationType="pulse"
+                    backgroundColor={color}
+                    highlightColor={`${color}70`}
+                />
+            ))}
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        gap: 10,
+        marginHorizontal: 2
+    }
+});
